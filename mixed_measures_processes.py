@@ -33,9 +33,12 @@ class MixedLocSegPairwiseMeasure(object):
 
     def recognition_quality(self):
         PE = BinaryPairwiseMeasures(self.pred,self.ref)
+        print(self.pred, self.ref)
         return PE.fbeta()
 
     def panoptic_quality(self):
+        print('RQ ', self.recognition_quality())
+        print('SQ ', self.average_iou_img())
         return self.recognition_quality() * self.average_iou_img()
 
     def to_dict_mt(self):
@@ -58,7 +61,7 @@ class MixedLocSegPairwiseMeasure(object):
 class MultiLabelLocSegPairwiseMeasure(object):
     # Instance segmentation
     def __init__(self, pred_class, ref_class, pred_loc, ref_loc, pred_prob, list_values,
-                 measures_pcc=[], measures_overlap=[] ,measures_boundary=[], measures_mt=[], per_case=True, num_neighbors=8, pixdim=[1, 1, 1],
+                 measures_pcc=[], measures_overlap=[] ,measures_boundary=[], measures_detseg=[], measures_mt=[], per_case=True, num_neighbors=8, pixdim=[1, 1, 1],
                  empty=False, association='Greedy IoU', localization='iou'):
         self.pred_loc = pred_loc
         self.list_values = list_values
@@ -66,9 +69,11 @@ class MultiLabelLocSegPairwiseMeasure(object):
         self.ref_loc = ref_loc
         self.pred_prob = pred_prob
         self.pred_class = pred_class
-        self.measures_prob = measures_mt
-        self.measures_det = measures_pcc
-        self.measures_seg = measures_overlap + measures_boundary
+        self.measures_mt = measures_mt
+        self.measures_pcc = measures_pcc
+        self.measures_overlap = measures_overlap 
+        self.measures_boundary = measures_boundary
+        self.measures_detseg = measures_detseg
         self.per_case = per_case
         self.association = association
         self.localization = localization
@@ -76,6 +81,8 @@ class MultiLabelLocSegPairwiseMeasure(object):
     def per_label_dict(self):
         list_det = []
         list_seg = []
+        list_mt = []
+        print(self.list_values)
         for lab in self.list_values:
             list_pred = []
             list_ref = []
@@ -83,17 +90,22 @@ class MultiLabelLocSegPairwiseMeasure(object):
             list_pred_loc = []
             list_ref_loc = []
             for case in range(len(self.pred_class)):
-                ind_pred = np.where(self.pred_class[case] == lab)
-                pred_tmp = np.where(self.pred_class[case] == lab, np.ones_like(self.pred_class[case]), np.zeros_like(self.pred_class[case]))
-                ref_tmp = np.where(self.ref_class[case] == lab, np.ones_like(self.ref_class[case]), np.zeros_like(self.ref_class[case]))
-                ind_ref = np.where(self.ref_class[case] == lab)
-                pred_loc_tmp = self.pred_loc[case][ind_pred[0]]
-                ref_loc_tmp = self.ref_loc[case][ind_ref[0]]
-                pred_prob_tmp = self.pred_prob[case][ind_pred[0]]
+                pred_class_case = np.asarray(self.pred_class[case])
+                ref_class_case = np.asarray(self.ref_class[case])
+                ind_pred = np.where(pred_class_case== lab)
+                print(ind_pred)
+                pred_tmp = np.where(pred_class_case == lab, np.ones_like(pred_class_case), np.zeros_like(pred_class_case))
+                ref_tmp = np.where(ref_class_case == lab, np.ones_like(ref_class_case), np.zeros_like(ref_class_case))
+                ind_ref = np.where(ref_class_case == lab)
+                pred_loc_tmp = [self.pred_loc[case][i] for i in ind_pred[0]]
+                ref_loc_tmp = [self.ref_loc[case][i] for i in ind_ref[0]]
+                pred_prob_tmp = [self.pred_prob[case][i] for i in ind_pred[0]]
+                print(len(pred_loc_tmp), len(ref_loc_tmp), lab, case)
                 AS = AssociationMapping(pred_loc=pred_loc_tmp, ref_loc=ref_loc_tmp, pred_prob=pred_prob_tmp, association=self.association, localization=self.localization)
                 pred_tmp_fin = np.asarray(AS.df_matching['pred'])
                 pred_tmp_fin = np.where(pred_tmp_fin>-1, np.ones_like(pred_tmp_fin),np.zeros_like(pred_tmp_fin))
                 ref_tmp_fin = np.asarray(AS.df_matching['ref'])
+                pred_prob_fin = np.asarray(AS.df_matching['pred_prob'])
                 ref_tmp_fin = np.where(ref_tmp_fin>-1, np.ones_like(ref_tmp_fin), np.zeros_like(ref_tmp_fin))
                 pred_loc_tmp_fin, ref_loc_tmp_fin = AS.matching_ref_predseg()
                 if self.per_case:
@@ -103,16 +115,22 @@ class MultiLabelLocSegPairwiseMeasure(object):
 
                     MLSPM = MixedLocSegPairwiseMeasure(pred=pred_tmp_fin, ref=ref_tmp_fin,
                                                        list_predimg=pred_loc_tmp_fin,
-                                                       list_refimg=ref_loc_tmp_fin,measures_det=self.measures_det,
-                                                       measures_seg=self.measures_seg)
+                                                       list_refimg=ref_loc_tmp_fin, pred_prob=pred_prob_fin,
+                                                       measures_detseg=self.measures_detseg, measures_pcc=self.measures_pcc, measures_boundary=
+                                                       self.measures_boundary, measures_overlap=self.measures_overlap, measures_mt=self.measures_mt,
+                                                       )
                     seg_res = MLSPM.to_pd_seg()
                     seg_res['label'] = lab
                     seg_res['case'] = case
                     det_res = MLSPM.to_dict_det()
                     det_res['label'] = lab
                     det_res['case'] = case
+                    mt_res = MLSPM.to_dict_mt()
+                    mt_res['label'] = lab
+                    mt_res['case'] = case
                     list_det.append(det_res)
                     list_seg.append(seg_res)
+                    list_mt.append(mt_res)
                 else:
                     for p in pred_loc_tmp_fin:
                         list_pred_loc.append(p)
@@ -125,17 +143,26 @@ class MultiLabelLocSegPairwiseMeasure(object):
                     for p in pred_prob_tmp:
                         list_prob.append(p)
             if not self.per_case:
-                MLSPM = MixedLocSegPairwiseMeasure(pred=list_pred, ref=list_ref,
+                overall_pred = np.concatenate(list_pred)
+                overall_ref = np.concatenate(list_ref)
+                overall_prob = np.concatenate(list_prob)
+                MLSPM = MixedLocSegPairwiseMeasure(pred=overall_pred, ref=overall_ref,
                                                    list_predimg=list_pred_loc,
-                                                   list_refimg=list_ref_loc, measures_det=self.measures_det,
-                                                   measures_seg=self.measures_seg)
+                                                   list_refimg=list_ref_loc, pred_prob =overall_prob,
+                                                    measures_detseg=self.measures_detseg, 
+                                                    measures_pcc=self.measures_pcc, 
+                                                    measures_boundary=self.measures_boundary,
+                                                     measures_overlap=self.measures_overlap, measures_mt=self.measures_mt)
                 res_seg = MLSPM.to_pd_seg()
                 res_seg['label'] = lab
                 res_det = MLSPM.to_dict_det()
                 res_det['label'] = lab
+                res_mt = MLSPM.to_dict_mt()
+                res_mt['label'] = lab
                 list_det.append(res_det)
                 list_seg.append(res_seg)
-        return pd.concat(list_seg), pd.DataFrame.from_dict(list_det)
+                list_mt.append(res_mt)
+        return pd.concat(list_seg), pd.DataFrame.from_dict(list_det), pd.DataFrame.from_dict(list_mt)
 
 class MultiLabelLocMeasures(object):
     def __init__(self, pred_loc, ref_loc, pred_class, ref_class, pred_prob, list_values, measures_pcc=[],measures_mt=[],per_case=False, association='Greedy IoU',localization='iou'):
@@ -251,9 +278,9 @@ class MultiLabelPairwiseMeasures(object):
                     dict_mt['case'] = case
                     list_mt.append(dict_mt)
                 else:
-                    list_pred.append(pred_case)
-                    list_ref.append(ref_case)
-                    list_prob.append(prob_case)
+                    list_pred.append(pred_tmp)
+                    list_ref.append(ref_tmp)
+                    list_prob.append(pred_proba_tmp)
                     list_case.append(np.ones_like(pred_case)*case)
             if not self.per_case:
                 overall_pred = np.concatenate(list_pred)

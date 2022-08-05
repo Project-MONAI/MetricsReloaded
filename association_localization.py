@@ -80,26 +80,27 @@ class AssociationMapping(object):
         return matrix_iou
 
     def pairwise_maskior(self):
-        matrix_ior = np.zeros([self.pred_loc.shape[-1], self.ref_loc.shape[-1]])
-        for p in range(self.pred_loc.shape[-1]):
-            for r in range(self.ref_loc.shape[-1]):
-                PM = BinaryPairwiseMeasures(self.pred_loc[...,p],self.ref_loc[...,r])
+        matrix_ior = np.zeros([self.pred_loc.shape[0], self.ref_loc.shape[0]])
+        for p in range(self.pred_loc.shape[0]):
+            for r in range(self.ref_loc.shape[0]):
+                PM = BinaryPairwiseMeasures(self.pred_loc[p,...],self.ref_loc[r,...])
                 matrix_ior[p,r] = PM.intersection_over_reference()
         return matrix_ior
 
     def pairwise_maskcom(self):
-        matrix_com = np.zeros([self.pred_loc.shape[-1], self.ref_loc.shape[-1]])
-        for p in range(self.pred_loc.shape[-1]):
-            for r in range(self.ref_loc.shape[-1]):
-                PM = BinaryPairwiseMeasures(self.pred_loc[..., p], self.ref_loc[..., r])
+        matrix_com = np.zeros([self.pred_loc.shape[0], self.ref_loc.shape[0]])
+        for p in range(self.pred_loc.shape[0]):
+            for r in range(self.ref_loc.shape[0]):
+                PM = BinaryPairwiseMeasures(self.pred_loc[p,...], self.ref_loc[r,...])
                 matrix_com[p, r] = PM.com_dist()
         return matrix_com
 
     def pairwise_maskiou(self):
-        matrix_iou = np.zeros([self.pred_loc.shape[-1], self.ref_loc.shape[-1]])
-        for p in range(self.pred_loc.shape[-1]):
-            for r in range(self.ref_loc.shape[-1]):
-                PM = BinaryPairwiseMeasures(self.pred_loc[...,p],self.ref[...,r])
+        matrix_iou = np.zeros([self.pred_loc.shape[0], self.ref_loc.shape[0]])
+        print(matrix_iou.shape, self.pred_loc.shape, self.ref_loc.shape)
+        for p in range(self.pred_loc.shape[0]):
+            for r in range(self.ref_loc.shape[0]):
+                PM = BinaryPairwiseMeasures(self.pred_loc[p,...],self.ref_loc[r,...])
                 matrix_iou[p,r] = PM.intersection_over_union()
         return matrix_iou
 
@@ -121,9 +122,10 @@ class AssociationMapping(object):
         list_valid = []
         list_matching = []
         list_notexist = []
+        print(possible_binary.shape)
         for f in range(possible_binary.shape[0]):
             ind_possible = np.where(possible_binary[f, :] == 1)
-            if len(ind_possible) == 0:
+            if len(ind_possible[0]) == 0:
                 new_dict = {}
                 new_dict['pred'] = f
                 #new_dict['pred_class'] = self.pred_class[f]
@@ -177,6 +179,7 @@ class AssociationMapping(object):
     def resolve_ambiguities_matching(self):
         matrix = self.matrix
         df_matching, df_fn, df_fp, list_valid = self.initial_mapping()
+        print('Number of categories: TP FN FP', df_matching.shape, df_fn.shape, df_fp.shape)
         df_ambiguous_ref = None
         if df_matching.shape[0] > 0:
             df_matching['count_pred'] = df_matching.groupby('ref')['pred'].transform('count')
@@ -241,6 +244,7 @@ class AssociationMapping(object):
         list_pred = []
         list_ref  = []
         for r in range(df_tp.shape[0]):
-            list_pred.append(self.pred_loc[df_tp.iloc[r]['pred']])
-            list_ref.append(self.ref_loc[df_tp.iloc[r]['ref']])
+            print(df_tp.iloc[r]['pred'])
+            list_pred.append(self.pred_loc[int(df_tp.iloc[r]['pred']),...])
+            list_ref.append(self.ref_loc[int(df_tp.iloc[r]['ref']),...])
         return list_pred, list_ref

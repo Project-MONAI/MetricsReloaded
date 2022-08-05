@@ -192,7 +192,7 @@ class MultiClassPairwiseMeasures(object):
 
 class BinaryPairwiseMeasures(object):
     def __init__(self, pred, ref,
-                 measures=[], num_neighbors=8, pixdim=[1, 1, 1],
+                 measures=[], num_neighbors=8, pixdim=None,
                  empty=False, dict_args={}):
 
         self.measures_dict = {
@@ -229,10 +229,6 @@ class BinaryPairwiseMeasures(object):
         :return: FP map
         """
         return np.asarray((self.pred - self.ref) > 0.0, dtype=np.float32)
-
-    
-
-
 
     def __fn_map(self):
         """
@@ -330,10 +326,6 @@ class BinaryPairwiseMeasures(object):
    
     def specificity(self):
         return self.tn() / self.n_neg_ref()
-
-
-
-
 
 
 
@@ -574,19 +566,23 @@ class BinaryPairwiseMeasures(object):
         border_pred = MorphologyOps(self.pred, self.neigh).border_map()
         oppose_ref = 1 - self.ref
         oppose_pred = 1 - self.pred
-        distance_ref = ndimage.distance_transform_edt(border_ref,
+        distance_ref = ndimage.distance_transform_edt(1-border_ref,
                                                       sampling=self.pixdim)
-        distance_pred = ndimage.distance_transform_edt(border_pred,
+        distance_pred = ndimage.distance_transform_edt(1-border_pred,
                                                       sampling=self.pixdim)
         distance_border_pred = border_ref * distance_pred
         distance_border_ref = border_pred * distance_ref
         return distance_border_ref, distance_border_pred, border_ref, border_pred
 
 
-    def normalised_surface_distance(self, tau):
+    def normalised_surface_distance(self):
+        if 'nsd' in self.dict_args.keys():
+            tau = self.dict_args['nsd']
+        else:
+            tau = 1
         dist_ref, dist_pred, border_ref, border_pred = self.border_distance()
-        reg_ref = np.where(dist_ref < tau, np.ones_like(dist_ref), np.zeros_like(dist_ref))
-        reg_pred = np.where(dist_pred < tau, np.ones_like(dist_pred), np.zeros_like(dist_pred))
+        reg_ref = np.where(dist_ref <= tau, np.ones_like(dist_ref), np.zeros_like(dist_ref))
+        reg_pred = np.where(dist_pred <= tau, np.ones_like(dist_pred), np.zeros_like(dist_pred))
         numerator = np.sum(border_pred * reg_ref) + np.sum(border_ref * reg_pred)
         denominator = np.sum(border_ref) + np.sum(border_pred)
         return numerator / denominator
@@ -603,7 +599,8 @@ class BinaryPairwiseMeasures(object):
             pred_border = self.border_distance()
         average_distance = (np.sum(ref_border_dist) + np.sum(
             pred_border_dist)) / (np.sum(pred_border+ref_border))
-        masd = np.mean(ref_border_dist) + np.mean(pred_border_dist)
+        masd = 0.5 * (np.sum(ref_border_dist)/np.sum(pred_border) + np.sum(pred_border_dist)/np.sum(ref_border))
+        print(np.sum(ref_border_dist)/np.sum(pred_border), np.sum(pred_border_dist)/np.sum(ref_border), np.sum(pred_border), np.sum(ref_border), np.sum(pred_border_dist), np.sum(ref_border_dist))
         hausdorff_distance = np.max([np.max(ref_border_dist), np.max(
             pred_border_dist)])
         hausdorff_distance_95 = np.max([np.percentile(ref_border_dist[
