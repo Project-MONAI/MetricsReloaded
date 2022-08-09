@@ -2,7 +2,7 @@ from threading import local
 from attr import assoc
 from prob_pairwise_measures import ProbabilityPairwiseMeasures
 from pairwise_measures import BinaryPairwiseMeasures, MultiClassPairwiseMeasures
-from association_localization import AssociationMapping
+from assignment_localization import assignmentMapping
 import numpy as np
 import pandas as pd
 
@@ -29,17 +29,27 @@ class MixedLocSegPairwiseMeasure(object):
         for (p, r) in zip(self.predimg, self.refimg):
             PE = BinaryPairwiseMeasures(p,r)
             list_iou.append(PE.intersection_over_union())
+        print(list_iou, ' is list iou')
         return np.mean(np.asarray(list_iou))
 
     def recognition_quality(self):
         PE = BinaryPairwiseMeasures(self.pred,self.ref)
-        print(self.pred, self.ref)
+        print('pred is ', self.pred, 'ref is ', self.ref)
         return PE.fbeta()
 
     def panoptic_quality(self):
         print('RQ ', self.recognition_quality())
         print('SQ ', self.average_iou_img())
-        return self.recognition_quality() * self.average_iou_img()
+        RQ = self.recognition_quality()
+        SQ = self.average_iou_img()
+        if np.isnan(SQ):
+            if RQ == 0:
+                SQ = 0
+            else:
+                SQ = 1
+                #TODO modify to nan if this is the value adopted for empty situations
+        print('PQ is ', RQ*SQ, RQ, SQ)
+        return RQ * SQ
 
     def to_dict_mt(self):
         dict_output = self.prob_res.to_dict_meas()
@@ -62,7 +72,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
     # Instance segmentation
     def __init__(self, pred_class, ref_class, pred_loc, ref_loc, pred_prob, list_values,
                  measures_pcc=[], measures_overlap=[] ,measures_boundary=[], measures_detseg=[], measures_mt=[], per_case=True, num_neighbors=8, pixdim=[1, 1, 1],
-                 empty=False, association='Greedy IoU', localization='iou'):
+                 empty=False, assignment='Greedy IoU', localization='iou', thresh=0.5):
         self.pred_loc = pred_loc
         self.list_values = list_values
         self.ref_class = ref_class
@@ -75,8 +85,10 @@ class MultiLabelLocSegPairwiseMeasure(object):
         self.measures_boundary = measures_boundary
         self.measures_detseg = measures_detseg
         self.per_case = per_case
-        self.association = association
+        self.assignment = assignment
         self.localization = localization
+        self.matching = []
+        self.thresh=thresh
 
     def per_label_dict(self):
         list_det = []
@@ -101,7 +113,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
                 ref_loc_tmp = [self.ref_loc[case][i] for i in ind_ref[0]]
                 pred_prob_tmp = [self.pred_prob[case][i] for i in ind_pred[0]]
                 print(len(pred_loc_tmp), len(ref_loc_tmp), lab, case)
-                AS = AssociationMapping(pred_loc=pred_loc_tmp, ref_loc=ref_loc_tmp, pred_prob=pred_prob_tmp, association=self.association, localization=self.localization)
+                AS = assignmentMapping(pred_loc=pred_loc_tmp, ref_loc=ref_loc_tmp, pred_prob=pred_prob_tmp, assignment=self.assignment, localization=self.localization,thresh=self.thresh)
                 pred_tmp_fin = np.asarray(AS.df_matching['pred'])
                 pred_tmp_fin = np.where(pred_tmp_fin>-1, np.ones_like(pred_tmp_fin),np.zeros_like(pred_tmp_fin))
                 ref_tmp_fin = np.asarray(AS.df_matching['ref'])
@@ -131,6 +143,10 @@ class MultiLabelLocSegPairwiseMeasure(object):
                     list_det.append(det_res)
                     list_seg.append(seg_res)
                     list_mt.append(mt_res)
+                    df_matching = AS.df_matching
+                    df_matching['case']=case
+                    df_matching['label'] = lab
+                    self.matching.append(df_matching)
                 else:
                     for p in pred_loc_tmp_fin:
                         list_pred_loc.append(p)
@@ -142,6 +158,10 @@ class MultiLabelLocSegPairwiseMeasure(object):
                         list_ref.append(r)
                     for p in pred_prob_tmp:
                         list_prob.append(p)
+                    df_matching = AS.df_matching
+                    df_matching['case']=case
+                    df_matching['label'] = lab
+                    self.matching.append(df_matching)
             if not self.per_case:
                 overall_pred = np.concatenate(list_pred)
                 overall_ref = np.concatenate(list_ref)
@@ -165,7 +185,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
         return pd.concat(list_seg), pd.DataFrame.from_dict(list_det), pd.DataFrame.from_dict(list_mt)
 
 class MultiLabelLocMeasures(object):
-    def __init__(self, pred_loc, ref_loc, pred_class, ref_class, pred_prob, list_values, measures_pcc=[],measures_mt=[],per_case=False, association='Greedy IoU',localization='iou'):
+    def __init__(self, pred_loc, ref_loc, pred_class, ref_class, pred_prob, list_values, measures_pcc=[],measures_mt=[],per_case=False, assignment='Greedy IoU',localization='iou'):
         self.pred_loc = pred_loc
         self.ref_loc = ref_loc
         self.ref_class = ref_class
@@ -175,7 +195,7 @@ class MultiLabelLocMeasures(object):
         self.measures_pcc=measures_pcc
         self.measures_mt = measures_mt
         self.per_case=per_case
-        self.association=association
+        self.assignment=assignment
         self.localization=localization
 
     def per_label_dict(self):
@@ -195,7 +215,7 @@ class MultiLabelLocMeasures(object):
                 pred_loc_tmp = [self.pred_loc[case][f] for f in ind_pred[0]]
                 ref_loc_tmp = [self.ref_loc[case][f] for f in ind_ref[0]]
                 pred_prob_tmp = [self.pred_prob[case][f] for f in ind_pred[0]]
-                AS = AssociationMapping(pred_loc=pred_loc_tmp, ref_loc=ref_loc_tmp, pred_prob=pred_prob_tmp, association=self.association, localization=self.localization)
+                AS = assignmentMapping(pred_loc=pred_loc_tmp, ref_loc=ref_loc_tmp, pred_prob=pred_prob_tmp, assignment=self.assignment, localization=self.localization)
                 df_matching = AS.df_matching
                 pred_tmp_fin = np.asarray(df_matching['pred'])
                 pred_tmp_fin = np.where(pred_tmp_fin>-1, np.ones_like(pred_tmp_fin),np.zeros_like(pred_tmp_fin))

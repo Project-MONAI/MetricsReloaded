@@ -1,10 +1,10 @@
 from __future__ import absolute_import, print_function
-
+import warnings
 import numpy as np
 from scipy import ndimage
 from functools import partial
 from skimage.morphology import skeletonize
-#from association_localization import AssociationMapping
+#from assignment_localization import assignmentMapping
 from scipy.spatial.distance import cdist
 import pandas as pd
 from scipy.optimize import linear_sum_assignment as lsa
@@ -109,8 +109,8 @@ class MorphologyOps(object):
 
 class MultiClassPairwiseMeasures(object):
     def __init__(self, pred, ref, list_values, measures=[], dict_args={}):
-        self.pred = pred
-        self.ref = ref
+        self.pred = np.asarray(pred,dtype=np.int32)
+        self.ref = np.asarray(ref,dtype=np.int32)
         self.dict_args = dict_args
         self.list_values = list_values
         self.measures = measures
@@ -167,14 +167,19 @@ class MultiClassPairwiseMeasures(object):
         one_hot_ref = np.eye(np.max(self.list_values)+1)[self.ref]
         pred_numb = np.sum(one_hot_pred,0)
         ref_numb = np.sum(one_hot_ref,0)
-        return np.matmul(pred_numb.T, ref_numb)/np.shape(one_hot_pred)[0]
+        print(pred_numb.shape, ref_numb.shape)
+        return np.matmul(np.reshape(pred_numb,[-1,1]), np.reshape(ref_numb,[1,-1]))/np.shape(one_hot_pred)[0]
     
     def weighted_cohens_kappa(self):
-        cm = self.confusion_matrix
-        exp = self.expectation_matrix
-        weights = self.dict_args['weights']
+        cm = self.confusion_matrix()
+        exp = self.expectation_matrix()
+        if 'weights' in self.dict_args.keys():
+            weights = self.dict_args['weights']
+        else:
+            weights = np.ones([len(self.list_values), len(self.list_values)]) - np.eye(len(self.list_values))
         numerator = np.sum(weights * cm)
         denominator = np.sum(weights* exp)
+        print(numerator, denominator, cm, exp)
         return 1 - numerator / denominator
 
     def to_dict_meas(self, fmt='{:.4f}'):
@@ -222,6 +227,7 @@ class BinaryPairwiseMeasures(object):
         self.neigh = num_neighbors
         self.pixdim = pixdim
         self.dict_args = dict_args
+        
 
     def __fp_map(self):
         """
@@ -321,13 +327,17 @@ class BinaryPairwiseMeasures(object):
         return 1- self.specificity() + self.sensitivity()
 
     def sensitivity(self):
+        if self.n_pos_ref() == 0:
+            warnings.warn('reference empty, sensitivity not defined')
+            return np.nan
         return self.tp() / self.n_pos_ref()
 
    
     def specificity(self):
+        if self.n_neg_ref() == 0:
+            warnings.warn('reference all positive, specificity not defined')
+            return np.nan
         return self.tn() / self.n_neg_ref()
-
-
 
     def balanced_accuracy(self):
         return 0.5 * self.sensitivity() + 0.5*self.specificity()
@@ -378,12 +388,23 @@ class BinaryPairwiseMeasures(object):
             return 0
 
     def positive_predictive_values(self):
-        if self.flag_empty:
-            return -1
+        if self.n_pos_pred() == 0:
+            if self.n_pos_ref() == 0:
+                warnings.warn('ref and prediction empty ppv not defined')
+                return np.nan
+            else:
+                warnings.warn('prediction empty, ppv not defined but set to 0')
+                return 0
         return self.tp() / (self.tp() + self.fp())
 
    
     def recall(self):
+        if self.n_pos_ref()==0:
+            warnings.warn('reference is empty, recall not defined')
+            return np.nan
+        if self.n_pos_pred() ==0:
+            warnings.warn('prediction is empty but ref not, recall not defined but set to 0')
+            return 0
         return self.tp() / (self.tp()+self.fn())
 
 
@@ -394,8 +415,17 @@ class BinaryPairwiseMeasures(object):
             beta = 1
         numerator = (1 + np.square(beta)) * self.positive_predictive_values() * self.recall()
         denominator = np.square(beta) * self.positive_predictive_values() + self.recall()
-        if denominator == 0:
-            return np.nan
+        print(numerator, denominator, self.fn(), self.tp(), self.fp())
+        if np.isnan(denominator):
+            if self.fp() + self.fn() > 0:
+                return 0
+            else:
+                return 1 # Potentially modify to nan
+        elif denominator == 0:
+            if self.fp() + self.fn() > 0:
+                return 0
+            else:
+                return 1 # Potentially modify to nan
         else:
             return numerator / denominator
 
@@ -405,6 +435,14 @@ class BinaryPairwiseMeasures(object):
         the number of true negatives and the total number of negative elements
         :return:
         """
+        if self.tn() + self.fn() == 0:
+            if self.n_neg_ref() == 0:
+                
+                warnings.warn('Nothing negative in either pred or ref, NPV not defined and set to nan')
+                return np.nan # Potentially modify to 1
+            else:
+                warnings.warn('Nothing negative in pred but should be NPV not defined but set to 0')
+                return 0
         return self.tn() / (self.fn() + self.tn())
 
     def dice_score(self):
@@ -469,14 +507,20 @@ class BinaryPairwiseMeasures(object):
         of mass of the reference and prediction.
         :return:
         """
+        print('pred sum ',self.n_pos_pred(), 'ref_sum ', self.n_pos_ref())
         if self.flag_empty:
             return -1
         else:
             com_ref = ndimage.center_of_mass(self.ref)
             com_pred = ndimage.center_of_mass(self.pred)
-            com_dist = np.sqrt(np.dot(np.square(np.asarray(com_ref) -
+            print(com_ref, com_pred)
+            if self.pixdim is not None:
+                com_dist = np.sqrt(np.dot(np.square(np.asarray(com_ref) -
                                                 np.asarray(com_pred)), np.square(
                                                 self.pixdim)))
+            else:
+                com_dist = np.sqrt(np.sum(np.square(np.asarray(com_ref) -
+                                                np.asarray(com_pred))))
             return com_dist
 
     def com_ref(self):
@@ -530,12 +574,14 @@ class BinaryPairwiseMeasures(object):
         skeleton_ref, skeleton_pred = self.skeleton_versions()
         numerator = np.sum(skeleton_pred * self.ref)
         denominator = np.sum(skeleton_pred)
+        print('top prec ', numerator, denominator)
         return numerator/denominator
 
     def topology_sensitivity(self):
         skeleton_ref, skeleton_pred = self.skeleton_versions()
         numerator = np.sum(skeleton_ref * self.pred)
         denominator = np.sum(skeleton_ref)
+        print('top sens ', numerator, denominator, skeleton_ref, skeleton_pred)
         return numerator / denominator
 
 
