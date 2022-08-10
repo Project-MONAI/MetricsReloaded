@@ -182,6 +182,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
                 list_det.append(res_det)
                 list_seg.append(res_seg)
                 list_mt.append(res_mt)
+        self.matching = pd.concat(self.matching)
         return pd.concat(list_seg), pd.DataFrame.from_dict(list_det), pd.DataFrame.from_dict(list_mt)
 
 class MultiLabelLocMeasures(object):

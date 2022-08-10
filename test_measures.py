@@ -291,12 +291,14 @@ def test_localization():
     match1 = mlis1.matching
     _,_,_ = mlis2.per_label_dict()
     match2 = mlis2.matching
-    print(match1, match2)
+    print(match1, match2, match2.columns)
     m12 = match1[match1['label']==2]
+    m21 = match2[match2['label']==1]
+    m22 = match2[match2['label']==2]
     print(m12)
     print(match1[match1['label']==2])
     print(match1[match1['label']==1])
-    assert m12[m12['pred']==1]['ref'] == 1
+    assert np.asarray(m12[m12['pred']==0]['ref'])[0] == 0 and np.asarray(m21[m21['pred']==0]['ref'])[0] == -1
 
 
 
