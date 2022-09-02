@@ -37,9 +37,11 @@ class MixedLocSegPairwiseMeasure(object):
         self.prob_res = ProbabilityPairwiseMeasures(
             pred_prob, ref, self.measures_mt, self.dict_args
         )
-        self.det_res = BinaryPairwiseMeasures(pred, ref, self.measures_det)
+        self.det_res = BinaryPairwiseMeasures(
+            pred, ref, self.measures_det, dict_args=self.dict_args
+        )
         self.seg_res = [
-            BinaryPairwiseMeasures(p, r, self.measures_seg)
+            BinaryPairwiseMeasures(p, r, self.measures_seg, dict_args=self.dict_args)
             for (p, r) in zip(list_predimg, list_refimg)
         ]
 
@@ -110,6 +112,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
         assignment="Greedy IoU",
         localization="iou",
         thresh=0.5,
+        dict_args={},
     ):
         self.pred_loc = pred_loc
         self.list_values = list_values
@@ -127,6 +130,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
         self.localization = localization
         self.matching = []
         self.thresh = thresh
+        self.dict_args = dict_args
 
     def per_label_dict(self):
         list_det = []
@@ -167,6 +171,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
                     localization=self.localization,
                     thresh=self.thresh,
                 )
+
                 pred_tmp_fin = np.asarray(AS.df_matching["pred"])
                 pred_tmp_fin = np.where(
                     pred_tmp_fin > -1,
@@ -181,6 +186,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
                     np.zeros_like(ref_tmp_fin),
                 )
                 pred_loc_tmp_fin, ref_loc_tmp_fin = AS.matching_ref_predseg()
+                print("assignment done")
                 if self.per_case:
                     # pred_loc_tmp_fin = pred_loc_tmp[list_valid]
                     # list_ref_valid = list(df_matching[df_matching['seg'].isin(list_valid)]['ref'])
@@ -197,6 +203,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
                         measures_boundary=self.measures_boundary,
                         measures_overlap=self.measures_overlap,
                         measures_mt=self.measures_mt,
+                        dict_args=self.dict_args,
                     )
                     seg_res = MLSPM.to_pd_seg()
                     seg_res["label"] = lab
@@ -244,6 +251,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
                     measures_boundary=self.measures_boundary,
                     measures_overlap=self.measures_overlap,
                     measures_mt=self.measures_mt,
+                    dict_args=self.dict_args,
                 )
                 res_seg = MLSPM.to_pd_seg()
                 res_seg["label"] = lab
@@ -276,6 +284,7 @@ class MultiLabelLocMeasures(object):
         per_case=False,
         assignment="Greedy IoU",
         localization="iou",
+        dict_args={},
     ):
         self.pred_loc = pred_loc
         self.ref_loc = ref_loc
@@ -288,6 +297,7 @@ class MultiLabelLocMeasures(object):
         self.per_case = per_case
         self.assignment = assignment
         self.localization = localization
+        self.dict_args = {}
 
     def per_label_dict(self):
         list_det = []
@@ -334,14 +344,20 @@ class MultiLabelLocMeasures(object):
                 if self.per_case:
 
                     BPM = BinaryPairwiseMeasures(
-                        pred=pred_tmp_fin, ref=ref_tmp_fin, measures=self.measures_pcc
+                        pred=pred_tmp_fin,
+                        ref=ref_tmp_fin,
+                        measures=self.measures_pcc,
+                        dict_args=self.dict_args,
                     )
                     det_res = BPM.to_dict_meas()
                     det_res["label"] = lab
                     det_res["case"] = case
                     list_det.append(det_res)
                     PPM = ProbabilityPairwiseMeasures(
-                        pred_prob_tmp_fin, ref_tmp_fin, measures=self.measures_mt
+                        pred_prob_tmp_fin,
+                        ref_tmp_fin,
+                        measures=self.measures_mt,
+                        dict_args=self.dict_args,
                     )
                     mt_res = PPM.to_dict_meas()
                     mt_res["label"] = lab
@@ -356,13 +372,19 @@ class MultiLabelLocMeasures(object):
                 overall_ref = np.concatenate(list_ref)
                 overall_prob = np.concatenate(list_prob)
                 BPM = BinaryPairwiseMeasures(
-                    pred=overall_pred, ref=overall_ref, measures=self.measures_pcc
+                    pred=overall_pred,
+                    ref=overall_ref,
+                    measures=self.measures_pcc,
+                    dict_args=self.dict_args,
                 )
                 det_res = BPM.to_dict_meas()
                 det_res["label"] = lab
                 list_det.append(det_res)
                 PPM = ProbabilityPairwiseMeasures(
-                    pred_prob_tmp_fin, ref_tmp_fin, measures=self.measures_mt
+                    pred_prob_tmp_fin,
+                    ref_tmp_fin,
+                    measures=self.measures_mt,
+                    dict_args=self.dict_args,
                 )
                 mt_res = PPM.to_dict_meas()
                 mt_res["label"] = lab

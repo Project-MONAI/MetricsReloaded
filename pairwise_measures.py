@@ -113,6 +113,18 @@ class MorphologyOps(object):
     def foreground_component(self):
         return ndimage.label(self.binary_map)
 
+    def list_foreground_component(self):
+        labels, _ = self.foreground_component()
+        list_ind_lab = []
+        list_values = np.unique(labels)
+        for f in list_values:
+            if f > 0:
+                tmp_lab = np.where(
+                    labels == f, np.ones_like(labels), np.zeros_like(labels)
+                )
+                list_ind_lab.append(tmp_lab)
+        return list_ind_lab
+
 
 class MultiClassPairwiseMeasures(object):
     """Class dealing with measures of direct multi-class such as MCC, Cohen's kappa or balanced accuracy"""
@@ -126,7 +138,7 @@ class MultiClassPairwiseMeasures(object):
         self.measures_dict = {
             "mcc": (self.matthews_correlation_coefficient, "MCC"),
             "wck": (self.weighted_cohens_kappa, "WCK"),
-            "balacc": (self.balanced_accuracy, "BAcc"),
+            "balanced_accuracy": (self.balanced_accuracy, "BAcc"),
         }
 
     def matthews_correlation_coefficient(self):
