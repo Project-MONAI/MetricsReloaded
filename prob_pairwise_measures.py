@@ -64,6 +64,11 @@ class ProbabilityPairwiseMeasures(object):
     def all_multi_threshold_values(
         self, max_number_samples=150, max_number_thresh=1500
     ):
+        """
+        Function defining the list of values for ppv, sensitivity, specificity 
+        and FPPI according to a list of probabilistic thresholds. The thresholds are defined to obtain equal bin sizes
+        The default maximum number of thresholds is 1500
+        """
         unique_thresh, unique_counts = np.unique(self.pred, return_counts=True)
         if len(unique_thresh) < max_number_thresh:
             unique_new_thresh = unique_thresh
@@ -95,6 +100,9 @@ class ProbabilityPairwiseMeasures(object):
         return unique_new_thresh, list_sens, list_spec, list_ppv, list_fppi
 
     def __fp_map_thr(self, thresh):
+        """
+        Map of FP given a specific threshold value
+        """
         pred_bin = self.pred >= thresh
         return np.asarray((pred_bin - self.ref) > 0.0, dtype=np.float32)
 
@@ -107,26 +115,38 @@ class ProbabilityPairwiseMeasures(object):
         return np.asarray((self.ref - pred_bin) > 0.0, dtype=np.float32)
 
     def __tp_map_thr(self, thresh):
+        """
+        TP map given a specified threshold
+        """
         pred_bin = self.pred >= thresh
         return np.asarray((self.ref + pred_bin) > 1.0, dtype=np.float32)
 
     def __tn_map_thr(self, thresh):
+        """
+        TN map given a specified threshold
+        """
         pred_bin = self.pred >= thresh
         return np.asarray((self.ref + pred_bin) < 0.5, dtype=np.float32)
 
     def positive_predictive_values_thr(self, thresh):
+        """
+        PPV given a specified threshold
+        """
         if self.flag_empty:
             return -1
         return self.tp_thr(thresh) / (self.tp_thr(thresh) + self.fp_thr(thresh))
 
     def specificity_thr(self, thresh):
+        """
+        Specificity given a specified threshold
+        """
         return self.tn_thr(thresh) / self.n_neg_ref()
 
     def sensitivity_thr(self, thresh):
+        """
+        Sensitivity given a specified threshold
+        """
         return self.tp_thr(thresh) / self.n_pos_ref()
-
-    def recall_thr(self, thresh):
-        return self.tp_thr(thresh) / (self.tp_thr(thresh) + self.fn_thr(thresh))
 
     def fppi_thr(self, thresh):
         if self.case is not None:
@@ -146,6 +166,9 @@ class ProbabilityPairwiseMeasures(object):
         return fppi
 
     def net_benefit_treated(self):
+        """
+        Calculation of net benefit given a specified threshold
+        """
         if "benefit_proba" in self.dict_args.keys():
             thresh = self.dict_args["benefit_proba"]
         else:
@@ -156,6 +179,10 @@ class ProbabilityPairwiseMeasures(object):
         return tp_thresh / n * (fp_thresh / n) * (thresh / (1 - thresh))
 
     def auroc(self):
+        """
+        Calculation of AUROC using trapezoidal integration based
+         on the threshold and values list obtained from the all_multi_threshold_values method
+        """
         (
             unique_thresh,
             list_sens,
@@ -174,6 +201,9 @@ class ProbabilityPairwiseMeasures(object):
         return auroc
 
     def froc(self):
+        """
+        Calculation of FROC score
+        """
         (
             unique_thresh,
             list_sens,
@@ -192,6 +222,9 @@ class ProbabilityPairwiseMeasures(object):
         return froc
 
     def average_precision(self):
+        """
+        Average precision calculation using trapezoidal integration
+        """
         (
             unique_thresh,
             list_sens,
@@ -208,6 +241,13 @@ class ProbabilityPairwiseMeasures(object):
         return ap
 
     def sensitivity_at_specificity(self):
+        """
+        From specificity cut-off values in the value_specificity field 
+        of the dictionary of arguments dict_args, 
+        reading of the maximum sensitivity value for all specificities
+         larger than the specified value. If value not specified, 
+         calculated at specificity of 0.8
+        """
         if "value_specificity" in self.dict_args.keys():
             value_spec = self.dict_args["value_specificity"]
         else:
@@ -226,6 +266,10 @@ class ProbabilityPairwiseMeasures(object):
         return np.max(sens_valid)
 
     def specificity_at_sensitivity(self):
+        """
+        Specificity given specified sensitivity (Field value_sensitivity)
+        in the arguments dictionary. If not specified, calculated at sensitivity=0.8
+        """
         if "value_sensitivity" in self.dict_args.keys():
             value_sens = self.dict_args["value_sensitivity"]
         else:
@@ -244,6 +288,10 @@ class ProbabilityPairwiseMeasures(object):
         return np.max(spec_valid)
 
     def fppi_at_sensitivity(self):
+        """
+        FPPI value at specified sensitivity value (Field value_sensitivity)
+        in the arguments' dictionary. If not specified, calculated at sensitivity 0.8
+        """
         if "value_sensitivity" in self.dict_args.keys():
             value_sens = self.dict_args["value_sensitivity"]
         else:
@@ -262,6 +310,10 @@ class ProbabilityPairwiseMeasures(object):
         return np.max(fppi_valid)
 
     def sensitivity_at_fppi(self):
+        """
+        Sensitivity at specified value of FPPI (Field value_fppi)
+        in the argument's dictionary. If not specified calculated at FPPI=0.8
+        """
         if "value_fppi" in self.dict_args.keys():
             value_fppi = self.dict_args["value_fppi"]
         else:
@@ -280,6 +332,10 @@ class ProbabilityPairwiseMeasures(object):
         return np.max(sens_valid)
 
     def sensitivity_at_ppv(self):
+        """
+        Sensitivity at specified PPV (field value_ppv) in the
+        arguments' dictionary. If not specified, calculated at value 0.8
+        """
         if "value_ppv" in self.dict_args.keys():
             value_ppv = self.dict_args["value_ppv"]
         else:
@@ -298,6 +354,10 @@ class ProbabilityPairwiseMeasures(object):
         return np.max(sens_valid)
 
     def ppv_at_sensitivity(self):
+        """
+        PPV at specified sensitivity value (Field value_sensitivity)
+        in the argument's dictionary. If not specified, calculated at value 0.8
+        """
         if "value_sensitivity" in self.dict_args.keys():
             value_sens = self.dict_args["value_sensitivity"]
         else:
@@ -316,8 +376,10 @@ class ProbabilityPairwiseMeasures(object):
         return np.max(ppv_valid)
 
     def to_dict_meas(self, fmt="{:.4f}"):
+        """
+        Transforming the results to form a dictionary
+        """
         result_dict = {}
-        # list_space = ['com_ref', 'com_pred', 'list_labels']
         for key in self.measures:
             result = self.measures_dict[key][0]()
             result_dict[key] = fmt.format(result)
