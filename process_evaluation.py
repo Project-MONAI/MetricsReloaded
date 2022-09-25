@@ -61,6 +61,9 @@ class ProcessEvaluation(object):
         measures_boundary=[],
         measures_overlap=[],
         measures_mt=[],
+        flag_map=False,
+        file=[],
+        thresh_ass=0.5
     ):
         self.data = data
         self.category = category
@@ -72,6 +75,8 @@ class ProcessEvaluation(object):
         self.measures_mcc = measures_mcc
         self.measures_pcc = measures_pcc
         self.measures_mt = measures_mt
+        self.flag_map=flag_map
+        self.thresh_ass=thresh_ass
 
     def process_data(self):
         data = self.data
@@ -86,12 +91,15 @@ class ProcessEvaluation(object):
                 pred_prob=data["pred_prob"],
                 ref_class=data["ref_class"],
                 pred_class=data["pred_class"],
+                file=data['file'],
+                flag_map=self.flag_map,
                 assignment=self.assignment,
                 localization=self.localization,
                 measures_mt=self.measures_mt,
                 measures_pcc=self.measures_pcc,
                 measures_overlap=self.measures_overlap,
                 measures_boundary=self.measures_boundary,
+                thresh=self.thresh_ass,
                 list_values=data["list_values"],
             )
             df_resseg, df_resdet, df_resmt = MLLS.per_label_dict()
@@ -105,6 +113,7 @@ class ProcessEvaluation(object):
                 list_values=data["list_values"],
                 localization=self.localization,
                 assignment=self.assignment,
+                thresh=self.thresh_ass,
                 measures_pcc=self.measures_pcc,
                 measures_mt=self.measures_mt,
             )
@@ -190,8 +199,8 @@ def main(argv):
         "-assignment",
         dest="assignment",
         action="store",
-        choices=["Greedy_iou", "Greedy_score", "Hungarian"],
-        default="Greedy_iou",
+        choices=["greedy_matching", "greedy_score", "hungarian"],
+        default="greedy_matching",
         type=str,
         help="result path",
     )
@@ -375,22 +384,27 @@ def main(argv):
     data = pkl.load(f)
     f.close()
     if args.task == "ILC":
+        measures_pcc = args.pcc + ['numb_ref','numb_pred','numb_tp','numb_fn','numb_fp']
+
         PE = ProcessEvaluation(
             data,
             "Image Classification",
             measures_mcc=args.mcc,
-            measures_pcc=args.pcc,
+            measures_pcc=measures_pcc,
             measures_mt=args.mt,
             dict_args=dict_args,
         )
     elif args.task == "SS":
+        measures_overlap = args.overlap + ['numb_ref','numb_pred','numb_tp','numb_fn','numb_fp']
         PE = ProcessEvaluation(
             data,
             "Semantic Segmentation",
             measures_boundary=args.boundary,
-            measures_overlap=args.overlap,
+            measures_overlap=measures_overlap,
         )
     elif args.task == "IS":
+        measures_overlap = args.overlap + ['numb_ref','numb_pred','numb_tp','numb_fn','numb_fp']
+        measures_pcc = args.pcc + ['numb_ref','numb_pred','numb_tp','numb_fn','numb_fp']
         PE = ProcessEvaluation(
             data,
             "Instance Segmentation",
@@ -399,17 +413,18 @@ def main(argv):
             measures_boundary=args.boundary,
             measures_overlap=args.overlap,
             measures_mcc=args.mcc,
-            measures_pcc=args.pcc,
+            measures_pcc=measures_pcc,
             measures_mt=args.mt,
             dict_args=dict_args,
         )
     elif args.task == "OD":
+        measures_pcc = args.pcc + ['numb_ref','numb_pred','numb_tp','numb_fn','numb_fp']
         PE = ProcessEvaluation(
             data,
             "Object Detection",
             localization=args.localization,
             assignment=args.assignment,
-            measures_pcc=args.pcc,
+            measures_pcc=measures_pcc,
             measures_mt=args.mt,
             dict_args=dict_args,
         )

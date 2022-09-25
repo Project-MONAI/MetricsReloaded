@@ -58,6 +58,9 @@ pq_ref3 = np.zeros([21, 21])
 pq_ref3[2:7, 14:17] = 1
 pq_ref3[2:4, 12:14] = 1
 
+f27_pred = np.concatenate([np.ones([81]),np.zeros([9]),np.ones([2]),np.zeros([8])])
+f27_ref = np.concatenate([np.ones([90]),np.zeros([10])])
+
 
 f38_pred = np.concatenate([np.ones([1499]), np.zeros([501])])
 f38_ref = np.concatenate([np.ones([1999]), np.zeros([1])])
@@ -270,6 +273,12 @@ def test_cohenskappa2():
     value_test = bpm.cohens_kappa()
     print("CK f38 ", value_test, cks(f38_pred, f38_ref))
     assert np.round(value_test, 3) == 0.003
+
+def test_expectedcost():
+    bpm = PM(f27_pred, f27_ref)
+    value_test = bpm.normalised_expected_cost()
+    print('EC 27', value_test)
+    assert np.round(value_test,2) == 0.30
 
 
 def test_cohenskappa3():

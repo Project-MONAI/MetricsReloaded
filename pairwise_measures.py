@@ -139,7 +139,37 @@ class MultiClassPairwiseMeasures(object):
             "mcc": (self.matthews_correlation_coefficient, "MCC"),
             "wck": (self.weighted_cohens_kappa, "WCK"),
             "balanced_accuracy": (self.balanced_accuracy, "BAcc"),
+            "expected_cost": (self.expected_cost, "EC")
         }
+
+    def expected_cost(self):
+        cm = self.confusion_matrix()
+        priors = np.sum(cm,0)/np.sum(cm)
+        numb_perc = np.sum(cm,0)
+        rmatrix = cm / numb_perc
+        prior_matrix = np.tile(priors,[cm.shape[0],1])
+        if 'ec_costs' in self.dict_args.keys():
+            weights = self.dict_args['ec_costs']
+        else:
+            weights = np.ones_like(cm) - np.eyes(cm.shape[0])
+        ec = np.sum(prior_matrix * weights * rmatrix)
+        return ec
+
+    def best_naive_ec(self):
+        cm = self.confusion_matrix()
+        priors = np.sum(cm, 0)/np.sum(cm)
+        prior_matrix = np.tile(priors,[cm.shape[0],1])
+        if 'ec_costs' in self.dict_args.keys():
+            weights = self.dict_args['ec_costs']
+        else:
+            weights = np.ones_like(cm) - np.eyes(cm.shape[0])
+        total_cost = np.sum(weights * prior_matrix,1)
+        return np.min(total_cost)
+
+    def normalised_expected_cost(self):
+        naive_cost = self.best_naive_ec()
+        ec = self.expected_cost()
+        return ec / naive_cost
 
     def matthews_correlation_coefficient(self):
         one_hot_pred = self.one_hot_pred()
@@ -242,7 +272,13 @@ class BinaryPairwiseMeasures(object):
     ):
 
         self.measures_dict = {
+            "numb_ref": (self.n_pos_ref, "NumbRef"),
+            "numb_pred": (self.n_pos_pred, "NumbPred"),
+            "numb_tp": (self.n_intersection, "NumbTP"),
+            "numb_fp":(self.fp, "NumbFP"),
+            "numb_fn": (self.fn, "NumbFN"),
             "accuracy": (self.accuracy, "Accuracy"),
+            "expected_cost": (self.normalised_expected_cost, "ECn"),
             "balanced_accuracy": (self.balanced_accuracy, "BalAcc"),
             "cohens_kappa": (self.cohens_kappa, "CohensKappa"),
             "lr+": (self.positive_likelihood_ratio, "LR+"),
@@ -374,6 +410,31 @@ class BinaryPairwiseMeasures(object):
 
     def false_positive_rate(self):
         return self.fp() / self.n_neg_ref()
+
+    def normalised_expected_cost(self):
+        prior_background = (self.tn() + self.fp())/(np.size(self.ref))
+        prior_foreground = (self.tp() + self.fn())/np.size(self.ref)
+
+        if 'cost_fn' in self.dict_args.keys():
+            c_fn = self.dict_args['cost_fn']
+        else:
+            c_fn = 1.0/prior_foreground
+        if 'cost_fp' in self.dict_args.keys():
+            c_fp = self.dict_args['cost_fp']
+        else:
+            c_fp = 1.0/prior_background
+        prior_background = (self.tn() + self.fp())/(np.size(self.ref))
+        prior_foreground = (self.tp() + self.fn())/np.size(self.ref)
+        alpha = c_fp * prior_background / (c_fn * prior_foreground)
+        print(prior_background, prior_foreground, alpha)
+        r_fp = self.fp()/self.n_neg_ref()
+        r_fn = self.fn()/self.n_pos_ref()
+        print(r_fn, r_fp)
+        if alpha >= 1:
+            ecn = alpha * r_fp + r_fn
+        else:
+            ecn = r_fp + 1/alpha * r_fn
+        return ecn
 
     def matthews_correlation_coefficient(self):
         numerator = self.tp() * self.tn() - self.fp() * self.fn()

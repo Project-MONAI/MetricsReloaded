@@ -220,7 +220,7 @@ class AssignmentMapping(object):
             df_matching_all = pd.concat([df_matching, df_fp, df_fn])
             return df_matching_all, list_valid
         else:
-            if self.assignment == "Hungarian":
+            if self.assignment == "hungarian":
                 valid_matrix = matrix[list_valid, :]
                 if self.localization != "com":
                     valid_matrix = 1 - valid_matrix
@@ -232,7 +232,7 @@ class AssignmentMapping(object):
                     ]
                     list_matching.append(df_tmp)
                 df_ordered2 = pd.concat(list_matching)
-            elif self.assignment == "Greedy matching":
+            elif self.assignment == "greedy_matching":
                 if self.localization == "com":
                     df_ordered = df_matching.sort_values("performance").drop_duplicates(
                         "pred"
@@ -288,10 +288,18 @@ class AssignmentMapping(object):
         df_tp = df_matching_all[
             (df_matching_all["ref"] >= 0) & (df_matching_all["pred"] >= 0)
         ]
+        df_fp = df_matching_all[(df_matching_all['ref']<0)]
+        df_fn = df_matching_all[(df_matching_all['pred']<0)]
         list_pred = []
         list_ref = []
+        list_fp = []
+        list_fn = []
         for r in range(df_tp.shape[0]):
             print(df_tp.iloc[r]["pred"])
             list_pred.append(self.pred_loc[int(df_tp.iloc[r]["pred"]), ...])
             list_ref.append(self.ref_loc[int(df_tp.iloc[r]["ref"]), ...])
-        return list_pred, list_ref
+        for r in range(df_fp.shape[0]):
+            list_fp.append(self.pred_loc[int(df_fp.iloc[r]['pred']),...])
+        for r in range(df_fn.shape[0]):
+            list_fn.append(self.ref_loc[int(df_fn.iloc[r]['ref']),...])
+        return list_pred, list_ref, list_fp, list_fn

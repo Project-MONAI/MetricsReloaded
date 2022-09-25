@@ -5,6 +5,8 @@ from pairwise_measures import BinaryPairwiseMeasures, MultiClassPairwiseMeasures
 from assignment_localization import AssignmentMapping
 import numpy as np
 import pandas as pd
+import nibabel as nib
+import os
 
 
 class MixedLocSegPairwiseMeasure(object):
@@ -106,10 +108,12 @@ class MultiLabelLocSegPairwiseMeasure(object):
         measures_detseg=[],
         measures_mt=[],
         per_case=True,
+        flag_map=True,
+        file=[],
         num_neighbors=8,
         pixdim=[1, 1, 1],
         empty=False,
-        assignment="Greedy IoU",
+        assignment="Greedy_IoU",
         localization="iou",
         thresh=0.5,
         dict_args={},
@@ -129,8 +133,23 @@ class MultiLabelLocSegPairwiseMeasure(object):
         self.assignment = assignment
         self.localization = localization
         self.matching = []
+        self.file = file
         self.thresh = thresh
         self.dict_args = dict_args
+        self.flag_map = flag_map
+    
+    def create_map(self, list_maps, file_ref, category):
+        affine = nib.load(file_ref).affine
+        data = nib.load(file_ref).get_fdata()
+        final_class = np.zeros_like(data)
+        for f in list_maps:
+            final_class += f
+        nib_img = nib.Nifti1Image(final_class,affine)
+        path,name=os.path.split(file_ref)
+        name_new = category+'_'+name
+        name_fin = path+os.path.sep+name_new
+        print(name_fin)
+        nib.save(nib_img, name_fin)
 
     def per_label_dict(self):
         list_det = []
@@ -185,7 +204,12 @@ class MultiLabelLocSegPairwiseMeasure(object):
                     np.ones_like(ref_tmp_fin),
                     np.zeros_like(ref_tmp_fin),
                 )
-                pred_loc_tmp_fin, ref_loc_tmp_fin = AS.matching_ref_predseg()
+                pred_loc_tmp_fin, ref_loc_tmp_fin, pred_fp_loc, ref_fn_loc = AS.matching_ref_predseg()
+                if self.flag_map and len(self.file)==len(self.pred_class):
+                    self.create_map(pred_loc_tmp_fin, self.file[case],'TP_Pred')
+                    self.create_map(ref_loc_tmp_fin, self.file[case],'TP_Ref')
+                    self.create_map(pred_fp_loc, self.file[case],'FP')
+                    self.create_map(ref_fn_loc, self.file[case],'FN')
                 print("assignment done")
                 if self.per_case:
                     # pred_loc_tmp_fin = pred_loc_tmp[list_valid]
@@ -284,6 +308,7 @@ class MultiLabelLocMeasures(object):
         per_case=False,
         assignment="Greedy IoU",
         localization="iou",
+        thresh=0.5,
         dict_args={},
     ):
         self.pred_loc = pred_loc
@@ -297,6 +322,7 @@ class MultiLabelLocMeasures(object):
         self.per_case = per_case
         self.assignment = assignment
         self.localization = localization
+        self.thresh=thresh
         self.dict_args = {}
 
     def per_label_dict(self):
@@ -326,6 +352,7 @@ class MultiLabelLocMeasures(object):
                     pred_prob=pred_prob_tmp,
                     assignment=self.assignment,
                     localization=self.localization,
+                    thresh=self.thresh
                 )
                 df_matching = AS.df_matching
                 pred_tmp_fin = np.asarray(df_matching["pred"])
