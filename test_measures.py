@@ -280,6 +280,11 @@ def test_expectedcost():
     print('EC 27', value_test)
     assert np.round(value_test,2) == 0.30
 
+def test_expectedcost2():
+    mpm = MPM(f27_pred, f27_ref, [0,1])
+    value_test = mpm.normalised_expected_cost()
+    print('ECn', value_test)
+    assert np.round(value_test,2) == 0.30
 
 def test_cohenskappa3():
     mpm = MPM(f38_pred, f38_ref, [0, 1])

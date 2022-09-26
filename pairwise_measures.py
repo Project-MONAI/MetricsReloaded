@@ -148,10 +148,13 @@ class MultiClassPairwiseMeasures(object):
         numb_perc = np.sum(cm,0)
         rmatrix = cm / numb_perc
         prior_matrix = np.tile(priors,[cm.shape[0],1])
+        priorbased_weights = 1/(cm.shape[1] * prior_matrix)
+        for c in range(cm.shape[0]):
+            priorbased_weights[c,c] = 0
         if 'ec_costs' in self.dict_args.keys():
             weights = self.dict_args['ec_costs']
         else:
-            weights = np.ones_like(cm) - np.eyes(cm.shape[0])
+            weights = priorbased_weights
         ec = np.sum(prior_matrix * weights * rmatrix)
         return ec
 
@@ -159,10 +162,14 @@ class MultiClassPairwiseMeasures(object):
         cm = self.confusion_matrix()
         priors = np.sum(cm, 0)/np.sum(cm)
         prior_matrix = np.tile(priors,[cm.shape[0],1])
+        priorbased_weights = 1/(cm.shape[1] * prior_matrix)
+        for c in range(cm.shape[0]):
+            priorbased_weights[c,c] = 0
+
         if 'ec_costs' in self.dict_args.keys():
             weights = self.dict_args['ec_costs']
         else:
-            weights = np.ones_like(cm) - np.eyes(cm.shape[0])
+            weights = priorbased_weights
         total_cost = np.sum(weights * prior_matrix,1)
         return np.min(total_cost)
 
@@ -418,11 +425,11 @@ class BinaryPairwiseMeasures(object):
         if 'cost_fn' in self.dict_args.keys():
             c_fn = self.dict_args['cost_fn']
         else:
-            c_fn = 1.0/prior_foreground
+            c_fn = 1.0/(2*prior_foreground)
         if 'cost_fp' in self.dict_args.keys():
             c_fp = self.dict_args['cost_fp']
         else:
-            c_fp = 1.0/prior_background
+            c_fp = 1.0/(2*prior_background)
         prior_background = (self.tn() + self.fp())/(np.size(self.ref))
         prior_foreground = (self.tp() + self.fn())/np.size(self.ref)
         alpha = c_fp * prior_background / (c_fn * prior_foreground)
