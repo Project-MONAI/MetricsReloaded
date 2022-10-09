@@ -1,12 +1,13 @@
 from threading import local
-from attr import assoc
-from prob_pairwise_measures import ProbabilityPairwiseMeasures
-from pairwise_measures import BinaryPairwiseMeasures, MultiClassPairwiseMeasures
-from assignment_localization import AssignmentMapping
+import os
+
 import numpy as np
 import pandas as pd
 import nibabel as nib
-import os
+
+from prob_pairwise_measures import ProbabilityPairwiseMeasures
+from pairwise_measures import BinaryPairwiseMeasures, MultiClassPairwiseMeasures
+from assignment_localization import AssignmentMapping
 
 
 class MixedLocSegPairwiseMeasure(object):
@@ -47,7 +48,7 @@ class MixedLocSegPairwiseMeasure(object):
             for (p, r) in zip(list_predimg, list_refimg)
         ]
 
-    def average_iou_img(self):
+    def segmentation_quality(self):
         list_iou = []
         for (p, r) in zip(self.predimg, self.refimg):
             PE = BinaryPairwiseMeasures(p, r)
@@ -55,16 +56,16 @@ class MixedLocSegPairwiseMeasure(object):
         print(list_iou, " is list iou")
         return np.mean(np.asarray(list_iou))
 
-    def recognition_quality(self):
+    def detection_quality(self):
         PE = BinaryPairwiseMeasures(self.pred, self.ref)
         print("pred is ", self.pred, "ref is ", self.ref)
-        return PE.fbeta()
+        return PE.fbeta(), PE.tp()
 
     def panoptic_quality(self):
-        print("RQ ", self.recognition_quality())
-        print("SQ ", self.average_iou_img())
-        RQ = self.recognition_quality()
-        SQ = self.average_iou_img()
+        RQ, tp = self.detection_quality()
+        SQ = self.segmentation_quality() / tp
+        print("RQ ", RQ)
+        print("SQ ", SQ)        
         if np.isnan(SQ):
             if RQ == 0:
                 SQ = 0
@@ -139,12 +140,11 @@ class MultiLabelLocSegPairwiseMeasure(object):
         self.flag_map = flag_map
     
     def create_map(self, list_maps, file_ref, category):
-        affine = nib.load(file_ref).affine
-        data = nib.load(file_ref).get_fdata()
-        final_class = np.zeros_like(data)
+        nii = nib.load(file_ref)  
+        final_class = np.zeros(nii.shape)
         for f in list_maps:
             final_class += f
-        nib_img = nib.Nifti1Image(final_class,affine)
+        nib_img = nib.Nifti1Image(final_class, nii.header)
         path,name=os.path.split(file_ref)
         name_new = category+'_'+name
         name_fin = path+os.path.sep+name_new

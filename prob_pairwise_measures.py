@@ -1,5 +1,10 @@
 import numpy as np
-from pairwise_measures import CacheFunctionOutput
+
+from utils import (
+    CacheFunctionOutput, 
+    trapezoidal_integration,
+    x_at_y,
+)
 
 
 class ProbabilityPairwiseMeasures(object):
@@ -66,27 +71,16 @@ class ProbabilityPairwiseMeasures(object):
     ):
         """
         Function defining the list of values for ppv, sensitivity, specificity 
-        and FPPI according to a list of probabilistic thresholds. The thresholds are defined to obtain equal bin sizes
+        and FPPI according to a list of probabilistic thresholds. The thresholds 
+        are defined to obtain equal bin sizes
         The default maximum number of thresholds is 1500
+        Returns:
+            unique_new_thresh, list_sens, list_spec, list_ppv, list_fppi
         """
-        unique_thresh, unique_counts = np.unique(self.pred, return_counts=True)
-        if len(unique_thresh) < max_number_thresh:
-            unique_new_thresh = unique_thresh
-        elif np.size(self.ref) < max_number_samples:
-            unique_new_thresh = unique_thresh
-        else:
-            numb_thresh_temp = np.size(self.ref) / max_number_samples
-            numb_samples_temp = np.size(self.pred) / max_number_thresh
+        hist_counts, hist_edges = np.histogram(self.pred, bins=max_number_thresh)
+        ix_nonzero = np.flatnonzero(hist_counts)
+        unique_new_thresh = hist_edges[np.flatnonzero(ix_nonzero)]
 
-            unique_new_thresh = [0]
-            current_count = 0
-            for (f, c) in zip(unique_thresh, unique_counts):
-                if current_count < numb_samples_temp:
-                    current_count += c
-                    new_thresh = f
-                else:
-                    unique_new_thresh.append(new_thresh)
-                    current_count = 0
         list_sens = []
         list_spec = []
         list_ppv = []
@@ -149,6 +143,10 @@ class ProbabilityPairwiseMeasures(object):
         return self.tp_thr(thresh) / self.n_pos_ref()
 
     def fppi_thr(self, thresh):
+        """
+        Computes average false positives per image. Assumes images are
+        stacked on the last dimension.
+        """
         if self.case is not None:
             list_sum = []
             for f in range(np.max(self.case)):
@@ -181,206 +179,113 @@ class ProbabilityPairwiseMeasures(object):
     def auroc(self):
         """
         Calculation of AUROC using trapezoidal integration based
-         on the threshold and values list obtained from the all_multi_threshold_values method
+        on the threshold and values list obtained from the 
+        all_multi_threshold_values method
         """
-        (
-            unique_thresh,
-            list_sens,
-            list_spec,
-            list_ppv,
-            list_fppi,
-        ) = self.all_multi_threshold_values()
-        array_spec = np.asarray(list_spec)
-        array_sens = np.asarray(list_sens)
-        diff_spec = (1 - array_spec[1:]) - (1 - array_spec[:-1])
-        diff_sens = array_sens[1:] - array_sens[:-1]
-        bottom_rect = np.sum(array_sens[:-1] * diff_spec)
-        top_rect = np.sum(array_sens[1:] * diff_spec)
-        diff_rect = np.sum(diff_sens * diff_spec)
-        auroc = bottom_rect + diff_rect * 0.5
+        _, list_sens, list_spec, _, _ \
+            = self.all_multi_threshold_values()
+        # False positive rate (FPR)
+        x = 1 - np.asarray(list_spec)  # specificity to FPR
+        # Sensitivity
+        y = np.asarray(list_sens)
+        # Compute AUROC
+        auroc = trapezoidal_integration(x, y)
         return auroc
 
     def froc(self):
         """
         Calculation of FROC score
         """
-        (
-            unique_thresh,
-            list_sens,
-            list_spec,
-            list_ppv,
-            list_fppi,
-        ) = self.all_multi_threshold_values()
-        array_fppi = np.asarray(list_fppi)
-        array_sens = np.asarray(list_sens)
-        diff_fppi = array_fppi[1:] - array_fppi[:-1]
-        diff_sens = array_sens[1:] - array_sens[:-1]
-        bottom_rect = np.sum(array_sens[:-1] * diff_fppi)
-        top_rect = np.sum(array_sens[1:] * diff_fppi)
-        diff_rect = np.sum(diff_sens * diff_fppi)
-        froc = bottom_rect + diff_rect * 0.5
+        
+        _, list_sens, _, _, list_fppi \
+            = self.all_multi_threshold_values()
+        # Average false positives per image (FPPI)        
+        x = np.asarray(list_fppi)
+        # Sensitivity
+        y = np.asarray(list_sens)                
+        # Compute FROC
+        froc = trapezoidal_integration(x, y)
         return froc
 
     def average_precision(self):
         """
         Average precision calculation using trapezoidal integration
         """
-        (
-            unique_thresh,
-            list_sens,
-            list_spec,
-            list_ppv,
-            list_fppi,
-        ) = self.all_multi_threshold_values()
-        diff_ppv = np.asarray(list_ppv[1:]) - np.asarray(list_ppv[:-1])
-        diff_sens = np.asarray(list_sens[1:]) - np.asarray(list_sens[:-1])
-        bottom_rect = np.sum(np.asarray(list_ppv[:-1]) * diff_sens)
-        top_rect = np.sum(np.asarray(list_ppv[1:]) * diff_sens)
-        diff_rect = np.sum(diff_sens * diff_ppv)
-        ap = bottom_rect + diff_rect * 0.5
+        _, list_sens, _, list_ppv, _ \
+            = self.all_multi_threshold_values()
+        # Sensitivity  
+        x = np.asarray(list_sens)
+        # Precision
+        y = np.asarray(list_ppv)                
+        # Average precision (AP)
+        ap = trapezoidal_integration(x, y)
         return ap
 
-    def sensitivity_at_specificity(self):
+    def sensitivity_at_specificity(self, value_spec=0.8):
         """
         From specificity cut-off values in the value_specificity field 
         of the dictionary of arguments dict_args, 
         reading of the maximum sensitivity value for all specificities
-         larger than the specified value. If value not specified, 
-         calculated at specificity of 0.8
+        larger than the specified value. If value not specified, 
+        calculated at specificity of 0.8
         """
         if "value_specificity" in self.dict_args.keys():
             value_spec = self.dict_args["value_specificity"]
-        else:
-            value_spec = 0.8
-        (
-            unique_thresh,
-            list_sens,
-            list_spec,
-            list_ppv,
-            list_fppi,
-        ) = self.all_multi_threshold_values()
-        array_spec = np.asarray(list_spec)
-        ind_values = np.where(array_spec >= value_spec)
-        array_sens = np.asarray(list_sens)
-        sens_valid = array_sens[ind_values]
-        return np.max(sens_valid)
+        _, list_sens, list_spec, _, _ \
+            = self.all_multi_threshold_values()
+        return x_at_y(list_sens, list_spec, value_spec)
 
-    def specificity_at_sensitivity(self):
+    def specificity_at_sensitivity(self, value_sens=0.8):
         """
         Specificity given specified sensitivity (Field value_sensitivity)
         in the arguments dictionary. If not specified, calculated at sensitivity=0.8
         """
         if "value_sensitivity" in self.dict_args.keys():
             value_sens = self.dict_args["value_sensitivity"]
-        else:
-            value_sens = 0.8
-        (
-            unique_thresh,
-            list_sens,
-            list_spec,
-            list_ppv,
-            list_fppi,
-        ) = self.all_multi_threshold_values()
-        array_spec = np.asarray(list_spec)
-        array_sens = np.asarray(list_sens)
-        ind_values = np.where(array_sens >= value_sens)
-        spec_valid = array_spec[ind_values]
-        return np.max(spec_valid)
+        _, list_sens, list_spec, _, _ \
+            = self.all_multi_threshold_values()
+        return x_at_y(list_spec, list_sens, value_sens)
 
-    def fppi_at_sensitivity(self):
+    def fppi_at_sensitivity(self, value_sens=0.8):
         """
         FPPI value at specified sensitivity value (Field value_sensitivity)
         in the arguments' dictionary. If not specified, calculated at sensitivity 0.8
         """
         if "value_sensitivity" in self.dict_args.keys():
             value_sens = self.dict_args["value_sensitivity"]
-        else:
-            value_sens = 0.8
-        (
-            unique_thresh,
-            list_sens,
-            list_spec,
-            list_ppv,
-            list_fppi,
-        ) = self.all_multi_threshold_values()
-        array_fppi = np.asarray(list_fppi)
-        array_sens = np.asarray(list_sens)
-        ind_values = np.where(array_sens >= value_sens)
-        fppi_valid = array_fppi[ind_values]
-        return np.max(fppi_valid)
+        _, list_sens, _, _, list_fppi \
+            = self.all_multi_threshold_values()
+        return x_at_y(list_fppi, list_sens, value_sens)
 
-    def sensitivity_at_fppi(self):
+    def sensitivity_at_fppi(self, value_fppi=0.8):
         """
         Sensitivity at specified value of FPPI (Field value_fppi)
         in the argument's dictionary. If not specified calculated at FPPI=0.8
         """
         if "value_fppi" in self.dict_args.keys():
-            value_fppi = self.dict_args["value_fppi"]
-        else:
-            value_fppi = 0.8
-        (
-            unique_thresh,
-            list_sens,
-            list_spec,
-            list_ppv,
-            list_fppi,
-        ) = self.all_multi_threshold_values()
-        array_fppi = np.asarray(list_fppi)
-        array_sens = np.asarray(list_sens)
-        ind_values = np.where(array_fppi <= value_fppi)
-        sens_valid = array_sens[ind_values]
-        return np.max(sens_valid)
+            value_fppi = self.dict_args["value_fppi"]            
+        _, list_sens, _, _, list_fppi \
+            = self.all_multi_threshold_values()
+        return x_at_y(list_sens, list_fppi, value_fppi)
 
-    def sensitivity_at_ppv(self):
+    def sensitivity_at_ppv(self, value_ppv=0.8):
         """
         Sensitivity at specified PPV (field value_ppv) in the
         arguments' dictionary. If not specified, calculated at value 0.8
         """
         if "value_ppv" in self.dict_args.keys():
             value_ppv = self.dict_args["value_ppv"]
-        else:
-            value_ppv = 0.8
-        (
-            unique_thresh,
-            list_sens,
-            list_spec,
-            list_ppv,
-            list_fppi,
-        ) = self.all_multi_threshold_values()
-        array_ppv = np.asarray(list_ppv)
-        array_sens = np.asarray(list_sens)
-        ind_values = np.where(array_ppv >= value_ppv)
-        sens_valid = array_sens[ind_values]
-        return np.max(sens_valid)
+        _, list_sens, _, list_ppv, _ \
+            = self.all_multi_threshold_values()
+        return x_at_y(list_sens, list_ppv, value_ppv)
 
-    def ppv_at_sensitivity(self):
+    def ppv_at_sensitivity(self, value_sens=0.8):
         """
         PPV at specified sensitivity value (Field value_sensitivity)
         in the argument's dictionary. If not specified, calculated at value 0.8
         """
         if "value_sensitivity" in self.dict_args.keys():
             value_sens = self.dict_args["value_sensitivity"]
-        else:
-            value_sens = 0.8
-        (
-            unique_thresh,
-            list_sens,
-            list_spec,
-            list_ppv,
-            list_fppi,
-        ) = self.all_multi_threshold_values()
-        array_ppv = np.asarray(list_ppv)
-        array_sens = np.asarray(list_sens)
-        ind_values = np.where(array_sens >= value_sens)
-        ppv_valid = array_ppv[ind_values]
-        return np.max(ppv_valid)
-
-    def to_dict_meas(self, fmt="{:.4f}"):
-        """
-        Transforming the results to form a dictionary
-        """
-        result_dict = {}
-        for key in self.measures:
-            result = self.measures_dict[key][0]()
-            result_dict[key] = fmt.format(result)
-        return result_dict  # trim the last comma
+        _, list_sens, _, list_ppv, _ \
+            = self.all_multi_threshold_values()
+        return x_at_y(list_ppv, list_sens, value_sens)

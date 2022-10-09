@@ -2,10 +2,14 @@ import pandas as pd
 import numpy as np
 from scipy.optimize import linear_sum_assignment as lsa
 from scipy.spatial.distance import cdist
+
 from pairwise_measures import BinaryPairwiseMeasures
 
 
 def intersection_boxes(box1, box2):
+    """
+    Intersection between two boxes given the corners
+    """
     min_values = np.minimum(box1, box2)
     max_values = np.maximum(box1, box2)
     box_inter = max_values[: min_values.shape[0] // 2]
@@ -18,17 +22,20 @@ def intersection_boxes(box1, box2):
 
 
 def area_box(box1):
+    """Determines the area / volume given the coordinates of extreme corners"""
     box_corner1 = box1[: box1.shape[0] // 2]
     box_corner2 = box1[box1.shape[0] // 2 :]
     return np.prod(box_corner2 + 1 - box_corner1)
 
 
 def union_boxes(box1, box2):
+    """Calculates the union of two boxes given their corner coordinates"""
     value = area_box(box1) + area_box(box2) - intersection_boxes(box1, box2)
     return value
 
 
 def box_iou(box1, box2):
+    """Calculates the iou of two boxes given their extreme corners coordinates"""
     numerator = intersection_boxes(box1, box2)
     denominator = union_boxes(box1, box2)
     return numerator / denominator

@@ -1,10 +1,13 @@
 from re import A
-from pairwise_measures import BinaryPairwiseMeasures as PM
-from pairwise_measures import MultiClassPairwiseMeasures as MPM
-from mixed_measures_processes import MultiLabelLocSegPairwiseMeasure as MLIS
+
 import numpy as np
 from sklearn.metrics import cohen_kappa_score as cks
 from sklearn.metrics import matthews_corrcoef as mcc
+
+from pairwise_measures import BinaryPairwiseMeasures as PM
+from pairwise_measures import MultiClassPairwiseMeasures as MPM
+from mixed_measures_processes import MultiLabelLocSegPairwiseMeasure as MLIS
+
 
 ### Small size of structures relative to pixel/voxel size (DSC)
 ## Larger structure
