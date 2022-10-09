@@ -47,7 +47,7 @@ class MixedLocSegPairwiseMeasure(object):
             for (p, r) in zip(list_predimg, list_refimg)
         ]
 
-    def average_iou_img(self):
+    def segmentation_quality(self):
         list_iou = []
         for (p, r) in zip(self.predimg, self.refimg):
             PE = BinaryPairwiseMeasures(p, r)
@@ -62,9 +62,9 @@ class MixedLocSegPairwiseMeasure(object):
 
     def panoptic_quality(self):
         print("RQ ", self.recognition_quality())
-        print("SQ ", self.average_iou_img())
+        print("SQ ", self.segmentation_quality())
         RQ = self.recognition_quality()
-        SQ = self.average_iou_img()
+        SQ = self.segmentation_quality()
         if np.isnan(SQ):
             if RQ == 0:
                 SQ = 0

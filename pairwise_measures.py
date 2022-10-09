@@ -113,9 +113,12 @@ class MorphologyOps(object):
     def foreground_component(self):
         return ndimage.label(self.binary_map)
 
+    @CacheFunctionOutput
     def list_foreground_component(self):
         labels, _ = self.foreground_component()
         list_ind_lab = []
+        list_vol_lab = []
+        list_com_lab = []
         list_values = np.unique(labels)
         for f in list_values:
             if f > 0:
@@ -123,7 +126,13 @@ class MorphologyOps(object):
                     labels == f, np.ones_like(labels), np.zeros_like(labels)
                 )
                 list_ind_lab.append(tmp_lab)
-        return list_ind_lab
+                list_vol_lab.append(np.sum(tmp_lab))
+                list_com_lab.append(np.mean(np.asarray(np.where(tmp_lab==1)).T,0))
+        return list_ind_lab, list_vol_lab, list_com_lab
+
+    
+    
+
 
 
 class MultiClassPairwiseMeasures(object):
@@ -145,16 +154,18 @@ class MultiClassPairwiseMeasures(object):
     def expected_cost(self):
         cm = self.confusion_matrix()
         priors = np.sum(cm,0)/np.sum(cm)
+        #print(priors,cm)
         numb_perc = np.sum(cm,0)
         rmatrix = cm / numb_perc
         prior_matrix = np.tile(priors,[cm.shape[0],1])
-        priorbased_weights = 1/(cm.shape[1] * prior_matrix)
+        priorbased_weights = 1.0/(cm.shape[1] * prior_matrix)
         for c in range(cm.shape[0]):
             priorbased_weights[c,c] = 0
         if 'ec_costs' in self.dict_args.keys():
             weights = self.dict_args['ec_costs']
         else:
             weights = priorbased_weights
+        print(weights, prior_matrix, rmatrix)
         ec = np.sum(prior_matrix * weights * rmatrix)
         return ec
 
@@ -175,7 +186,9 @@ class MultiClassPairwiseMeasures(object):
 
     def normalised_expected_cost(self):
         naive_cost = self.best_naive_ec()
+        #print(naive_cost)
         ec = self.expected_cost()
+        print(ec, naive_cost)
         return ec / naive_cost
 
     def matthews_correlation_coefficient(self):
@@ -395,7 +408,7 @@ class BinaryPairwiseMeasures(object):
         return np.sum(self.__union_map())
 
     def youden_index(self):
-        return 1 - self.specificity() + self.sensitivity()
+        return self.specificity() + self.sensitivity() - 1
 
     def sensitivity(self):
         if self.n_pos_ref() == 0:
@@ -561,7 +574,14 @@ class BinaryPairwiseMeasures(object):
         and predmentation images
         :return: dice score
         """
-        return 2 * self.tp() / np.sum(self.ref + self.pred)
+        if not 'fbeta' in self.dict_args.keys():
+            self.dict_args['fbeta'] = 1
+        elif self.dict_args['fbeta'] != 1:
+            warnings.warn('Modifying fbeta option to get dice score')
+            self.dict_args['fbeta'] = 1
+        else:
+            print('Already correct value for fbeta option')
+        return self.fbeta()
 
     def fppi(self):
         """
