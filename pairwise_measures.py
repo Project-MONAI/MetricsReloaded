@@ -126,7 +126,7 @@ class MultiClassPairwiseMeasures(object):
         """Derivation of weighted cohen's kappa. The weight matrix is set to 1-ID(len(list_values))
         - cost of 1 for each error type if no weight provided
         Ref: https://en.wikipedia.org/wiki/Cohen%27s_kappa (Weighted kappa)"""
-        cm = self.confusion_matrix()
+        cm = self.confusion_matrix() / len(self.pred)
         exp = self.expectation_matrix()
         if "weights" in self.dict_args.keys():
             weights = self.dict_args["weights"]
