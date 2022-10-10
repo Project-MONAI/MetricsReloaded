@@ -3,41 +3,8 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment as lsa
 from scipy.spatial.distance import cdist
 from pairwise_measures import BinaryPairwiseMeasures
+from utils import intersection_boxes, area_box, union_boxes, box_ior, box_iou
 
-
-def intersection_boxes(box1, box2):
-    min_values = np.minimum(box1, box2)
-    max_values = np.maximum(box1, box2)
-    box_inter = max_values[: min_values.shape[0] // 2]
-    box_inter2 = min_values[max_values.shape[0] // 2 :]
-    box_intersect = np.concatenate([box_inter, box_inter2])
-    box_intersect_area = np.prod(
-        np.maximum(box_inter2 + 1 - box_inter, np.zeros_like(box_inter))
-    )
-    return np.max([0, box_intersect_area])
-
-
-def area_box(box1):
-    box_corner1 = box1[: box1.shape[0] // 2]
-    box_corner2 = box1[box1.shape[0] // 2 :]
-    return np.prod(box_corner2 + 1 - box_corner1)
-
-
-def union_boxes(box1, box2):
-    value = area_box(box1) + area_box(box2) - intersection_boxes(box1, box2)
-    return value
-
-
-def box_iou(box1, box2):
-    numerator = intersection_boxes(box1, box2)
-    denominator = union_boxes(box1, box2)
-    return numerator / denominator
-
-
-def box_ior(box1, box2):
-    numerator = intersection_boxes(box1, box2)
-    denominator = area_box(box2)
-    return numerator / denominator
 
 
 class AssignmentMapping(object):

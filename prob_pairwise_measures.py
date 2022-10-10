@@ -1,5 +1,6 @@
 import numpy as np
 from pairwise_measures import CacheFunctionOutput
+from utils import max_x_at_y_more, max_x_at_y_less, min_x_at_y_more, min_x_at_y_less, trapezoidal_integration
 
 
 class ProbabilityPairwiseMeasures(object):
@@ -192,12 +193,13 @@ class ProbabilityPairwiseMeasures(object):
         ) = self.all_multi_threshold_values()
         array_spec = np.asarray(list_spec)
         array_sens = np.asarray(list_sens)
-        diff_spec = (1 - array_spec[1:]) - (1 - array_spec[:-1])
-        diff_sens = array_sens[1:] - array_sens[:-1]
-        bottom_rect = np.sum(array_sens[:-1] * diff_spec)
-        top_rect = np.sum(array_sens[1:] * diff_spec)
-        diff_rect = np.sum(diff_sens * diff_spec)
-        auroc = bottom_rect + diff_rect * 0.5
+        # diff_spec = (1 - array_spec[1:]) - (1 - array_spec[:-1])
+        # diff_sens = array_sens[1:] - array_sens[:-1]
+        # bottom_rect = np.sum(array_sens[:-1] * diff_spec)
+        # top_rect = np.sum(array_sens[1:] * diff_spec)
+        # diff_rect = np.sum(diff_sens * diff_spec)
+        # auroc = bottom_rect + diff_rect * 0.5
+        auroc = trapezoidal_integration(1-array_spec, array_sens)
         return auroc
 
     def froc(self):
@@ -213,12 +215,13 @@ class ProbabilityPairwiseMeasures(object):
         ) = self.all_multi_threshold_values()
         array_fppi = np.asarray(list_fppi)
         array_sens = np.asarray(list_sens)
-        diff_fppi = array_fppi[1:] - array_fppi[:-1]
-        diff_sens = array_sens[1:] - array_sens[:-1]
-        bottom_rect = np.sum(array_sens[:-1] * diff_fppi)
-        top_rect = np.sum(array_sens[1:] * diff_fppi)
-        diff_rect = np.sum(diff_sens * diff_fppi)
-        froc = bottom_rect + diff_rect * 0.5
+        # diff_fppi = array_fppi[1:] - array_fppi[:-1]
+        # diff_sens = array_sens[1:] - array_sens[:-1]
+        # bottom_rect = np.sum(array_sens[:-1] * diff_fppi)
+        # top_rect = np.sum(array_sens[1:] * diff_fppi)
+        # diff_rect = np.sum(diff_sens * diff_fppi)
+        # froc = bottom_rect + diff_rect * 0.5
+        froc = trapezoidal_integration(list_fppi, list_sens)
         return froc
 
     def average_precision(self):
@@ -232,12 +235,13 @@ class ProbabilityPairwiseMeasures(object):
             list_ppv,
             list_fppi,
         ) = self.all_multi_threshold_values()
-        diff_ppv = np.asarray(list_ppv[1:]) - np.asarray(list_ppv[:-1])
-        diff_sens = np.asarray(list_sens[1:]) - np.asarray(list_sens[:-1])
-        bottom_rect = np.sum(np.asarray(list_ppv[:-1]) * diff_sens)
-        top_rect = np.sum(np.asarray(list_ppv[1:]) * diff_sens)
-        diff_rect = np.sum(diff_sens * diff_ppv)
-        ap = bottom_rect + diff_rect * 0.5
+        ap = trapezoidal_integration(list_sens, list_ppv)
+        # diff_ppv = np.asarray(list_ppv[1:]) - np.asarray(list_ppv[:-1])
+        # diff_sens = np.asarray(list_sens[1:]) - np.asarray(list_sens[:-1])
+        # bottom_rect = np.sum(np.asarray(list_ppv[:-1]) * diff_sens)
+        # top_rect = np.sum(np.asarray(list_ppv[1:]) * diff_sens)
+        # diff_rect = np.sum(diff_sens * diff_ppv)
+        # ap = bottom_rect + diff_rect * 0.5
         return ap
 
     def sensitivity_at_specificity(self):
@@ -259,11 +263,13 @@ class ProbabilityPairwiseMeasures(object):
             list_ppv,
             list_fppi,
         ) = self.all_multi_threshold_values()
-        array_spec = np.asarray(list_spec)
-        ind_values = np.where(array_spec >= value_spec)
-        array_sens = np.asarray(list_sens)
-        sens_valid = array_sens[ind_values]
-        return np.max(sens_valid)
+        # array_spec = np.asarray(list_spec)
+        # ind_values = np.where(array_spec >= value_spec)
+        # array_sens = np.asarray(list_sens)
+        # sens_valid = array_sens[ind_values]
+        # value_max = np.max(sens_valid)
+        value_max = max_x_at_y_more(list_sens, list_spec, value_spec)
+        return value_max
 
     def specificity_at_sensitivity(self):
         """
@@ -281,11 +287,13 @@ class ProbabilityPairwiseMeasures(object):
             list_ppv,
             list_fppi,
         ) = self.all_multi_threshold_values()
-        array_spec = np.asarray(list_spec)
-        array_sens = np.asarray(list_sens)
-        ind_values = np.where(array_sens >= value_sens)
-        spec_valid = array_spec[ind_values]
-        return np.max(spec_valid)
+        # array_spec = np.asarray(list_spec)
+        # array_sens = np.asarray(list_sens)
+        # ind_values = np.where(array_sens >= value_sens)
+        # spec_valid = array_spec[ind_values]
+        # value_max = np.max(spec_valid)
+        value_max = max_x_at_y_more(list_spec, list_sens, value_sens)
+        return value_max
 
     def fppi_at_sensitivity(self):
         """
@@ -303,11 +311,13 @@ class ProbabilityPairwiseMeasures(object):
             list_ppv,
             list_fppi,
         ) = self.all_multi_threshold_values()
-        array_fppi = np.asarray(list_fppi)
-        array_sens = np.asarray(list_sens)
-        ind_values = np.where(array_sens >= value_sens)
-        fppi_valid = array_fppi[ind_values]
-        return np.max(fppi_valid)
+        # array_fppi = np.asarray(list_fppi)
+        # array_sens = np.asarray(list_sens)
+        # ind_values = np.where(array_sens >= value_sens)
+        # fppi_valid = array_fppi[ind_values]
+        # value_max = np.max(fppi_valid)
+        value_max = max_x_at_y_more(list_fppi, list_sens, value_sens)
+        return value_max
 
     def sensitivity_at_fppi(self):
         """
@@ -325,11 +335,13 @@ class ProbabilityPairwiseMeasures(object):
             list_ppv,
             list_fppi,
         ) = self.all_multi_threshold_values()
-        array_fppi = np.asarray(list_fppi)
-        array_sens = np.asarray(list_sens)
-        ind_values = np.where(array_fppi <= value_fppi)
-        sens_valid = array_sens[ind_values]
-        return np.max(sens_valid)
+        # array_fppi = np.asarray(list_fppi)
+        # array_sens = np.asarray(list_sens)
+        # ind_values = np.where(array_fppi <= value_fppi)
+        # sens_valid = array_sens[ind_values]
+        # value_max = np.max(sens_valid)
+        value_max = max_x_at_y_less(list_sens, list_fppi,value_fppi)
+        return value_max
 
     def sensitivity_at_ppv(self):
         """
@@ -347,11 +359,13 @@ class ProbabilityPairwiseMeasures(object):
             list_ppv,
             list_fppi,
         ) = self.all_multi_threshold_values()
-        array_ppv = np.asarray(list_ppv)
-        array_sens = np.asarray(list_sens)
-        ind_values = np.where(array_ppv >= value_ppv)
-        sens_valid = array_sens[ind_values]
-        return np.max(sens_valid)
+        # array_ppv = np.asarray(list_ppv)
+        # array_sens = np.asarray(list_sens)
+        # ind_values = np.where(array_ppv >= value_ppv)
+        # sens_valid = array_sens[ind_values]
+        # value_max = np.max(sens_valid)
+        value_max = max_x_at_y_more(list_sens,list_ppv,value_ppv)
+        return value_max
 
     def ppv_at_sensitivity(self):
         """
@@ -369,11 +383,13 @@ class ProbabilityPairwiseMeasures(object):
             list_ppv,
             list_fppi,
         ) = self.all_multi_threshold_values()
-        array_ppv = np.asarray(list_ppv)
-        array_sens = np.asarray(list_sens)
-        ind_values = np.where(array_sens >= value_sens)
-        ppv_valid = array_ppv[ind_values]
-        return np.max(ppv_valid)
+        # array_ppv = np.asarray(list_ppv)
+        # array_sens = np.asarray(list_sens)
+        # ind_values = np.where(array_sens >= value_sens)
+        # ppv_valid = array_ppv[ind_values]
+        # value_max = np.max(ppv_valid)
+        value_max = max_x_at_y_more(list_ppv, list_sens, value_sens)
+        return value_max
 
     def to_dict_meas(self, fmt="{:.4f}"):
         """

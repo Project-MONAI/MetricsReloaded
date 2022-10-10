@@ -4,6 +4,7 @@ import numpy as np
 from scipy import ndimage
 from functools import partial
 from skimage.morphology import skeletonize
+from utils import one_hot_encode, compute_center_of_mass, compute_skeleton, CacheFunctionOutput, MorphologyOps
 
 # from assignment_localization import AssignmentMapping
 from scipy.spatial.distance import cdist
@@ -11,124 +12,86 @@ import pandas as pd
 from scipy.optimize import linear_sum_assignment as lsa
 
 
-class CacheFunctionOutput(object):
-    """
-    this provides a decorator to cache function outputs
-    to avoid repeating some heavy function computations
-    """
+# class CacheFunctionOutput(object):
+#     """
+#     this provides a decorator to cache function outputs
+#     to avoid repeating some heavy function computations
+#     """
 
-    def __init__(self, func):
-        self.func = func
+#     def __init__(self, func):
+#         self.func = func
 
-    def __get__(self, obj, _=None):
-        if obj is None:
-            return self
-        return partial(self, obj)  # to remember func as self.func
+#     def __get__(self, obj, _=None):
+#         if obj is None:
+#             return self
+#         return partial(self, obj)  # to remember func as self.func
 
-    def __call__(self, *args, **kw):
-        obj = args[0]
-        try:
-            cache = obj.__cache
-        except AttributeError:
-            cache = obj.__cache = {}
-        key = (self.func, args[1:], frozenset(kw.items()))
-        try:
-            value = cache[key]
-        except KeyError:
-            value = cache[key] = self.func(*args, **kw)
-        return value
-
-
-def intersection_boxes(box1, box2):
-    """
-    Intersection between two boxes given the corners
-    """
-    min_values = np.minimum(box1, box2)
-    max_values = np.maximum(box1, box2)
-    box_inter = max_values[: min_values.shape[0] // 2]
-    box_inter2 = min_values[max_values.shape[0] // 2 :]
-    box_intersect = np.concatenate([box_inter, box_inter2])
-    box_intersect_area = np.prod(
-        np.maximum(box_inter2 + 1 - box_inter, np.zeros_like(box_inter))
-    )
-    return np.max([0, box_intersect_area])
+#     def __call__(self, *args, **kw):
+#         obj = args[0]
+#         try:
+#             cache = obj.__cache
+#         except AttributeError:
+#             cache = obj.__cache = {}
+#         key = (self.func, args[1:], frozenset(kw.items()))
+#         try:
+#             value = cache[key]
+#         except KeyError:
+#             value = cache[key] = self.func(*args, **kw)
+#         return value
 
 
-def area_box(box1):
-    """Determines the area / volume given the coordinates of extreme corners"""
-    box_corner1 = box1[: box1.shape[0] // 2]
-    box_corner2 = box1[box1.shape[0] // 2 :]
-    return np.prod(box_corner2 + 1 - box_corner1)
 
 
-def union_boxes(box1, box2):
-    """Calculates the union of two boxes given their corner coordinates"""
-    value = area_box(box1) + area_box(box2) - intersection_boxes(box1, box2)
-    return value
 
+# class MorphologyOps(object):
+#     """
+#     Class that performs the morphological operations needed to get notably
+#     connected component. To be used in the evaluation
+#     """
 
-def box_iou(box1, box2):
-    """Calculates the iou of two boxes given their extreme corners coordinates"""
-    numerator = intersection_boxes(box1, box2)
-    denominator = union_boxes(box1, box2)
-    return numerator / denominator
+#     def __init__(self, binary_img, neigh):
+#         self.binary_map = np.asarray(binary_img, dtype=np.int8)
+#         self.neigh = neigh
 
+#     def border_map(self):
+#         eroded = ndimage.binary_erosion(self.binary_map)
+#         border = self.binary_map - eroded
+#         return border
 
-def box_ior(box1, box2):
-    numerator = intersection_boxes(box1, box2)
-    denominator = area_box(box2)
-    return numerator / denominator
+#     def border_map2(self):
+#         """
+#         Creates the border for a 3D image
+#         :return:
+#         """
+#         west = ndimage.shift(self.binary_map, [-1, 0, 0], order=0)
+#         east = ndimage.shift(self.binary_map, [1, 0, 0], order=0)
+#         north = ndimage.shift(self.binary_map, [0, 1, 0], order=0)
+#         south = ndimage.shift(self.binary_map, [0, -1, 0], order=0)
+#         top = ndimage.shift(self.binary_map, [0, 0, 1], order=0)
+#         bottom = ndimage.shift(self.binary_map, [0, 0, -1], order=0)
+#         cumulative = west + east + north + south + top + bottom
+#         border = ((cumulative < 6) * self.binary_map) == 1
+#         return border
 
+#     def foreground_component(self):
+#         return ndimage.label(self.binary_map)
 
-class MorphologyOps(object):
-    """
-    Class that performs the morphological operations needed to get notably
-    connected component. To be used in the evaluation
-    """
-
-    def __init__(self, binary_img, neigh):
-        self.binary_map = np.asarray(binary_img, dtype=np.int8)
-        self.neigh = neigh
-
-    def border_map(self):
-        eroded = ndimage.binary_erosion(self.binary_map)
-        border = self.binary_map - eroded
-        return border
-
-    def border_map2(self):
-        """
-        Creates the border for a 3D image
-        :return:
-        """
-        west = ndimage.shift(self.binary_map, [-1, 0, 0], order=0)
-        east = ndimage.shift(self.binary_map, [1, 0, 0], order=0)
-        north = ndimage.shift(self.binary_map, [0, 1, 0], order=0)
-        south = ndimage.shift(self.binary_map, [0, -1, 0], order=0)
-        top = ndimage.shift(self.binary_map, [0, 0, 1], order=0)
-        bottom = ndimage.shift(self.binary_map, [0, 0, -1], order=0)
-        cumulative = west + east + north + south + top + bottom
-        border = ((cumulative < 6) * self.binary_map) == 1
-        return border
-
-    def foreground_component(self):
-        return ndimage.label(self.binary_map)
-
-    @CacheFunctionOutput
-    def list_foreground_component(self):
-        labels, _ = self.foreground_component()
-        list_ind_lab = []
-        list_vol_lab = []
-        list_com_lab = []
-        list_values = np.unique(labels)
-        for f in list_values:
-            if f > 0:
-                tmp_lab = np.where(
-                    labels == f, np.ones_like(labels), np.zeros_like(labels)
-                )
-                list_ind_lab.append(tmp_lab)
-                list_vol_lab.append(np.sum(tmp_lab))
-                list_com_lab.append(np.mean(np.asarray(np.where(tmp_lab==1)).T,0))
-        return list_ind_lab, list_vol_lab, list_com_lab
+#     @CacheFunctionOutput
+#     def list_foreground_component(self):
+#         labels, _ = self.foreground_component()
+#         list_ind_lab = []
+#         list_vol_lab = []
+#         list_com_lab = []
+#         list_values = np.unique(labels)
+#         for f in list_values:
+#             if f > 0:
+#                 tmp_lab = np.where(
+#                     labels == f, np.ones_like(labels), np.zeros_like(labels)
+#                 )
+#                 list_ind_lab.append(tmp_lab)
+#                 list_vol_lab.append(np.sum(tmp_lab))
+#                 list_com_lab.append(np.mean(np.asarray(np.where(tmp_lab==1)).T,0))
+#         return list_ind_lab, list_vol_lab, list_com_lab
 
     
     
@@ -192,8 +155,8 @@ class MultiClassPairwiseMeasures(object):
         return ec / naive_cost
 
     def matthews_correlation_coefficient(self):
-        one_hot_pred = self.one_hot_pred()
-        one_hot_ref = self.one_hot_ref()
+        one_hot_pred = one_hot_encode(self.pred, len(self.list_values))
+        one_hot_ref = one_hot_encode(self.ref, len(self.list_values))
         cov_pred = 0
         cov_ref = 0
         cov_pr = 0
@@ -218,8 +181,8 @@ class MultiClassPairwiseMeasures(object):
 
     def confusion_matrix(self):
         """Provides the confusion matrix Prediction in rows, Reference in columns"""
-        one_hot_pred = self.one_hot_pred()
-        one_hot_ref = self.one_hot_ref()
+        one_hot_pred = one_hot_encode(self.pred, len(self.list_values))
+        one_hot_ref = one_hot_encode(self.ref, len(self.list_values))
         confusion_matrix = np.matmul(one_hot_pred.T, one_hot_ref)
         return confusion_matrix
 
@@ -240,8 +203,8 @@ class MultiClassPairwiseMeasures(object):
 
     def expectation_matrix(self):
         """Determination of the expectation matrix to be used for CK derivation"""
-        one_hot_pred = self.one_hot_pred()
-        one_hot_ref = self.one_hot_ref()
+        one_hot_pred = one_hot_encode(self.pred, len(self.list_values))
+        one_hot_ref = one_hot_encode(self.ref, len(self.list_values))
         pred_numb = np.sum(one_hot_pred, 0)
         ref_numb = np.sum(one_hot_ref, 0)
         print(pred_numb.shape, ref_numb.shape)
@@ -618,8 +581,9 @@ class BinaryPairwiseMeasures(object):
         if self.flag_empty:
             return -1
         else:
-            com_ref = ndimage.center_of_mass(self.ref)
-            com_pred = ndimage.center_of_mass(self.pred)
+            com_ref = compute_center_of_mass(self.ref)
+            com_pred = compute_center_of_mass(self.pred)
+            
             print(com_ref, com_pred)
             if self.pixdim is not None:
                 com_dist = np.sqrt(
@@ -667,8 +631,8 @@ class BinaryPairwiseMeasures(object):
 
     @CacheFunctionOutput
     def skeleton_versions(self):
-        skeleton_ref = skeletonize(self.ref)
-        skeleton_pred = skeletonize(self.pred)
+        skeleton_ref = compute_skeleton(self.ref)
+        skeleton_pred = compute_skeleton(self.pred)
         return skeleton_ref, skeleton_pred
 
     def topology_precision(self):
@@ -806,7 +770,6 @@ class BinaryPairwiseMeasures(object):
 
     def to_dict_meas(self, fmt="{:.4f}"):
         result_dict = {}
-        # list_space = ['com_ref', 'com_pred', 'list_labels']
         for key in self.measures:
             if len(self.measures_dict[key]) == 2:
                 result = self.measures_dict[key][0]()
@@ -817,7 +780,6 @@ class BinaryPairwiseMeasures(object):
 
     def to_string_count(self, fmt="{:.4f}"):
         result_str = ""
-        # list_space = ['com_ref', 'com_pred', 'list_labels']
         for key in self.measures_count:
             if len(self.counting_dict[key]) == 2:
                 result = self.counting_dict[key][0]()
@@ -833,7 +795,7 @@ class BinaryPairwiseMeasures(object):
 
     def to_string_dist(self, fmt="{:.4f}"):
         result_str = ""
-        # list_space = ['com_ref', 'com_pred', 'list_labels']
+        
         for key in self.measures_dist:
             if len(self.distance_dict[key]) == 2:
                 result = self.distance_dict[key][0]()
@@ -849,7 +811,7 @@ class BinaryPairwiseMeasures(object):
 
     def to_string_mt(self, fmt="{:.4f}"):
         result_str = ""
-        # list_space = ['com_ref', 'com_pred', 'list_labels']
+        
         for key in self.measures_mthresh:
             if len(self.multi_thresholds_dict[key]) == 2:
                 result = self.multi_thresholds_dict[key][0]()

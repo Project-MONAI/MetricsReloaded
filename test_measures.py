@@ -267,6 +267,13 @@ def test_mcc3():
     print("MCC MPM f38", value_test, mcc(f38_ref, f38_pred))
     assert value_test > 0.0386 and value_test < 0.0387
 
+def test_ec3():
+    test_true = np.asarray([0,1,2,3,4])
+    test_pred = np.asarray([0,1,2,3,0])
+    mpm = MPM(test_pred, test_true, [0,1,2,3,4])
+    value_test = mpm.normalised_expected_cost()
+    print(value_test)
+    assert value_test > 0.15
 
 def test_cohenskappa2():
     bpm = PM(f38_pred, f38_ref)
