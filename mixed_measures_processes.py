@@ -144,7 +144,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
         final_class = np.zeros(nii.shape)
         for f in list_maps:
             final_class += f
-        nib_img = nib.Nifti1Image(final_class, nii.header)
+        nib_img = nib.Nifti1Image(final_class, nii.affine, nii.header)
         path,name=os.path.split(file_ref)
         name_new = category+'_'+name
         name_fin = path+os.path.sep+name_new
