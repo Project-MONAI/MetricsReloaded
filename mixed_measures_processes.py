@@ -59,21 +59,21 @@ class MixedLocSegPairwiseMeasure(object):
     def detection_quality(self):
         PE = BinaryPairwiseMeasures(self.pred, self.ref)
         print("pred is ", self.pred, "ref is ", self.ref)
-        return PE.fbeta(), PE.tp()
+        return PE.fbeta()
 
     def panoptic_quality(self):
-        RQ, tp = self.detection_quality()
-        SQ = self.segmentation_quality() / tp
-        print("RQ ", RQ)
+        DQ = self.detection_quality()
+        SQ = self.segmentation_quality()
+        print("DQ ", DQ)
         print("SQ ", SQ)        
         if np.isnan(SQ):
-            if RQ == 0:
+            if DQ == 0:
                 SQ = 0
             else:
                 SQ = 1
                 # TODO modify to nan if this is the value adopted for empty situations
-        print("PQ is ", RQ * SQ, RQ, SQ)
-        return RQ * SQ
+        print("PQ is ", DQ * SQ, DQ, SQ)
+        return DQ * SQ
 
     def to_dict_mt(self):
         dict_output = self.prob_res.to_dict_meas()
