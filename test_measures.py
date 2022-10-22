@@ -294,6 +294,23 @@ def test_cohenskappa2():
     print("CK f38 ", value_test, cks(f38_pred, f38_ref))
     assert np.round(value_test, 3) == 0.003
 
+def test_npv():
+    f17_ref = np.concatenate([np.ones([50]),np.zeros([50])])
+    f17_pred = np.concatenate([np.ones([45]),np.zeros([5]),np.ones([10]),np.zeros(40)])
+    bpm = PM(f17_pred, f17_ref)
+    value_test = bpm.negative_predictive_values()
+    print('NPV',value_test)
+    assert np.round(value_test,2) >= 0.889 and np.round(value_test,2) < 0.891
+
+def test_auc():
+    ref = np.asarray([0,0,0,1,1,1])
+    pred_proba  = np.asarray([0.21,0.35,0.63, 0.92,0.32,0.79])
+    ppm = ProbabilityPairwiseMeasures(pred_proba, ref)
+    value_test = ppm.auroc()
+    print(value_test)
+    assert np.round(value_test,2) == 0.78 
+
+
 def test_expectedcost():
     bpm = PM(f27_pred, f27_ref)
     value_test = bpm.normalised_expected_cost()
