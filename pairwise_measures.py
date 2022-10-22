@@ -261,6 +261,7 @@ class BinaryPairwiseMeasures(object):
             "numb_fp":(self.fp, "NumbFP"),
             "numb_fn": (self.fn, "NumbFN"),
             "accuracy": (self.accuracy, "Accuracy"),
+            "net_benefit":(self.net_benefit_treated, "NB"),
             "expected_cost": (self.normalised_expected_cost, "ECn"),
             "balanced_accuracy": (self.balanced_accuracy, "BalAcc"),
             "cohens_kappa": (self.cohens_kappa, "CohensKappa"),
@@ -510,6 +511,17 @@ class BinaryPairwiseMeasures(object):
                 return 1  # Potentially modify to nan
         else:
             return numerator / denominator
+
+    def net_benefit_treated(self):
+        if 'exchange_rate' in self.dict_args.keys():
+            er = self.dict_args['exchange_rate']
+        else:
+            er = 1
+        n = np.size(self.pred)
+        tp = self.tp()
+        fp = self.fp()
+        nb = tp/n - fp/n * er
+        return nb
 
     def negative_predictive_values(self):
         """

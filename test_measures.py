@@ -6,6 +6,8 @@ import numpy as np
 from sklearn.metrics import cohen_kappa_score as cks
 from sklearn.metrics import matthews_corrcoef as mcc
 
+from prob_pairwise_measures import ProbabilityPairwiseMeasures
+
 ### Small size of structures relative to pixel/voxel size (DSC)
 ## Larger structure
 p_large_ref = np.zeros((11, 11))
@@ -274,6 +276,17 @@ def test_ec3():
     value_test = mpm.normalised_expected_cost()
     print(value_test)
     assert value_test > 0.15
+
+def test_netbenefit():
+    ref = np.concatenate([np.ones([30]), np.zeros([75])])
+    pred = np.ones([105])
+    pred2 = np.concatenate([np.ones([22]),np.zeros([8]),np.ones([50]),np.zeros([25]) ])
+    ppm = PM(pred, ref,dict_args={'exchange_rate':1.0/9.0})
+    value_test = ppm.net_benefit_treated()
+    ppm2 = PM(pred2, ref,dict_args={'exchange_rate':1.0/9.0})
+    value_test2 = ppm2.net_benefit_treated()
+    print(value_test, value_test2)
+    assert np.round(value_test,3) == 0.206 and np.round(value_test2,3) == 0.157
 
 def test_cohenskappa2():
     bpm = PM(f38_pred, f38_ref)
