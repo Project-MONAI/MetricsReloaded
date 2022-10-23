@@ -672,11 +672,26 @@ class BinaryPairwiseMeasures(object):
         """
         This functions determines the boundary iou
         """
+        if 'boundary_dist' in self.dict_args.keys():
+            distance = self.dict_args['boundary_dist']
+        else:
+            distance = 1
         border_ref = MorphologyOps(self.ref, self.neigh).border_map()
+        distance_border_ref = ndimage.distance_transform_edt(1-border_ref)
+
         border_pred = MorphologyOps(self.pred, self.neigh).border_map()
-        return np.sum(border_ref * border_pred) / (
-            np.sum(border_ref) + np.sum(border_pred)
-        )
+        distance_border_pred = ndimage.distance_transform_edt(1-border_pred)
+
+        lim_dbp = np.where(distance_border_pred < distance, np.ones_like(border_pred), np.zeros_like(border_pred))
+        lim_dbr = np.where(distance_border_ref < distance, np.ones_like(border_ref), np.zeros_like(border_ref))
+
+        intersect = np.sum(lim_dbp*lim_dbr)
+        union = np.sum(np.where(lim_dbp + lim_dbr>0,np.ones_like(border_ref),np.zeros_like(border_pred)))
+        print(intersect, union)
+        return intersect / union
+        # return np.sum(border_ref * border_pred) / (
+        #     np.sum(border_ref) + np.sum(border_pred)
+        # )
 
     @CacheFunctionOutput
     def border_distance(self):

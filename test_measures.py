@@ -416,6 +416,22 @@ def test_ppv():
     print("PPV ", value_test)
     assert value_test > 0.975 and value_test < 0.976
 
+def test_positive_likelihood_ratio():
+    f17_ref = np.concatenate([np.ones([50]),np.zeros([50])])
+    f17_pred = np.concatenate([np.ones([45]),np.zeros([5]),np.ones([10]),np.zeros(40)])
+    bpm = PM(f17_pred, f17_ref)
+    value_test = bpm.positive_likelihood_ratio()
+    assert np.round(value_test,1) == 4.5
+
+def test_boundary_iou():
+    f21_ref = np.zeros([22,22])
+    f21_ref[2:21,2:21] = 1
+    f21_pred = np.zeros([22,22])
+    f21_pred[3:21,2:21] = 1
+    bpm = PM(f21_pred, f21_ref)
+    value_test = bpm.boundary_iou()
+    assert np.round(value_test,1) == 0.6
+
 
 def test_cldsc():
     pm1 = PM(pred_clDice_small1, ref_clDice_small)
