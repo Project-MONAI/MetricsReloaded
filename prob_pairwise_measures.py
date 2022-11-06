@@ -179,6 +179,32 @@ class ProbabilityPairwiseMeasures(object):
         n = np.size(np.asarray(self.pred))
         return tp_thresh / n * (fp_thresh / n) * (thresh / (1 - thresh))
 
+    def expectation_calibration_error(self):
+        if 'bins_ece' in self.dict_args:
+            nbins = self.dict_args['bins_ece']
+        else:
+            nbins = 10
+        step = 1.0 / nbins
+        range_values = np.arange(0,1.00001,step)
+        print(range_values)
+        list_values = []
+        numb_samples = 0
+        for (l,u) in zip(range_values[:-1],range_values[1:]):
+            ref_tmp = np.where(np.logical_and(self.pred>l, self.pred<=u),self.ref,np.ones_like(self.ref)*-1)
+            ref_sel = ref_tmp[ref_tmp>-1]
+            nsamples = np.size(ref_sel)
+            prop = np.sum(ref_sel)/nsamples
+            pred_tmp = np.where(np.logical_and(self.pred>l, self.pred<=u),self.pred,np.ones_like(self.pred)*-1)
+            pred_sel = pred_tmp[pred_tmp>-1]
+            if nsamples == 0 :
+                list_values.append(0)
+            else:
+                list_values.append(nsamples * np.abs(prop-np.mean(pred_sel)))
+            numb_samples += nsamples
+        print(list_values,numb_samples)
+        return np.sum(np.asarray(list_values))/numb_samples
+
+    
     def auroc(self):
         """
         Calculation of AUROC using trapezoidal integration based

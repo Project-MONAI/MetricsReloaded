@@ -423,6 +423,28 @@ def test_positive_likelihood_ratio():
     value_test = bpm.positive_likelihood_ratio()
     assert np.round(value_test,1) == 4.5
 
+def test_expected_calibration_error():
+    f40_pred = [0.22, 0.48, 0.49, 0.96, 0.55, 0.64, 0.78, 0.82, 0.34, 0.87]
+    f40_ref = [0, 1, 0, 0, 1,1,1,1,1,0]
+    ppm = ProbabilityPairwiseMeasures(f40_pred, f40_ref)
+    ppm1 = ProbabilityPairwiseMeasures(f40_pred,f40_ref,dict_args={'bins_ece':2})
+    value_test = ppm.expectation_calibration_error()
+    value_test2 = ppm1.expectation_calibration_error()
+    assert np.round(value_test2,2) == 0.11 and np.round(value_test, 2) == 0.36
+
+def test_hd():
+    f20_ref = np.zeros([14,14])
+    f20_ref[1,1] = 1
+    f20_ref[9:12,9:12] =1
+    f20_pred = np.zeros([14,14])
+    f20_pred[9:12,9:12] = 1
+    bpm = PM(f20_pred, f20_ref, dict_args={'hd_perc':95})
+    value_test = bpm.measured_hausdorff_distance()
+    value_test2 = bpm.measured_hausdorff_distance_perc()
+    print(value_test, value_test2)
+    assert np.round(value_test,2) == 11.31 and value_test2 == 2.26
+
+
 def test_boundary_iou():
     f21_ref = np.zeros([22,22])
     f21_ref[2:21,2:21] = 1

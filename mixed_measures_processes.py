@@ -1,4 +1,5 @@
 from threading import local
+from tkinter.font import names
 from attr import assoc
 from prob_pairwise_measures import ProbabilityPairwiseMeasures
 from pairwise_measures import BinaryPairwiseMeasures, MultiClassPairwiseMeasures
@@ -102,6 +103,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
         ref_loc,
         pred_prob,
         list_values,
+        names = [],
         measures_pcc=[],
         measures_overlap=[],
         measures_boundary=[],
@@ -137,6 +139,12 @@ class MultiLabelLocSegPairwiseMeasure(object):
         self.thresh = thresh
         self.dict_args = dict_args
         self.flag_map = flag_map
+        self.names = names
+        if len(self.names) == 0:
+            self.names = self.file
+        if len(self.names) < len(self.ref_loc):
+            self.names = range(len(self.ref_loc))
+
     
     def create_map(self, list_maps, file_ref, category):
         affine = nib.load(file_ref).affine
@@ -162,7 +170,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
             list_prob = []
             list_pred_loc = []
             list_ref_loc = []
-            for case in range(len(self.pred_class)):
+            for (case,name) in zip(range(len(self.pred_class)),self.names):
                 pred_class_case = np.asarray(self.pred_class[case])
                 ref_class_case = np.asarray(self.ref_class[case])
                 ind_pred = np.where(pred_class_case == lab)
@@ -231,18 +239,18 @@ class MultiLabelLocSegPairwiseMeasure(object):
                     )
                     seg_res = MLSPM.to_pd_seg()
                     seg_res["label"] = lab
-                    seg_res["case"] = case
+                    seg_res["case"] = name
                     det_res = MLSPM.to_dict_det()
                     det_res["label"] = lab
-                    det_res["case"] = case
+                    det_res["case"] = name
                     mt_res = MLSPM.to_dict_mt()
                     mt_res["label"] = lab
-                    mt_res["case"] = case
+                    mt_res["case"] = name
                     list_det.append(det_res)
                     list_seg.append(seg_res)
                     list_mt.append(mt_res)
                     df_matching = AS.df_matching
-                    df_matching["case"] = case
+                    df_matching["case"] = name
                     df_matching["label"] = lab
                     self.matching.append(df_matching)
                 else:
@@ -257,13 +265,13 @@ class MultiLabelLocSegPairwiseMeasure(object):
                     for p in pred_prob_tmp:
                         list_prob.append(p)
                     df_matching = AS.df_matching
-                    df_matching["case"] = case
+                    df_matching["case"] = name
                     df_matching["label"] = lab
                     self.matching.append(df_matching)
             if not self.per_case:
-                overall_pred = np.concatenate(list_pred)
-                overall_ref = np.concatenate(list_ref)
-                overall_prob = np.concatenate(list_prob)
+                overall_pred = np.asarray(list_pred)
+                overall_ref = np.asarray(list_ref)
+                overall_prob = np.asarray(list_prob)
                 MLSPM = MixedLocSegPairwiseMeasure(
                     pred=overall_pred,
                     ref=overall_ref,
@@ -303,6 +311,7 @@ class MultiLabelLocMeasures(object):
         ref_class,
         pred_prob,
         list_values,
+        names=[],
         measures_pcc=[],
         measures_mt=[],
         per_case=False,
@@ -324,6 +333,9 @@ class MultiLabelLocMeasures(object):
         self.localization = localization
         self.thresh=thresh
         self.dict_args = {}
+        self.names = names
+        if len(self.names) < len(self.ref):
+            self.names = range(len(self.ref))
 
     def per_label_dict(self):
         list_det = []
@@ -332,7 +344,7 @@ class MultiLabelLocMeasures(object):
             list_pred = []
             list_ref = []
             list_prob = []
-            for case in range(len(self.ref_class)):
+            for (case,name) in zip(range(len(self.ref_class)),self.names):
                 pred_arr = np.asarray(self.pred_class[case])
                 ref_arr = np.asarray(self.ref_class[case])
                 ind_pred = np.where(pred_arr == lab)
@@ -378,7 +390,7 @@ class MultiLabelLocMeasures(object):
                     )
                     det_res = BPM.to_dict_meas()
                     det_res["label"] = lab
-                    det_res["case"] = case
+                    det_res["case"] = name
                     list_det.append(det_res)
                     PPM = ProbabilityPairwiseMeasures(
                         pred_prob_tmp_fin,
@@ -388,7 +400,7 @@ class MultiLabelLocMeasures(object):
                     )
                     mt_res = PPM.to_dict_meas()
                     mt_res["label"] = lab
-                    mt_res["case"] = case
+                    mt_res["case"] = name
                     list_mt.append(mt_res)
                 else:
                     list_pred.append(pred_tmp_fin)
@@ -427,6 +439,7 @@ class MultiLabelPairwiseMeasures(object):
         ref,
         pred_proba,
         list_values,
+        names = [],
         measures_pcc=[],
         measures_mt=[],
         measures_mcc=[],
@@ -434,6 +447,7 @@ class MultiLabelPairwiseMeasures(object):
         measures_boundary=[],
         num_neighbors=8,
         per_case=False,
+        
         pixdim=[1, 1, 1],
         empty=False,
         dict_args={},
@@ -449,6 +463,9 @@ class MultiLabelPairwiseMeasures(object):
         self.pixdim = pixdim
         self.dict_args = dict_args
         self.per_case = per_case
+        self.names = names
+        if len(self.names) < len(self.ref):
+            self.names = range(len(self.ref))
 
     def per_label_dict(self):
         list_bin = []
@@ -458,7 +475,7 @@ class MultiLabelPairwiseMeasures(object):
             list_ref = []
             list_prob = []
             list_case = []
-            for case in range(len(self.ref)):
+            for (case, name) in zip(range(len(self.ref)),self.names):
                 pred_case = np.asarray(self.pred[case])
                 ref_case = np.asarray(self.ref[case])
                 prob_case = np.asarray(self.pred_proba[case])
@@ -475,24 +492,24 @@ class MultiLabelPairwiseMeasures(object):
                     BPM = BinaryPairwiseMeasures(
                         pred_tmp,
                         ref_tmp,
-                        measures_pcc=self.measures_binary,
+                        measures=self.measures_binary,
                         num_neighbors=self.num_neighbors,
                         pixdim=self.pixdim,
                         dict_args=self.dict_args,
                     )
                     dict_bin = BPM.to_dict_meas()
                     dict_bin["label"] = lab
-                    dict_bin["case"] = case
+                    dict_bin["case"] = name
                     list_bin.append(dict_bin)
                     PPM = ProbabilityPairwiseMeasures(
                         pred_proba=pred_proba_tmp,
-                        ref=ref_tmp,
+                        ref_proba=ref_tmp,
                         measures=self.measures_mt,
                         dict_args=self.dict_args,
                     )
                     dict_mt = PPM.to_dict_meas()
                     dict_mt["label"] = lab
-                    dict_mt["case"] = case
+                    dict_mt["case"] = name
                     list_mt.append(dict_mt)
                 else:
                     list_pred.append(pred_tmp)
@@ -531,7 +548,7 @@ class MultiLabelPairwiseMeasures(object):
         list_pred = []
         list_ref = []
         list_mcc = []
-        for case in range(len(self.ref)):
+        for (case,name) in zip(range(len(self.ref)),self.names):
             pred_case = np.asarray(self.pred[case])
             ref_case = np.asarray(self.ref[case])
             if self.per_case:
@@ -543,7 +560,7 @@ class MultiLabelPairwiseMeasures(object):
                     dict_args=self.dict_args,
                 )
                 dict_mcc = MPM.to_dict_meas()
-                dict_mcc["case"] = case
+                dict_mcc["case"] = name
                 list_mcc.append(dict_mcc)
             else:
                 list_pred.append(pred_case)

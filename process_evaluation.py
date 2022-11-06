@@ -61,9 +61,11 @@ class ProcessEvaluation(object):
         measures_boundary=[],
         measures_overlap=[],
         measures_mt=[],
+        measures_detseg=[],
         flag_map=False,
         file=[],
-        thresh_ass=0.5
+        thresh_ass=0.5,
+        case=False
     ):
         self.data = data
         self.category = category
@@ -74,9 +76,11 @@ class ProcessEvaluation(object):
         self.measures_mt = measures_mt
         self.measures_mcc = measures_mcc
         self.measures_pcc = measures_pcc
-        self.measures_mt = measures_mt
+        self.measures_detseg = measures_detseg
+        
         self.flag_map=flag_map
         self.thresh_ass=thresh_ass
+        self.case=case
 
     def process_data(self):
         data = self.data
@@ -99,8 +103,10 @@ class ProcessEvaluation(object):
                 measures_pcc=self.measures_pcc,
                 measures_overlap=self.measures_overlap,
                 measures_boundary=self.measures_boundary,
+                measures_detseg=self.measures_detseg,
                 thresh=self.thresh_ass,
                 list_values=data["list_values"],
+                per_case=self.case
             )
             df_resseg, df_resdet, df_resmt = MLLS.per_label_dict()
         elif self.category == "Object Detection":
@@ -116,6 +122,7 @@ class ProcessEvaluation(object):
                 thresh=self.thresh_ass,
                 measures_pcc=self.measures_pcc,
                 measures_mt=self.measures_mt,
+                per_case=self.case
             )
             df_resdet, df_resmt = MLDT.per_label_dict()
             df_resseg = None
@@ -130,6 +137,7 @@ class ProcessEvaluation(object):
                 measures_mcc=self.measures_mcc,
                 measures_mt=self.measures_mt,
                 list_values=data["list_values"],
+                per_case=self.case
             )
             df_bin, df_mt = MLPM.per_label_dict()
             df_mcc = MLPM.multi_label_res()

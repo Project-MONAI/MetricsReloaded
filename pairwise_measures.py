@@ -292,28 +292,36 @@ class BinaryPairwiseMeasures(object):
         This function calculates the false positive map
         :return: FP map
         """
-        return np.asarray((self.pred - self.ref) > 0.0, dtype=np.float32)
+        ref_float = np.asarray(self.ref, dtype=np.float32)
+        pred_float = np.asarray(self.pred, dtype=np.float32)
+        return np.asarray((pred_float - ref_float) > 0.0, dtype=np.float32)
 
     def __fn_map(self):
         """
         This function calculates the false negative map
         :return: FN map
         """
-        return np.asarray((self.ref - self.pred) > 0.0, dtype=np.float32)
+        ref_float = np.asarray(self.ref, dtype=np.float32)
+        pred_float = np.asarray(self.pred, dtype=np.float32)
+        return np.asarray((ref_float - pred_float) > 0.0, dtype=np.float32)
 
     def __tp_map(self):
         """
         This function calculates the true positive map
         :return: TP map
         """
-        return np.asarray((self.ref + self.pred) > 1.0, dtype=np.float32)
+        ref_float = np.asarray(self.ref, dtype=np.float32)
+        pred_float = np.asarray(self.pred, dtype=np.float32)
+        return np.asarray((ref_float + pred_float) > 1.0, dtype=np.float32)
 
     def __tn_map(self):
         """
         This function calculates the true negative map
         :return: TN map
         """
-        return np.asarray((self.ref + self.pred) < 0.5, dtype=np.float32)
+        ref_float = np.asarray(self.ref, dtype=np.float32)
+        pred_float = np.asarray(self.pred, dtype=np.float32)
+        return np.asarray((ref_float + pred_float) < 0.5, dtype=np.float32)
 
     def __union_map(self):
         """
@@ -737,6 +745,10 @@ class BinaryPairwiseMeasures(object):
         hausdorff distance between a predmentation and a reference image
         :return: hausdorff distance and average symmetric distance
         """
+        if 'hd_perc' in self.dict_args.keys():
+            perc = self.dict_args['hd_perc']
+        else:
+            perc = perc
         if np.sum(self.pred + self.ref) == 0:
             return 0, 0, 0
         (
@@ -761,13 +773,16 @@ class BinaryPairwiseMeasures(object):
             np.sum(ref_border_dist),
         )
         hausdorff_distance = np.max([np.max(ref_border_dist), np.max(pred_border_dist)])
-        hausdorff_distance_95 = np.max(
+        hausdorff_distance_perc = np.max(
             [
                 np.percentile(ref_border_dist[self.ref + self.pred > 0], q=perc),
                 np.percentile(pred_border_dist[self.ref + self.pred > 0], q=perc),
             ]
         )
-        return hausdorff_distance, average_distance, hausdorff_distance_95, masd
+        print(ref_border_dist[self.ref + self.pred > 0], pred_border_dist[self.ref + self.pred > 0])
+        print(len(ref_border_dist[self.ref + self.pred > 0]), len(pred_border_dist[self.ref + self.pred > 0]))
+        
+        return hausdorff_distance, average_distance, hausdorff_distance_perc, masd
 
     def measured_average_distance(self):
         """
