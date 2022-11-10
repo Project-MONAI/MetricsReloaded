@@ -4,7 +4,7 @@ import numpy as np
 from scipy import ndimage
 from functools import partial
 from skimage.morphology import skeletonize
-from utils import one_hot_encode, compute_center_of_mass, compute_skeleton, CacheFunctionOutput, MorphologyOps
+from utility.utils import one_hot_encode, compute_center_of_mass, compute_skeleton, CacheFunctionOutput, MorphologyOps
 
 # from assignment_localization import AssignmentMapping
 from scipy.spatial.distance import cdist

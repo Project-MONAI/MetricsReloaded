@@ -1,6 +1,6 @@
 import numpy as np
-from pairwise_measures import CacheFunctionOutput
-from utils import max_x_at_y_more, max_x_at_y_less, min_x_at_y_more, min_x_at_y_less, trapezoidal_integration
+#from metrics.pairwise_measures import CacheFunctionOutput
+from utility.utils import CacheFunctionOutput,max_x_at_y_more, max_x_at_y_less, min_x_at_y_more, min_x_at_y_less, trapezoidal_integration
 
 
 class ProbabilityPairwiseMeasures(object):

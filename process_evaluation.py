@@ -2,13 +2,13 @@
 
 # Press ⇧F10 to execute it or replace it with your code.
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
-from assignment_localization import AssignmentMapping
-from mixed_measures_processes import (
+from utility.assignment_localization import AssignmentMapping
+from processes.mixed_measures_processes import (
     MultiLabelLocMeasures,
     MultiLabelLocSegPairwiseMeasure,
     MultiLabelPairwiseMeasures,
 )
-from pairwise_measures import BinaryPairwiseMeasures, MorphologyOps
+from metrics.pairwise_measures import BinaryPairwiseMeasures, MorphologyOps
 
 # from assignment_localization import AssignmentMapping
 import numpy as np

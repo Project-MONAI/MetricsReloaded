@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 from scipy.optimize import linear_sum_assignment as lsa
 from scipy.spatial.distance import cdist
-from pairwise_measures import BinaryPairwiseMeasures
-from utils import intersection_boxes, area_box, union_boxes, box_ior, box_iou
+from metrics.pairwise_measures import BinaryPairwiseMeasures
+from utility.utils import intersection_boxes, area_box, union_boxes, box_ior, box_iou
 
 
 

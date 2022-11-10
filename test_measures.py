@@ -1,12 +1,12 @@
 from re import A
-from pairwise_measures import BinaryPairwiseMeasures as PM
-from pairwise_measures import MultiClassPairwiseMeasures as MPM
-from mixed_measures_processes import MultiLabelLocSegPairwiseMeasure as MLIS
+from metrics.pairwise_measures import BinaryPairwiseMeasures as PM
+from metrics.pairwise_measures import MultiClassPairwiseMeasures as MPM
+from processes.mixed_measures_processes import MultiLabelLocSegPairwiseMeasure as MLIS
 import numpy as np
 from sklearn.metrics import cohen_kappa_score as cks
 from sklearn.metrics import matthews_corrcoef as mcc
 
-from prob_pairwise_measures import ProbabilityPairwiseMeasures
+from metrics.prob_pairwise_measures import ProbabilityPairwiseMeasures
 
 ### Small size of structures relative to pixel/voxel size (DSC)
 ## Larger structure
