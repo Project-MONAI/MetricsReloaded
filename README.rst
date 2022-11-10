@@ -20,6 +20,15 @@ Clone the repository: ::
 
     git clone https://github.com/csudre/MetricsReloaded.git
     cd MetricsReloaded
-    python -m pip install -r requirements.txt
+
+Install the package:
+
+    python -m pip install .
+
+You can alternatively install the package in editable mode:
+
+    python -m pip install -e .
+
+This is useful if you are developing MetricsReloaded and want to see changes in the code automatically applied to the installed library.
 
 .. end-description
