@@ -442,7 +442,7 @@ def test_hd():
     value_test = bpm.measured_hausdorff_distance()
     value_test2 = bpm.measured_hausdorff_distance_perc()
     print(value_test, value_test2)
-    assert np.round(value_test,2) == 11.31 and value_test2 == 2.26
+    assert np.round(value_test,2) == 11.31 and np.round(value_test2, 2) == 6.22
 
 
 def test_boundary_iou():
