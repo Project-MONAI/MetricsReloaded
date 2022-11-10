@@ -1,0 +1,17 @@
+graft docs
+graft MetricsReloaded
+
+prune docs/_build/**/*
+
+include .readthedocs.yaml
+
+include LICENSE
+include README.rst
+include requirements.txt
+
+exclude preparation_data_IS.py
+global-exclude *.py[cod] __pycache__/* *.so *.dylib
+global-exclude tags
+global-exclude *.swp
+global-exclude .MetricsReloaded.* *.debug
+global-exclude examples/**/*
