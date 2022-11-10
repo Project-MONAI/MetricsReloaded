@@ -13,7 +13,7 @@ list_det = []
 list_seg = []
 for f in list_reffile:
     name = os.path.split(f)[1]
-    name = name.split('CLA')[0]
+    name = name.split('Ref')[0]
     name = name.split('Lesion_')[1]
     if not os.path.exists('examples/results/Det94AvFin_%s.csv'%name):
     
