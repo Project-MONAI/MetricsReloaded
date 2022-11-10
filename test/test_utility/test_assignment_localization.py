@@ -29,8 +29,8 @@ def test_localization():
         [ref],
         [[1, 1]],
         [1, 2],
-        assignment="Greedy matching",
-        localization="maskcom",
+        assignment="greedy_matching",
+        localization="mask_com",
         thresh=3,
     )
     mlis2 = MLIS(
@@ -40,8 +40,8 @@ def test_localization():
         [ref],
         [[1, 1]],
         [1, 2],
-        assignment="Greedy matching",
-        localization="maskior",
+        assignment="greedy_matching",
+        localization="mask_ior",
         thresh=0,
     )
     _, _, _ = mlis1.per_label_dict()

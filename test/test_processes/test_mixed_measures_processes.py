@@ -38,7 +38,7 @@ def test_mismatch_category():
         ref_loc=[ref],
         pred_prob=[[1, 1, 1, 1]],
         list_values=[1, 2],
-        localization="maskiou",
+        localization="mask_iou",
         measures_detseg=["PQ"],
         measures_pcc=["fbeta"],
     )
@@ -59,7 +59,7 @@ def test_panoptic_quality():
         ref_loc=[ref],
         pred_prob=[[1, 1, 1, 1]],
         list_values=[1],
-        localization="maskiou",
+        localization="mask_iou",
         measures_detseg=["PQ"],
     )
     _, value_tmp, _ = mlis.per_label_dict()

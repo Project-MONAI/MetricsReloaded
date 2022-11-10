@@ -1,10 +1,10 @@
 import glob
-from process_evaluation import ProcessEvaluation
+from processes.overall_process import ProcessEvaluation
 import os
 import nibabel as nib
 import pickle as pkl
 import pandas as pd
-from pairwise_measures import MorphologyOps
+from metrics.pairwise_measures import MorphologyOps
 
 
 list_reffile = glob.glob('/Users/csudre/Data/B-RAPIDD/CLA94/CorrectLesion*')
@@ -53,7 +53,7 @@ for f in list_reffile:
             PE = ProcessEvaluation(
                 dict_file,
                 "Instance Segmentation",
-                localization="maskiou",
+                localization="mask_iou",
                 file=list_pospred,
                 flag_map=True,
                 assignment="greedy_matching",
@@ -99,8 +99,8 @@ f.close()
 PE = ProcessEvaluation(
     "TestDataMR.pkl",
     "Object Detection",
-    localization="iou",
-    assignment="Greedy IoU",
+    localization="box_iou",
+    assignment="greedy_matching",
     measures_overlap=[],
     measures_mcc=[],
     measures_pcc=["fbeta"],
