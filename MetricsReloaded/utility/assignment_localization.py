@@ -2,10 +2,12 @@ import pandas as pd
 import numpy as np
 from scipy.optimize import linear_sum_assignment as lsa
 from scipy.spatial.distance import cdist
-from metrics.pairwise_measures import BinaryPairwiseMeasures
-from utility.utils import intersection_boxes, area_box, union_boxes, box_ior, box_iou
+from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures
+from MetricsReloaded.utility.utils import intersection_boxes, area_box, union_boxes, box_ior, box_iou
 
-
+__all__ = [
+    'AssignmentMapping',
+]
 
 class AssignmentMapping(object):
     """

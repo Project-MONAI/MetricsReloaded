@@ -1,14 +1,18 @@
-from threading import local
-from tkinter.font import names
-from attr import assoc
-from metrics.prob_pairwise_measures import ProbabilityPairwiseMeasures
-from metrics.pairwise_measures import BinaryPairwiseMeasures, MultiClassPairwiseMeasures
-from utility.assignment_localization import AssignmentMapping
+from MetricsReloaded.metrics.prob_pairwise_measures import ProbabilityPairwiseMeasures
+from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures, MultiClassPairwiseMeasures
+from MetricsReloaded.utility.assignment_localization import AssignmentMapping
 import numpy as np
 import pandas as pd
 import nibabel as nib
 import os
 
+
+__all__ = [
+    'MixedLocSegPairwiseMeasure',
+    'MultiLabelLocSegPairwiseMeasure',
+    'MultiLabelLocMeasures',
+    'MultiLabelPairwiseMeasures',
+]
 
 class MixedLocSegPairwiseMeasure(object):
     def __init__(

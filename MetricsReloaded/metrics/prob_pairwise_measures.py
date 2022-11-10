@@ -1,10 +1,11 @@
 import numpy as np
 #from metrics.pairwise_measures import CacheFunctionOutput
-from utility.utils import CacheFunctionOutput,max_x_at_y_more, max_x_at_y_less, min_x_at_y_more, min_x_at_y_less, trapezoidal_integration
+from MetricsReloaded.utility.utils import CacheFunctionOutput,max_x_at_y_more, max_x_at_y_less, min_x_at_y_more, min_x_at_y_less, trapezoidal_integration
 
 
-
-
+__all__ = [
+    'ProbabilityPairwiseMeasures',
+]
 
 class ProbabilityPairwiseMeasures(object):
     def __init__(

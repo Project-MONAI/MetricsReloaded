@@ -1,5 +1,10 @@
-from metrics.pairwise_measures import BinaryPairwiseMeasures
-from processes.mixed_measures_processes import *
+from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures
+from MetricsReloaded.processes.mixed_measures_processes import *
+
+
+__all__ = [
+    'ProcessEvaluation',
+]
 
 class ProcessEvaluation(object):
     """
