@@ -3,6 +3,9 @@ import numpy as np
 from utility.utils import CacheFunctionOutput,max_x_at_y_more, max_x_at_y_less, min_x_at_y_more, min_x_at_y_less, trapezoidal_integration
 
 
+
+
+
 class ProbabilityPairwiseMeasures(object):
     def __init__(
         self,
@@ -28,6 +31,8 @@ class ProbabilityPairwiseMeasures(object):
             "auroc": (self.auroc, "AUROC"),
             "ap": (self.average_precision, "AP"),
             "froc": (self.froc, "FROC"),
+            "ece": (self.expectation_calibration_error, "ECE"),
+            "bs": (self.brier_score, "BS")
         }
 
         self.pred = pred_proba
@@ -204,7 +209,27 @@ class ProbabilityPairwiseMeasures(object):
         print(list_values,numb_samples)
         return np.sum(np.asarray(list_values))/numb_samples
 
-    
+    def brier_score(self):
+        """ 
+        Calculation of the Brier score https://en.wikipedia.org/wiki/Brier_score
+        """
+        bs = np.mean(np.square(self.ref - self.pred))
+        return bs
+
+    def logarithmic_score(self):
+        """
+        Calculation of the logarithmic score https://en.wikipedia.org/wiki/Scoring_rule
+        """
+        eps = 1e-10
+        log_pred = np.log(self.pred + eps)
+        log_1pred = np.log(1-self.pred + eps)
+        print(log_pred, log_1pred, self.ref, 1-self.ref)
+        overall = self.ref * log_pred + (1-self.ref) * log_1pred
+        print(overall)
+        ls = np.mean(overall)
+        print(ls)
+        return ls
+
     def auroc(self):
         """
         Calculation of AUROC using trapezoidal integration based

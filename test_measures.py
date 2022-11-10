@@ -240,6 +240,8 @@ f59_pred2 = np.zeros([15, 15])
 f59_pred2[4:8, 5:9] = 1
 
 
+
+
 def test_ba():
     list_values = [0, 1, 2, 3]
     mpm = MPM(pred, ref, list_values)
@@ -432,6 +434,22 @@ def test_expected_calibration_error():
     value_test2 = ppm1.expectation_calibration_error()
     assert np.round(value_test2,2) == 0.11 and np.round(value_test, 2) == 0.36
 
+def test_logarithmic_score():
+    ref_ls = [1,0]
+    pred_ls = [0.8, 0.6]
+    ppm = ProbabilityPairwiseMeasures(np.asarray(pred_ls), np.asarray(ref_ls))
+    value_test = ppm.logarithmic_score()
+    assert np.round(value_test,2) == -0.57
+
+def test_brier_score():
+    ref_bs = [1,0]
+    pred_bs = [0.8, 0.6]
+    ppm = ProbabilityPairwiseMeasures(np.asarray(pred_bs), np.asarray(ref_bs))
+    value_test = ppm.brier_score()
+    assert np.round(value_test,1) == 0.2
+
+
+
 def test_hd():
     f20_ref = np.zeros([14,14])
     f20_ref[1,1] = 1
@@ -442,7 +460,7 @@ def test_hd():
     value_test = bpm.measured_hausdorff_distance()
     value_test2 = bpm.measured_hausdorff_distance_perc()
     print(value_test, value_test2)
-    assert np.round(value_test,2) == 11.31 and value_test2 == 2.26
+    assert np.round(value_test,2) == 11.31 and np.round(value_test2,2) == 6.22
 
 
 def test_boundary_iou():
