@@ -1,8 +1,8 @@
-from re import A
 from metrics.pairwise_measures import BinaryPairwiseMeasures as PM
 from metrics.pairwise_measures import MultiClassPairwiseMeasures as MPM
 from processes.mixed_measures_processes import MultiLabelLocSegPairwiseMeasure as MLIS
 import numpy as np
+from numpy.testing import assert_allclose
 from sklearn.metrics import cohen_kappa_score as cks
 from sklearn.metrics import matthews_corrcoef as mcc
 
@@ -432,17 +432,20 @@ def test_expected_calibration_error():
     value_test2 = ppm1.expectation_calibration_error()
     assert np.round(value_test2,2) == 0.11 and np.round(value_test, 2) == 0.36
 
-def test_hd():
+def test_hausdorff_distance():
     f20_ref = np.zeros([14,14])
     f20_ref[1,1] = 1
     f20_ref[9:12,9:12] =1
     f20_pred = np.zeros([14,14])
     f20_pred[9:12,9:12] = 1
     bpm = PM(f20_pred, f20_ref, dict_args={'hd_perc':95})
-    value_test = bpm.measured_hausdorff_distance()
-    value_test2 = bpm.measured_hausdorff_distance_perc()
-    print(value_test, value_test2)
-    assert np.round(value_test,2) == 11.31 and np.round(value_test2, 2) == 6.22
+    hausdorff_distance = bpm.measured_hausdorff_distance()
+    hausdorff_distance_perc = bpm.measured_hausdorff_distance_perc()
+
+    expected_hausdorff_distance = 11.31
+    expected_hausdorff_distance_perc = 6.22
+    assert_allclose(hausdorff_distance, expected_hausdorff_distance, atol=0.01)
+    assert_allclose(hausdorff_distance_perc, expected_hausdorff_distance_perc, atol=0.01)
 
 
 def test_boundary_iou():
