@@ -1,3 +1,4 @@
+import pytest
 from metrics.pairwise_measures import BinaryPairwiseMeasures as PM
 from metrics.pairwise_measures import MultiClassPairwiseMeasures as MPM
 from processes.mixed_measures_processes import MultiLabelLocSegPairwiseMeasure as MLIS
@@ -517,13 +518,17 @@ def test_mismatch_category():
     assert value_test == 0
 
 
-def test_empty():
+def test_empty_reference():
     ref = [0]
     pred = [0]
     pm = PM(np.asarray(ref), np.asarray(pred))
-    value_test = pm.fbeta()
-    print("Empty FB ", value_test)
-    assert value_test == 1
+
+    match = "reference is empty, recall not defined"
+    with pytest.warns(UserWarning, match=match):
+        fbeta = pm.fbeta()
+
+    expected_fbeta = 1
+    assert fbeta == expected_fbeta
 
 
 def test_localization():
