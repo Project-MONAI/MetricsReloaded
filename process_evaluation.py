@@ -188,8 +188,8 @@ def main(argv):
         "-localization",
         dest="localization",
         action="store",
-        choices=["maskiou", "maskior", "iou", "ior", "com"],
-        default="Greedy iou",
+        choices=["mask_iou", "mask_ior", "box_iou", "box_ior", "box_com","mask_com"],
+        default="box_iou",
         type=str,
         help="Choice of localisation method",
     )

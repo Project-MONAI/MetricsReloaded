@@ -8,15 +8,32 @@ from utility.utils import intersection_boxes, area_box, union_boxes, box_ior, bo
 
 
 class AssignmentMapping(object):
+    """
+    Class allowing the assignment and localization of individual objects of interests. 
+    The localization strategies are either based on box characteristics:
+    - box_iou
+    - box_ior
+    - box_com
+    or on the masks
+    - mask_iou
+    - mask_ior
+    - mask_com
+    where iou refers to Intersection over Union, IoR to Intersection over Reference, and CoM to Centre of Mass
+    Options to solve assignment ambiguities are one of the following:
+    - hungarian: minimising assignment cost
+    - greedy_matching: based on best matching
+    - greedy_performance: based on probability score
+    """
     def __init__(
         self,
         pred_loc,
         ref_loc,
         pred_prob,
-        localization="iou",
+        localization="box_iou",
         thresh=0.5,
-        assignment="Greedy matching",
+        assignment="greedy_matching",
     ):
+    
         self.pred_loc = np.asarray(pred_loc)
         self.pred_prob = pred_prob
         # self.pred_class = pred_class
@@ -25,17 +42,17 @@ class AssignmentMapping(object):
         self.localization = localization
         self.assignment = assignment
         self.thresh = thresh
-        if localization == "iou":
+        if localization == "box_iou":
             self.matrix = self.pairwise_iou()
-        elif localization == "com":
+        elif localization == "box_com":
             self.matrix = self.pairwise_comdist()
-        elif localization == "ior":
+        elif localization == "box_ior":
             self.matrix = self.pairwise_ior()
-        elif localization == "maskiou":
+        elif localization == "mask_iou":
             self.matrix = self.pairwise_maskiou()
-        elif localization == "maskior":
+        elif localization == "mask_ior":
             self.matrix = self.pairwise_maskior()
-        elif localization == "maskcom":
+        elif localization == "mask_com":
             self.matrix = self.pairwise_maskcom()
         self.df_matching, self.valid = self.resolve_ambiguities_matching()
 
@@ -43,10 +60,18 @@ class AssignmentMapping(object):
         return np.floor(self.pred_loc.shape[0] / 2.0)
 
     def pairwise_comdist(self):
+        """
+        Creates a matrix of size numb_prediction elements x number of reference elements 
+        indicating the pairwise distance of the centre of mass of the location boxes
+        """
         matrix_cdist = cdist(self.pred_loc, self.ref_loc)
         return matrix_cdist
 
     def pairwise_iou(self):
+        """
+        Creates a matrix of size number of prediction elements x number of reference elements
+        indicating the pairwise box iou
+        """
         matrix_iou = np.zeros([self.pred_loc.shape[0], self.ref_loc.shape[0]])
         for (pi, pb) in enumerate(self.pred_loc):
             for (ri, rb) in enumerate(self.ref_loc):
@@ -54,6 +79,10 @@ class AssignmentMapping(object):
         return matrix_iou
 
     def pairwise_maskior(self):
+        """
+        Creates a matrix of size number of prediction elements x number of reference elements
+        indicating the pairwise mask ior
+        """
         matrix_ior = np.zeros([self.pred_loc.shape[0], self.ref_loc.shape[0]])
         for p in range(self.pred_loc.shape[0]):
             for r in range(self.ref_loc.shape[0]):
@@ -63,6 +92,10 @@ class AssignmentMapping(object):
         return matrix_ior
 
     def pairwise_maskcom(self):
+        """
+        Creates a matrix of size number of prediction elements x number of reference elements
+        indicating the pairwise distance between mask centre of mass
+        """
         matrix_com = np.zeros([self.pred_loc.shape[0], self.ref_loc.shape[0]])
         for p in range(self.pred_loc.shape[0]):
             for r in range(self.ref_loc.shape[0]):
@@ -72,6 +105,10 @@ class AssignmentMapping(object):
         return matrix_com
 
     def pairwise_maskiou(self):
+        """
+        Creates a matrix of size number of prediction elements x number of reference elements 
+        indicating the pairwise mask iou.
+        """
         matrix_iou = np.zeros([self.pred_loc.shape[0], self.ref_loc.shape[0]])
         print(matrix_iou.shape, self.pred_loc.shape, self.ref_loc.shape)
         for p in range(self.pred_loc.shape[0]):
@@ -81,6 +118,10 @@ class AssignmentMapping(object):
         return matrix_iou
 
     def pairwise_ior(self):
+        """
+        Creates a matrix of size number of prediction elements x number of reference elements
+        indicating the pairwise box ior
+        """
         matrix_ior = np.zeros([self.pred_loc.shape[0], self.ref_loc.shape[0]])
         for (pi, pb) in enumerate(self.pred_loc):
             for (ri, rb) in enumerate(self.ref_loc):
@@ -88,6 +129,12 @@ class AssignmentMapping(object):
         return matrix_ior
 
     def initial_mapping(self):
+        """
+        Identifies an original ideal mapping between references and prediction element for all those
+        when there is no ambiguity in the assignment (only one to one matching available). Creates the list of 
+        possible options when multiple are possible and populates the relevant dataframes with performance of the
+        localization metrics and the assigned score probability.
+        """
         matrix = self.matrix
         if "com" in self.localization:
             possible_binary = np.where(
@@ -156,6 +203,11 @@ class AssignmentMapping(object):
         return df_matching, df_fn, df_fp, list_valid
 
     def resolve_ambiguities_matching(self):
+        """
+        Finalise the mapping based on the initial guess by deciding on the possible ambiguities
+        Returns a final pandas dataframe with all attribution and erroneous detection / non detections.
+        
+        """
         matrix = self.matrix
         df_matching, df_fn, df_fp, list_valid = self.initial_mapping()
         print(
@@ -251,6 +303,12 @@ class AssignmentMapping(object):
             return df_matching_all, list_valid
 
     def matching_ref_predseg(self):
+        """
+        In case mask of individual elements are available (Instance segmentation task)
+        provides the list of true positive prediction, associated list of reference segmentation, 
+        list of false positive masks and of false negative masks as
+        returns: list_pred, list_ref, list_fp, list_fn
+        """
         df_matching_all = self.df_matching
         df_tp = df_matching_all[
             (df_matching_all["ref"] >= 0) & (df_matching_all["pred"] >= 0)

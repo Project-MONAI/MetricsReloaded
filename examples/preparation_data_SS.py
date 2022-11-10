@@ -1,10 +1,10 @@
 import glob
-from process_evaluation import ProcessEvaluation
+from processes.overall_process import ProcessEvaluation
 import os
 import nibabel as nib
 import pickle as pkl
 import pandas as pd
-from pairwise_measures import MorphologyOps
+from metrics.pairwise_measures import MorphologyOps
 
 
 list_reffile = glob.glob('/Users/csudre/Data/B-RAPIDD/CLAAv/CorrectLesion*CLA*')
@@ -59,7 +59,7 @@ dict_file['file'] = list_files
 PE = ProcessEvaluation(
     dict_file,
     "Semantic Segmentation",
-    localization="maskiou",
+    localization="mask_iou",
     file=list_files,
     flag_map=True,
     assignment="greedy_matching",
