@@ -46,6 +46,18 @@ def test_top_label_classification_error():
     value_test = cm.top_label_classification_error()
     assert_allclose(value_test, expected_tce, atol=0.001)
 
+def test_negative_log_likelihood():
+    ref_nll = [1, 0, 2, 1]
+    pred_nll = [[0.1, 0.8, 0.05, 0.1],
+                [0.6, 0.1, 0, 0.7],
+                [0.3, 0.1, 0.95, 0.2 ]]
+    ref_nll = np.asarray(ref_nll)
+    pred_nll = np.asarray(pred_nll)
+    expected_nll = -1 * (np.log(0.8) + np.log(0.6) + np.log(0.7) + np.log(0.95))
+    cm = CalibrationMeasures(pred_nll, ref_nll)
+    value_test = cm.negative_log_likelihood()
+    assert_allclose(value_test, expected_nll)
+
 def test_class_wise_expectation_calibration_error():
     ref_cwece = [1, 0, 2, 1]
     pred_cwece = [[0.1, 0.8, 0, 0.1],

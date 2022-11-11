@@ -145,9 +145,7 @@ class CalibrationMeasures(object):
         cwbs = 0
         return cwbs
 
-    def class_wise_calibration_error(self):
-        cwce = 0
-        return cwce
+    
 
     def kernel_calibration_error(self):
         """
@@ -159,7 +157,9 @@ class CalibrationMeasures(object):
         return kce
 
     def negative_log_likelihood(self):
-        nll = 0
+        log_pred = np.log(self.pred)
+        ll = np.sum(log_pred[self.ref,range(self.pred.shape[1])])
+        nll = -1*ll
         return nll
 
     def root_brier_score(self):
