@@ -4,6 +4,27 @@ Metrics Reloaded
 
 .. start-description
 
+.. start-badges
+
+|docs|
+|testing|
+|codecov|
+
+.. |docs| image:: https://readthedocs.org/projects/csudre/badge/?style=flat
+    :target: https://MetricsReloaded.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
+.. |testing| image:: https://github.com/csudre/MetricsReloaded/actions/workflows/python-app.yml/badge.svg
+    :target: https://github.com/csudre/MetricsReloaded/actions
+    :alt: Testing Status
+
+.. |codecov| image:: https://codecov.io/gh/csudre/MetricsReloaded/branch/main/graph/badge.svg
+    :target: https://codecov.io/gh/csudre/MetricsReloaded
+    :alt: Coverage Status
+
+.. end-badges
+
+
 A Python implementaiton of `Metrics Reloaded <https://openreview.net/forum?id=24kBqy8rcB_>`__ - A new recommendation framework for biomedical image analysis validation.
 
 .. figure:: /images/classification_scales_and_domains.png
