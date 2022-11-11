@@ -1,5 +1,36 @@
+# Copyright (c) Carole Sudre
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+Probabilistic Pairwise Measures - :mod:`MetricsReloaded.metrics.prob_pairwise_measures`
+====================================================================
+
+This module provides classes for calculating :ref:`probabilistic
+<probabilistic>` pairwise measures.
+
+.. _probabilistic:
+
+Calculating multi-threshold/probabilistic pairwise measures
+------------------------------------
+
+.. autoclass:: ProbabilityPairwiseMeasures
+    :members:
+
+
+"""
+
+
+
 import numpy as np
-#from metrics.pairwise_measures import CacheFunctionOutput
 from MetricsReloaded.utility.utils import CacheFunctionOutput,max_x_at_y_more, max_x_at_y_less, min_x_at_y_more, min_x_at_y_less, trapezoidal_integration
 
 
@@ -185,51 +216,7 @@ class ProbabilityPairwiseMeasures(object):
         n = np.size(np.asarray(self.pred))
         return tp_thresh / n * (fp_thresh / n) * (thresh / (1 - thresh))
 
-    def expectation_calibration_error(self):
-        if 'bins_ece' in self.dict_args:
-            nbins = self.dict_args['bins_ece']
-        else:
-            nbins = 10
-        step = 1.0 / nbins
-        range_values = np.arange(0,1.00001,step)
-        print(range_values)
-        list_values = []
-        numb_samples = 0
-        for (l,u) in zip(range_values[:-1],range_values[1:]):
-            ref_tmp = np.where(np.logical_and(self.pred>l, self.pred<=u),self.ref,np.ones_like(self.ref)*-1)
-            ref_sel = ref_tmp[ref_tmp>-1]
-            nsamples = np.size(ref_sel)
-            prop = np.sum(ref_sel)/nsamples
-            pred_tmp = np.where(np.logical_and(self.pred>l, self.pred<=u),self.pred,np.ones_like(self.pred)*-1)
-            pred_sel = pred_tmp[pred_tmp>-1]
-            if nsamples == 0 :
-                list_values.append(0)
-            else:
-                list_values.append(nsamples * np.abs(prop-np.mean(pred_sel)))
-            numb_samples += nsamples
-        print(list_values,numb_samples)
-        return np.sum(np.asarray(list_values))/numb_samples
-
-    def brier_score(self):
-        """ 
-        Calculation of the Brier score https://en.wikipedia.org/wiki/Brier_score
-        """
-        bs = np.mean(np.square(self.ref - self.pred))
-        return bs
-
-    def logarithmic_score(self):
-        """
-        Calculation of the logarithmic score https://en.wikipedia.org/wiki/Scoring_rule
-        """
-        eps = 1e-10
-        log_pred = np.log(self.pred + eps)
-        log_1pred = np.log(1-self.pred + eps)
-        print(log_pred, log_1pred, self.ref, 1-self.ref)
-        overall = self.ref * log_pred + (1-self.ref) * log_1pred
-        print(overall)
-        ls = np.mean(overall)
-        print(ls)
-        return ls
+    
 
     def auroc(self):
         """

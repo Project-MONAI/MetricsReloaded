@@ -1,3 +1,56 @@
+# Copyright (c) Carole Sudre
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+Mixed measures processes - :mod:`MetricsReloaded.processes.mixed_measures_processes`
+====================================================================
+
+This module provides classes for performing the evaluation processes of
+ :ref:`instance segmentation <instanceseg>`, :ref:`multi label instance segmentation <mlinstanceseg>`, 
+:ref:`multilabel object detection <mlod>` and :ref:`multi class classification  <multiclass>`.
+
+.. _instanceseg:
+
+Performing the process associated with instance segmentation
+------------------------------------
+
+.. autoclass:: MixedLocSegPairwiseMeasure
+    :members:
+
+.. _mlinstanceseg:
+
+Performing the process associated with multiple labels in instance segmentation
+----------------------------------------
+
+.. autoclass:: MultiLabelLocSegPairwiseMeasure
+    :members:
+
+Performing the process associated with multiple labels in instance segmentation
+----------------------------------------
+
+.. autoclass:: MultiLabelLocMeasures
+    :members:
+
+Performing the process associated with multiple labels in classification (semantic segmentation or image level classification)
+----------------------------------------
+
+.. autoclass:: MultiLabelPairwiseMeasures
+    :members:
+"""
+
+
+
+
+
 from MetricsReloaded.metrics.prob_pairwise_measures import ProbabilityPairwiseMeasures
 from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures, MultiClassPairwiseMeasures
 from MetricsReloaded.utility.assignment_localization import AssignmentMapping
