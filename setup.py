@@ -49,7 +49,7 @@ setup(
         'Documentation': 'https://MetricsReloaded.readthedocs.io/',
         'Issue Tracker': 'https://github.com/csudre/MetricsReloaded/issues',
     },
-    python_requires='>=3.8',
+    python_requires='>=3.7',
     install_requires=requirements,
     extras_require={
     },
