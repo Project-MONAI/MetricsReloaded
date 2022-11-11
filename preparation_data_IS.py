@@ -53,7 +53,7 @@ for f in list_reffile:
             PE = ProcessEvaluation(
                 dict_file,
                 "Instance Segmentation",
-                localization="maskiou",
+                localization="mask_iou",
                 file=list_pospred,
                 flag_map=True,
                 assignment="greedy_matching",
