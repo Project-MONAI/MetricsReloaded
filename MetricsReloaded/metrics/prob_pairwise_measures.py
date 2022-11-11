@@ -63,8 +63,6 @@ class ProbabilityPairwiseMeasures(object):
             "auroc": (self.auroc, "AUROC"),
             "ap": (self.average_precision, "AP"),
             "froc": (self.froc, "FROC"),
-            "ece": (self.expectation_calibration_error, "ECE"),
-            "bs": (self.brier_score, "BS")
         }
 
         self.pred = pred_proba
