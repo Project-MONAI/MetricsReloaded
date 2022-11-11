@@ -6,11 +6,25 @@ Metrics Reloaded
 
 A Python implementaiton of `Metrics Reloaded <https://openreview.net/forum?id=24kBqy8rcB_>`__ - A new recommendation framework for biomedical image analysis validation.
 
-.. figure:: /images/classification_scales_and_domains.png
-    :scale: 10%
-    :align: center
+.. start-badges
 
-    Metrics Reloaded fosters the convergence of validation methodology across modalities, application domains and classification scales
+|docs|
+|testing|
+|codecov|
+
+.. |docs| image:: https://readthedocs.org/projects/metricsreloaded/badge/?style=flat
+    :target: https://MetricsReloaded.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
+.. |testing| image:: https://github.com/csudre/MetricsReloaded/actions/workflows/python-app.yml/badge.svg
+    :target: https://github.com/csudre/MetricsReloaded/actions
+    :alt: Testing Status
+
+.. |codecov| image:: https://codecov.io/gh/csudre/MetricsReloaded/branch/main/graph/badge.svg
+    :target: https://codecov.io/gh/csudre/MetricsReloaded
+    :alt: Coverage Status
+
+.. end-badges
 
 Installation
 ============
@@ -37,4 +51,13 @@ You can alternatively install the package in editable mode:
 
 This is useful if you are developing MetricsReloaded and want to see changes in the code automatically applied to the installed library.
 
+Overview
+========
+
 .. end-description
+
+.. figure:: docs/source/images/classification_scales_and_domains.png
+    :scale: 10%
+    :align: center
+
+    Metrics Reloaded fosters the convergence of validation methodology across modalities, application domains and classification scales
