@@ -1,3 +1,32 @@
+# Copyright (c) Carole Sudre
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+Overall process - :mod:`MetricsReloaded.processes.overall_process`
+====================================================================
+
+This module provides class to perform the :ref:`overall evaluation process  <processeval>`.
+
+.. _processeval:
+
+Performing the process associated with instance segmentation
+------------------------------------
+
+.. autoclass:: ProcessEvaluation
+    :members:
+
+"""
+
+
 from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures
 from MetricsReloaded.processes.mixed_measures_processes import *
 

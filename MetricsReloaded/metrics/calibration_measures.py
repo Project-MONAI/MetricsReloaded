@@ -1,3 +1,35 @@
+# Copyright (c) Carole Sudre
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+Calibration measures - :mod:`MetricsReloaded.metrics.calibration_measures`
+====================================================================
+
+This module provides classes for calculating :ref:`calibration
+<calibration>` measures.
+.. _binary:
+
+Calculating calibration measures
+------------------------------------
+
+.. autoclass:: CalibrationMeasures
+    :members:
+
+"""
+
+
+
+
+
 import numpy as np
 #from metrics.pairwise_measures import CacheFunctionOutput
 from MetricsReloaded.utility.utils import CacheFunctionOutput,max_x_at_y_more, max_x_at_y_less, min_x_at_y_more, min_x_at_y_less, trapezoidal_integration
@@ -73,6 +105,12 @@ class CalibrationMeasures(object):
             
     
     def expectation_calibration_error(self):
+        """
+        Derives the expectation calibration error in the case of binary task
+        bins_ece is the key in the dictionary for the number of bins to consider
+        Default is 10
+        
+        """
         if 'bins_ece' in self.dict_args:
             nbins = self.dict_args['bins_ece']
         else:

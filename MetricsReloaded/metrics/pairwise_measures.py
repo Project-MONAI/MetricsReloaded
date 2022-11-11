@@ -25,6 +25,8 @@ Calculating binary pairwise measures
 .. autoclass:: BinaryPairwiseMeasures
     :members:
 
+.. _multiclass:
+
 Calculating multiclass pairwise measures
 ----------------------------------------
 
