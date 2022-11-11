@@ -19,7 +19,7 @@ Create and activate a new `Conda <https://docs.conda.io/en/latest/miniconda.html
 Clone the repository: ::
 
     git clone https://github.com/csudre/MetricsReloaded.git
-    cd MetricsReloaded
+    cd MetricsReloadeds
 
 Install the package:
 
