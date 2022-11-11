@@ -10,7 +10,7 @@ Metrics Reloaded
 |testing|
 |codecov|
 
-.. |docs| image:: https://readthedocs.org/projects/csudre/badge/?style=flat
+.. |docs| image:: https://readthedocs.org/projects/metricsreloaded/badge/?style=flat
     :target: https://MetricsReloaded.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
