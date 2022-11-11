@@ -63,6 +63,7 @@ autodoc_docstring_signature = True
 autoclass_content = 'both'
 autodoc_member_order = 'bysource'
 
+html_static_path = ["_static"]
 templates_path = ['_templates']
 extlinks = {
     'issue': ('https://github.com/csudre/MetricsReloaded/issues/%s', '#'),
