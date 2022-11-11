@@ -6,6 +6,12 @@ Metrics Reloaded
 
 A Python implementaiton of `Metrics Reloaded <https://openreview.net/forum?id=24kBqy8rcB_>`__ - A new recommendation framework for biomedical image analysis validation.
 
+.. figure:: /images/classification_scales_and_domains.png
+    :scale: 10%
+    :align: center
+
+    Metrics Reloaded fosters the convergence of validation methodology across modalities, application domains and classification scales
+
 Installation
 ============
 Using git
