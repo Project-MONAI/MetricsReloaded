@@ -10,3 +10,4 @@ Modules for calculating metrics.
 
    pairwise_measures
    prob_pairwise_measures
+   calibration_measures
