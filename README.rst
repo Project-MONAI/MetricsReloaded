@@ -10,7 +10,7 @@ A Python implementaiton of `Metrics Reloaded <https://openreview.net/forum?id=24
     :scale: 10%
     :align: center
 
-    Metrics Reloaded fosters the convergence of validation methodology across modalities, ap- plication domains and classification scales
+    Metrics Reloaded fosters the convergence of validation methodology across modalities, application domains and classification scales
 
 Installation
 ============
