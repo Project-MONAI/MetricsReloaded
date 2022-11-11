@@ -32,6 +32,46 @@ class CalibrationMeasures(object):
         self.dict_args = dict_args
         self.measures = measures if measures is not None else self.measures_dict
 
+    def class_wise_expectation_calibration_error(self):
+        """
+        Class_wise version of the expectation calibration error
+        .. math::
+
+            cwECE = \dfrac{1}{K}\sum_{k=1}^{K}\sum_{i=1}^{N}\dfrac{\vert B_{i,k} \vert}/N \left(y_{k}(B_{i,k}) - p_{k}(B_{i,k})\right)
+
+        """
+        if 'bins_ece' in self.dict_args:
+            nbins = self.dict_args['bins_ece']
+        else:
+            nbins = 10
+        step = 1.0 / nbins
+        range_values = np.arange(0,1.00001,step)
+        print(range_values)
+        list_values = []
+        numb_samples = self.pred.shape[1]
+        class_pred = np.argmax(self.pred,0)
+        for k in range(self.pred.shape[0]):
+            list_values_k = []
+            for (l,u) in zip(range_values[:-1],range_values[1:]):
+                ref_tmp = np.where(np.logical_and(self.pred[k,:]>l, self.pred[k,:]<=u),self.ref,np.ones_like(self.ref)*-1)
+                ref_sel = ref_tmp[ref_tmp>-1]
+                ref_selk = np.where(ref_sel==k, np.ones_like(ref_sel), np.zeros_like(ref_sel))
+                nsamples = np.size(ref_sel)
+                prop = np.sum(ref_selk)/nsamples
+                pred_tmp = np.where(np.logical_and(self.pred[k,:]>l, self.pred[k,:]<=u),self.pred[k,:],np.ones_like(self.pred[k,:])*-1)
+                pred_sel = pred_tmp[pred_tmp>-1]
+                if nsamples == 0 :
+                    list_values_k.append(0)
+                else:
+                    list_values_k.append(nsamples * np.abs(prop-np.mean(pred_sel)))
+                
+            print(list_values,numb_samples)
+            list_values.append(np.sum(np.asarray(list_values_k))/numb_samples)
+        print(list_values)
+        cwece = np.sum(np.asarray(list_values))/self.pred.shape[0]
+        return cwece
+            
+    
     def expectation_calibration_error(self):
         if 'bins_ece' in self.dict_args:
             nbins = self.dict_args['bins_ece']
