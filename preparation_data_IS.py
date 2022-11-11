@@ -1,10 +1,10 @@
 import glob
-from processes.overall_process import ProcessEvaluation
+from MetricsReloaded.processes.overall_process import ProcessEvaluation
 import os
 import nibabel as nib
 import pickle as pkl
 import pandas as pd
-from utility.utils import MorphologyOps
+from MetricsReloaded.utility.utils import MorphologyOps
 
 
 list_reffile = glob.glob('examples/data/Ref/CorrectLesion*CLA*')
