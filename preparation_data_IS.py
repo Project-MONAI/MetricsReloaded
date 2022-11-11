@@ -7,8 +7,10 @@ import pandas as pd
 from MetricsReloaded.utility.utils import MorphologyOps
 
 
-list_reffile = glob.glob('examples/data/Ref/CorrectLesion*CLA*')
-list_predfile = glob.glob('examples/data/Pred/CorrectLesion*RAP94*')
+#list_reffile = glob.glob('examples/data/Ref/CorrectLesion*CLA*')
+#list_predfile = glob.glob('examples/data/Pred/CorrectLesion*RAP94*')
+list_reffile = glob.glob('examples/data/Ref/CorrectLesion*')
+list_predfile = glob.glob('examples/data/Pred/CorrectLesion*')
 list_det = []
 list_seg = []
 for f in list_reffile:
@@ -26,17 +28,12 @@ for f in list_reffile:
             ref_bin = ref>=0.5
             pred_bin = pred>=0.5
             print(f,list_pospred[0])
+            # Splitting the mask into it's component instences
             list_ref,_,_ = MorphologyOps(ref_bin, neigh=6).list_foreground_component()
             list_pred,_,_ = MorphologyOps(pred_bin,neigh=6).list_foreground_component()
-            pred_prob = []
-            pred_class = []
-            ref_class = []
-            for k in list_pred:
-                pred_class.append(1)
-                pred_prob.append(1)
-            for k in list_ref:
-                ref_class.append(1)
-            
+            pred_class = [1]*len(list_pred)
+            pred_prob = [1]*len(list_pred)
+            ref_class = [1]*len(list_ref)
             list_values = [1]
             file=list_pospred
             dict_file = {}
@@ -50,6 +47,7 @@ for f in list_reffile:
             #f = open("TestDataBRAP_%s.pkl"%name, "wb")  # Pickle file is newly created where foo1.py is
             #pkl.dump(dict_file, f)  # dump data to f
             #f.close()
+            # This does the evaluation and saves the TP FP FN (T= True, P = positive,.. )
             PE = ProcessEvaluation(
                 dict_file,
                 "Instance Segmentation",
@@ -67,6 +65,7 @@ for f in list_reffile:
             )
             df_resdet, df_resseg, df_resmt, df_resmcc = PE.process_data()
             df_resdet['id'] = name
+            # This line gives an error: Cannot save file into a non-existent directory: 'examples\results'
             df_resseg['id'] = name
             df_resdet.to_csv('examples/results/Det94AvFin_%s.csv'%name)
             df_resseg.to_csv('examples/results/Seg94AvFin_%s.csv' %name)

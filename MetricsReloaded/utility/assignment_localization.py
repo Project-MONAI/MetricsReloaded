@@ -113,6 +113,7 @@ class AssignmentMapping(object):
         """
         matrix_iou = np.zeros([self.pred_loc.shape[0], self.ref_loc.shape[0]])
         print(matrix_iou.shape, self.pred_loc.shape, self.ref_loc.shape)
+        # Iterate through the predictions and references and compute the overlap between each
         for p in range(self.pred_loc.shape[0]):
             for r in range(self.ref_loc.shape[0]):
                 PM = BinaryPairwiseMeasures(self.pred_loc[p, ...], self.ref_loc[r, ...])
