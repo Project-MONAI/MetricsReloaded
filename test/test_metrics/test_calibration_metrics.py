@@ -45,4 +45,24 @@ def test_top_label_classification_error():
     cm = CalibrationMeasures(pred_tce, ref_tce)
     value_test = cm.top_label_classification_error()
     assert_allclose(value_test, expected_tce, atol=0.001)
+
+def test_class_wise_expectation_calibration_error():
+    ref_cwece = [1, 0, 2, 1]
+    pred_cwece = [[0.1, 0.8, 0, 0.1],
+                [0.6, 0.1, 0, 0.7],
+                [0.3, 0.1, 1, 0.2 ]]
+    # 0.06 * 3
+    # 0.2 * 1
+    # 0.05 * 2
+    # 0.35 * 2
+    # 0.2 * 3
+    # 0 * 1
+    ref_cwece = np.asarray(ref_cwece)
+    pred_cwece = np.asarray(pred_cwece)
+    dict_args = {'bins_ece': 2}
+    cm = CalibrationMeasures(pred_cwece, ref_cwece, dict_args=dict_args)
+    value_test = cm.class_wise_expectation_calibration_error()
+    expected_cwece = 0.150
+    print(value_test)
+    assert_allclose(value_test, expected_cwece, atol=0.001)
     
