@@ -1,3 +1,36 @@
+# Copyright (c) Carole Sudre
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+Calibration measures - :mod:`MetricsReloaded.metrics.calibration_measures`
+==========================================================================
+
+This module provides classes for calculating :ref:`calibration
+<calibration>` measures.
+
+.. _calibration:
+
+Calculating calibration measures
+--------------------------------
+
+.. autoclass:: CalibrationMeasures
+    :members:
+
+"""
+
+
+
+
+
 import numpy as np
 #from metrics.pairwise_measures import CacheFunctionOutput
 from MetricsReloaded.utility.utils import CacheFunctionOutput,max_x_at_y_more, max_x_at_y_less, min_x_at_y_more, min_x_at_y_less, trapezoidal_integration
@@ -33,13 +66,16 @@ class CalibrationMeasures(object):
         self.measures = measures if measures is not None else self.measures_dict
 
     def class_wise_expectation_calibration_error(self):
-        """
+        r"""
         Class_wise version of the expectation calibration error
+        
         .. math::
 
             cwECE = \dfrac{1}{K}\sum_{k=1}^{K}\sum_{i=1}^{N}\dfrac{\vert B_{i,k} \vert}/N \left(y_{k}(B_{i,k}) - p_{k}(B_{i,k})\right)
 
+
         """
+
         if 'bins_ece' in self.dict_args:
             nbins = self.dict_args['bins_ece']
         else:
@@ -73,6 +109,12 @@ class CalibrationMeasures(object):
             
     
     def expectation_calibration_error(self):
+        """
+        Derives the expectation calibration error in the case of binary task
+        bins_ece is the key in the dictionary for the number of bins to consider
+        Default is 10
+        
+        """
         if 'bins_ece' in self.dict_args:
             nbins = self.dict_args['bins_ece']
         else:
@@ -151,7 +193,7 @@ class CalibrationMeasures(object):
         """
         Based on the paper Widmann, D., Lindsten, F., and Zachariah, D. 
         Calibration tests in multi-class classification: A unifying framework.
-         Advances in Neural Information Processing Systems, 32:12257–12267, 2019.
+        Advances in Neural Information Processing Systems, 32:12257–12267, 2019.
         """
         kce = 0
         return kce

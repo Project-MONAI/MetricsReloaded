@@ -1,0 +1,87 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+        
+# This file will define what the workflow consists of, that is what operations we want to perform and when. The first 
+# part names the action, the second states when the action is triggered (on push or on pull request) and on what 
+# branches (main and dev in our case).
+
+name: Unit Tests
+
+on:
+  push:
+    branches: [ main ]  # run when anything is pushed to these branches
+  pull_request:
+    branches: [ main ]  # run for the code submitted as a PR to these branches
+
+# jobs are a series of steps which run commands in the chosen virtualized environment to perform some action
+jobs:
+  build:
+
+    runs-on: ubuntu-latest  # run in Ubuntu VM, so assuming a Unix-like environment for our commands
+
+    steps:
+    # first step checks out the code into 
+    - uses: actions/checkout@v2
+
+    # Setup Python using a existing action "actions/setup-python@v2" from Github's library of actions
+    # Arguments are provided to this action using the key-values under "with"
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+
+    # Install the requirements for this library plus those for running out tests (flake8 and coverage)
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
+
+    # Run flake8 to do basic code quality checks, the output will appear in the action log
+    - name: Lint with flake8
+      run: |
+
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --exit-zero --select=E9,F63,F7,F82 --show-source --statistics
+
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics \
+          --per-file-ignores="__init__.py:F401"
+  
+    # Run the unit tests using the coverage program and create the XML output file
+    - name: Test with pytest
+      run: |
+        pytest --cov --cov-config=.coveragerc --cov-report=xml -vv
+
+    # Using Codecov's action, upload the coverage report for the triggering commit/PR
+    - name: Upload coverage
+      uses: codecov/codecov-action@v2
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: true
+        verbose: true
+        version: "v0.1.15"
+  
+  build_docs:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-docs.txt
+
+    - name: Install Metrics Reloaded
+      run: |
+        python -m pip install .
+
+    - name: Build docs
+      run: |
+        cd docs && make html
