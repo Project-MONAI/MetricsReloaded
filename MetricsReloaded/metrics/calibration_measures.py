@@ -71,7 +71,7 @@ class CalibrationMeasures(object):
         
         .. math::
 
-            cwECE = \dfrac{1}{K}\sum_{k=1}^{K}\sum_{i=1}^{N}\dfrac{\vert B_{i,k} \vert}/N \left(y_{k}(B_{i,k}) - p_{k}(B_{i,k})\right)
+            cwECE = \dfrac{1}{K}\sum_{k=1}^{K}\sum_{i=1}^{N}\dfrac{\vert B_{i,k} \vert}{N} \left(y_{k}(B_{i,k}) - p_{k}(B_{i,k})\right)
 
 
         """
