@@ -71,7 +71,7 @@ class CalibrationMeasures(object):
         
         .. math::
 
-            cwECE = \dfrac{1}{K}\sum_{k=1}^{K}\sum_{i=1}^{N}\dfrac{\vert B_{i,k} \vert}/N \left(y_{k}(B_{i,k}) - p_{k}(B_{i,k})\right)
+            cwECE = \dfrac{1}{K}\sum_{k=1}^{K}\sum_{i=1}^{N}\dfrac{\vert B_{i,k} \vert}{N} \left(y_{k}(B_{i,k}) - p_{k}(B_{i,k})\right)
 
 
         """
@@ -142,6 +142,7 @@ class CalibrationMeasures(object):
     def brier_score(self):
         """ 
         Calculation of the Brier score https://en.wikipedia.org/wiki/Brier_score
+        here considering prediction probabilities as a vector of dimension N samples
         """
         bs = np.mean(np.square(self.ref - self.pred))
         return bs
@@ -187,9 +188,7 @@ class CalibrationMeasures(object):
         cwbs = 0
         return cwbs
 
-    def class_wise_calibration_error(self):
-        cwce = 0
-        return cwce
+    
 
     def kernel_calibration_error(self):
         """
@@ -201,7 +200,17 @@ class CalibrationMeasures(object):
         return kce
 
     def negative_log_likelihood(self):
-        nll = 0
+        """
+        Derives the negative log-likelihood defined as 
+
+        .. math::
+
+            -\sum_{i=1}{N} log(p_{i,k} | y_i=k)
+            
+        """
+        log_pred = np.log(self.pred)
+        ll = np.sum(log_pred[self.ref,range(self.pred.shape[1])])
+        nll = -1*ll
         return nll
 
     def root_brier_score(self):
