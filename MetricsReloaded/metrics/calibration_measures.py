@@ -142,6 +142,7 @@ class CalibrationMeasures(object):
     def brier_score(self):
         """ 
         Calculation of the Brier score https://en.wikipedia.org/wiki/Brier_score
+        here considering prediction probabilities as a vector of dimension N samples
         """
         bs = np.mean(np.square(self.ref - self.pred))
         return bs
@@ -199,6 +200,14 @@ class CalibrationMeasures(object):
         return kce
 
     def negative_log_likelihood(self):
+        """
+        Derives the negative log-likelihood defined as 
+
+        .. math::
+
+            -\sum_{i=1}{N} log(p_{i,k} | y_i=k)
+            
+        """
         log_pred = np.log(self.pred)
         ll = np.sum(log_pred[self.ref,range(self.pred.shape[1])])
         nll = -1*ll

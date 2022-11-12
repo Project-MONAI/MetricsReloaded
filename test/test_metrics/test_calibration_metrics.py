@@ -77,4 +77,6 @@ def test_class_wise_expectation_calibration_error():
     expected_cwece = 0.150
     print(value_test)
     assert_allclose(value_test, expected_cwece, atol=0.001)
+
+
     
