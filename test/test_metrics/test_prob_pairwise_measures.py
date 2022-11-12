@@ -18,5 +18,21 @@ def test_auc():
     print(value_test)
     expected_auc = 0.78
     assert_allclose(value_test, expected_auc, atol=0.01)
-    
+
+def test_sensitivity_at_specificity():
+    ref = np.concatenate([np.zeros([50]), np.ones([50])])
+    pred = np.arange(0,1,0.01)
+    ppm = ProbabilityPairwiseMeasures(pred, ref)
+    value_sensspec = ppm.sensitivity_at_specificity()
+    value_specsens = ppm.specificity_at_sensitivity()
+    value_sensppv = ppm.sensitivity_at_ppv()
+    value_ppvsens = ppm.ppv_at_sensitivity()
+    expected_sensatspec = 1.0
+    expected_specatsens = 1.0
+    expected_sensatppv = 1.0
+    expected_ppvatsens = 1.0
+    assert_allclose(value_sensspec, expected_sensatspec, atol=0.01)
+    assert_allclose(value_sensppv, expected_sensatppv, atol=0.01)
+    assert_allclose(value_specsens, expected_specatsens, atol=0.01)
+    assert_allclose(value_ppvsens, expected_ppvatsens, atol=0.01)
 
