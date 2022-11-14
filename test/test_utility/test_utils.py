@@ -28,3 +28,10 @@ def test_box_iou():
     expected_iou = 0.222
     value_test = box_iou(np.asarray(box1), np.asarray(box2))
     assert_allclose(value_test, expected_iou, atol=0.001)
+
+def test_box_ior():
+    box1 = [2,2,2,2,3,3]
+    box2 = [2,2,2,3,4,4]
+    expected_ior = 0.222
+    value_test = box_ior(np.asarray(box1), np.asarray(box2))
+    assert_allclose(value_test, expected_ior, atol=0.001)

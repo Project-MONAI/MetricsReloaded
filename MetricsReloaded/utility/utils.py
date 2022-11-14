@@ -142,6 +142,9 @@ def box_iou(box1, box2):
 
 
 def box_ior(box1, box2):
+    """
+    Calculates the intersection over reference between two boxes, box2 is the reference argument
+    """
     numerator = intersection_boxes(box1, box2)
     denominator = area_box(box2)
     return numerator / denominator
