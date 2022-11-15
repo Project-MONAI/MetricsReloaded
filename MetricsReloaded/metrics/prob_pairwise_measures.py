@@ -123,6 +123,8 @@ class ProbabilityPairwiseMeasures(object):
                 else:
                     unique_new_thresh.append(new_thresh)
                     current_count = 0
+            unique_new_thresh = np.asarray(unique_new_thresh)
+        unique_new_thresh = np.concatenate([unique_new_thresh, np.asarray([1+np.max(unique_thresh)])])
         list_sens = []
         list_spec = []
         list_ppv = []
@@ -133,6 +135,7 @@ class ProbabilityPairwiseMeasures(object):
             list_spec.append(self.specificity_thr(val))
             list_ppv.append(self.positive_predictive_values_thr(val))
             list_fppi.append(self.fppi_thr(val))
+        list_ppv[0] = 1.0
         return unique_new_thresh, list_sens, list_spec, list_ppv, list_fppi
 
     def __fp_map_thr(self, thresh):
@@ -272,7 +275,9 @@ class ProbabilityPairwiseMeasures(object):
             list_ppv,
             list_fppi,
         ) = self.all_multi_threshold_values()
-        ap = trapezoidal_integration(list_sens, list_ppv)
+        
+        print("From AP", list_sens, list_ppv)
+        ap = trapezoidal_integration(np.asarray(list_sens), np.asarray(list_ppv))
         # diff_ppv = np.asarray(list_ppv[1:]) - np.asarray(list_ppv[:-1])
         # diff_sens = np.asarray(list_sens[1:]) - np.asarray(list_sens[:-1])
         # bottom_rect = np.sum(np.asarray(list_ppv[:-1]) * diff_sens)
