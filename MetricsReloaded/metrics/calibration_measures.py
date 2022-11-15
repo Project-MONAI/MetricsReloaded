@@ -32,8 +32,9 @@ Calculating calibration measures
 
 
 import numpy as np
+from scipy.special import gamma
 #from metrics.pairwise_measures import CacheFunctionOutput
-from MetricsReloaded.utility.utils import CacheFunctionOutput,max_x_at_y_more, max_x_at_y_less, min_x_at_y_more, min_x_at_y_less, trapezoidal_integration
+from MetricsReloaded.utility.utils import CacheFunctionOutput,max_x_at_y_more, max_x_at_y_less, min_x_at_y_more, min_x_at_y_less, trapezoidal_integration, one_hot_encode
 
 
 __all__ = [
@@ -55,7 +56,9 @@ class CalibrationMeasures(object):
         self.measures_dict = {
             "ece": (self.expectation_calibration_error, "ECE"),
             "bs": (self.brier_score, "BS"),
-            "ls": (self.logarithmic_score, "LS")
+            "ls": (self.logarithmic_score, "LS"),
+            "cwece": (self.class_wise_expectation_calibration_error, "cwECE"),
+            "ece_kde": (self.kernel_based_ece, "ECE-KDE")
         }
 
         self.pred = pred_proba
@@ -84,17 +87,19 @@ class CalibrationMeasures(object):
         range_values = np.arange(0,1.00001,step)
         print(range_values)
         list_values = []
-        numb_samples = self.pred.shape[1]
-        class_pred = np.argmax(self.pred,0)
-        for k in range(self.pred.shape[0]):
+        numb_samples = self.pred.shape[0]
+        class_pred = np.argmax(self.pred,1)
+        nclasses = self.pred.shape[1]
+        for k in range(nclasses):
             list_values_k = []
             for (l,u) in zip(range_values[:-1],range_values[1:]):
-                ref_tmp = np.where(np.logical_and(self.pred[k,:]>l, self.pred[k,:]<=u),self.ref,np.ones_like(self.ref)*-1)
+                pred_k = self.pred[:,k]
+                ref_tmp = np.where(np.logical_and(pred_k>l, pred_k<=u),self.ref,np.ones_like(self.ref)*-1)
                 ref_sel = ref_tmp[ref_tmp>-1]
                 ref_selk = np.where(ref_sel==k, np.ones_like(ref_sel), np.zeros_like(ref_sel))
                 nsamples = np.size(ref_sel)
                 prop = np.sum(ref_selk)/nsamples
-                pred_tmp = np.where(np.logical_and(self.pred[k,:]>l, self.pred[k,:]<=u),self.pred[k,:],np.ones_like(self.pred[k,:])*-1)
+                pred_tmp = np.where(np.logical_and(pred_k>l, pred_k<=u),pred_k,np.ones_like(pred_k)*-1)
                 pred_sel = pred_tmp[pred_tmp>-1]
                 if nsamples == 0 :
                     list_values_k.append(0)
@@ -104,7 +109,7 @@ class CalibrationMeasures(object):
             print(list_values,numb_samples)
             list_values.append(np.sum(np.asarray(list_values_k))/numb_samples)
         print(list_values)
-        cwece = np.sum(np.asarray(list_values))/self.pred.shape[0]
+        cwece = np.sum(np.asarray(list_values))/nclasses
         return cwece
             
     
@@ -166,22 +171,84 @@ class CalibrationMeasures(object):
         Calculation of the top-label classification error. Assumes pred_proba a matrix K x Numb observations 
         with probability to be in class k for observation i in position (k,i)
         """
-        class_max = np.argmax(self.pred, 0)
-        prob_pred_max = np.max(self.pred, 0)
-        prob = np.zeros([self.pred.shape[0]])
+        class_max = np.argmax(self.pred, 1)
+        prob_pred_max = np.max(self.pred, 1)
+        nclasses = self.pred.shape[1]
+        numb_samples = self.pred.shape[0]
+        prob = np.zeros([nclasses])
         prob_ref_values, prob_ref_counts = np.unique(self.ref, return_counts=True)
-        for k in range(self.pred.shape[0]):
+        for k in range(nclasses):
             idx = np.where(prob_ref_values==k)
             if len(idx) == 0:
                 prob[k] = 0
             else:
-                prob[k] = prob_ref_counts[idx[0]]/self.pred.shape[1]
+                prob[k] = prob_ref_counts[idx[0]]/numb_samples
         
         prob_expected_max = prob[class_max]
         print(prob, prob_ref_counts, prob_expected_max, prob_pred_max)
         print(np.square(prob_expected_max-prob_pred_max))
         tce = np.sqrt(np.mean(np.square(prob_expected_max-prob_pred_max)))
         return tce
+
+    def kernel_based_ece(self):
+        ece_kde = 0
+        one_hot_ref = one_hot_encode(self.ref,self.pred.shape[1])
+        nclasses = self.pred.shape[1]
+        numb_samples = self.pred.shape[0]
+        print(nclasses, one_hot_ref)
+        norm_list = []
+        for j in range(numb_samples):
+            new_list = []
+            new_vect = np.zeros([nclasses])
+            for i in range(numb_samples):
+                if j != i:
+                    new_dir = self.dirichlet_kernel(j,i)
+                    new_list.append(new_dir)
+                    ref_tmp = one_hot_ref[i,:]
+                    new_add = ref_tmp*new_dir
+                    print(new_add)
+                    new_vect += new_add
+            norm = np.sum(np.asarray(new_list))
+            final_vect = new_vect / norm
+            norm_list.append(final_vect-self.pred[j,:])
+
+        full_array = np.vstack(norm_list)
+        print(full_array.shape)
+        ece_kde = np.mean(np.sqrt(np.sum(np.square(full_array),1)))
+
+        return ece_kde
+
+    def gamma_ik(self, i, k):
+        pred_ik = self.pred[i, k]
+        if 'bandwidth' in self.dict_args.keys():
+            h = self.dict_args['bandwidth']
+        else:
+            h = 0.5
+        alpha_ik = pred_ik / h + 1
+        gamma_ik = gamma(alpha_ik)
+        return gamma_ik
+
+    def dirichlet_kernel(self, j, i):
+        pred_i = self.pred[i, :]
+        pred_j = self.pred[j, :]
+        nclasses = self.pred.shape[1]
+        if 'bandwidth' in self.dict_args.keys():
+            h = self.dict_args['bandwidth']
+        else:
+            h = 0.5
+        alpha_i = pred_i / h + 1
+        numerator  = gamma(np.sum(alpha_i))
+        denominator = np.prod(gamma(alpha_i))
+        prod = 1
+        for k in range(nclasses):
+            prod *= np.power(pred_j[k], alpha_i[k]-1)
+        kernel_value = numerator / denominator * prod
+        return kernel_value
+
+
+
+
+
             
 
     def class_wise_brier_score(self):
@@ -209,7 +276,8 @@ class CalibrationMeasures(object):
             
         """
         log_pred = np.log(self.pred)
-        ll = np.sum(log_pred[self.ref,range(self.pred.shape[1])])
+        numb_samples = self.pred.shape[0]
+        ll = np.sum(log_pred[range(numb_samples), self.ref])
         nll = -1*ll
         return nll
 
