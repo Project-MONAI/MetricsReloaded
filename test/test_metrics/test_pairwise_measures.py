@@ -241,7 +241,7 @@ f59_pred2 = np.zeros([15, 15])
 f59_pred2[4:8, 5:9] = 1
 
 
-def test_ba():
+def test_balanced_accuracy():
     list_values = [0, 1, 2, 3]
     mpm = MPM(pred, ref, list_values)
     ohp = mpm.one_hot_pred().T
@@ -256,6 +256,16 @@ def test_ba():
     print(ba)
     expected_ba = 0.7071
     assert_allclose(ba,expected_ba,atol=0.001)
+
+def test_voldiff():
+    ref = np.zeros([14,14])
+    pred = np.zeros([14,14])
+    ref[2:4,2:4] = 1
+    pred[3:5,3:5]= 1
+    bpm = PM(pred,ref)
+    value_test = bpm.vol_diff()
+    expected_vdiff = 0
+    assert_allclose(value_test, expected_vdiff)
 
 def test_matthews_correlation_coefficient():
     bpm = PM(f38_pred, f38_ref)
@@ -287,11 +297,15 @@ def test_netbenefit():
     value_test = ppm.net_benefit_treated()
     ppm2 = PM(pred2, ref,dict_args={'exchange_rate':1.0/9.0})
     value_test2 = ppm2.net_benefit_treated()
+    ppm3 = PM(pred, ref)
+    value_test3 = ppm3.net_benefit_treated()
     print(value_test, value_test2)
     expected_netbenefit1 = 0.206
     expected_netbenefit2 = 0.157
+    expected_netbenefit3 = -0.429
     assert_allclose(value_test,expected_netbenefit1, atol=0.001)
     assert_allclose(value_test2, expected_netbenefit2, atol=0.001)
+    assert_allclose(value_test3, expected_netbenefit3, atol=0.001)
     
 def test_cohenskappa2():
     bpm = PM(f38_pred, f38_ref)
@@ -355,15 +369,29 @@ def test_mcc():
     print(mcc)
     assert mcc < 1
 
+def test_distance_empty():
+    pred = np.zeros([14,14])
+    ref = np.zeros([14,14])
+    bpm = PM(pred, ref)
+    value_test = bpm.measured_distance()
+    expected_dist = (0,0,0,0)
+    assert_allclose(value_test, expected_dist)
 
-def test_dsc():
+def test_dsc_fbeta():
     bpm = PM(p_pred, p_ref)
+    bpm2 = PM(p_pred, p_ref, dict_args={'fbeta':2})
     print(np.sum(p_ref), np.sum(p_pred))
     value_test = bpm.fbeta()
     print("DSC test", value_test)
     expected_dsc = 0.862
+    value_test2 = bpm.dice_score()
+    match = 'Modifying fbeta option to get dice score'
+    with pytest.warns(UserWarning, match=match):
+        value_test3 = bpm2.dice_score()
     assert_allclose(value_test, expected_dsc, atol=0.001)
-    
+    assert_allclose(value_test2, expected_dsc, atol=0.001)
+    assert_allclose(value_test3, expected_dsc, atol=0.001)
+
 def test_assd():
     bpm = PM(p_pred, p_ref)
     value_test = bpm.measured_average_distance()
@@ -401,11 +429,14 @@ def test_iou():
    
 def test_fbeta():
     pm = PM(p_large_pred1, p_large_ref)
+    pm2 = PM(p_large_pred1, p_large_ref, dict_args={'beta':1})
     value_test = pm.fbeta()
+    value_test2 = pm2.fbeta()
     print(value_test)
     expected_fbeta = 0.986
     assert_allclose(value_test, expected_fbeta, atol=0.001)
-    
+    assert_allclose(value_test2, expected_fbeta, atol=0.001)
+
 def test_sens():
     pm = PM(f27_pred1, f27_ref1)
     value_test = pm.sensitivity()
@@ -484,11 +515,67 @@ def test_cldsc():
 def test_empty_reference():
     ref = [0]
     pred = [0]
-    pm = PM(np.asarray(ref), np.asarray(pred))
+    pm = PM(np.asarray(pred), np.asarray(ref))
 
     match = "reference is empty, recall not defined"
     with pytest.warns(UserWarning, match=match):
         fbeta = pm.fbeta()
 
+    match2 = "reference empty, sensitivity not defined"
+    with pytest.warns(UserWarning,match=match2):
+        sens = pm.sensitivity()
+
+    match3 = "reference all positive, specificity not defined"
+    ref2 = [1]
+    pred2 = [1]
+    pm2 = PM(np.asarray(pred2), np.asarray(ref2))
+    with pytest.warns(UserWarning, match=match3):
+        spec = pm2.specificity()
+
     expected_fbeta = 1
     assert fbeta == expected_fbeta
+    assert sens != sens # True if nan
+    assert spec != spec # True if nan
+
+
+def test_pred_in_ref():
+    pred = np.zeros([14,14])
+    ref = np.zeros([14,14])
+    pred[2:4,2:4] = 1
+    ref[3:6,3:6] = 1
+    bpm = PM(pred, ref)
+    expected_pir = 1
+    value_test = bpm.pred_in_ref()
+    assert value_test == expected_pir
+    ref[3,3] = 0
+    bpm2 = PM(pred, ref)
+    expected_pir2 = 0
+    value_test2 = bpm2.pred_in_ref()
+    assert value_test2 == expected_pir2
+
+def test_com_empty():
+    pred0 = np.zeros([14,14])
+    ref0 = np.zeros([14,14])
+    bpm = PM(pred0, ref0)
+    value_test = bpm.com_dist()
+    value_pred = bpm.com_pred()
+    value_ref = bpm.com_ref()
+    expected_empty = -1
+    assert value_test == expected_empty
+    assert value_ref == expected_empty
+    assert value_pred == expected_empty
+
+def test_com_dist():
+    pred = np.zeros([14,14])
+    ref = np.zeros([14,14])
+    pred[0:5,0:5] = 1
+    ref[0:5,0:5] = 1
+    bpm = PM(pred, ref)
+    value_dist = bpm.com_dist()
+    value_pred = bpm.com_pred()
+    value_ref = bpm.com_ref()
+    expected_dist = 0
+    expected_com  = (2,2)
+    assert_allclose(value_pred, expected_com)
+    assert_allclose(value_ref, expected_com)
+    assert_allclose(value_dist, expected_dist, atol=0.01)

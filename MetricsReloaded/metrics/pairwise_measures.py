@@ -324,6 +324,12 @@ class BinaryPairwiseMeasures(object):
         self.pred = pred
         self.ref = ref
         self.flag_empty = empty
+        self.flag_empty_pred = False
+        self.flag_empty_ref = False
+        if np.sum(self.pred) == 0:
+            self.flag_empty_pred = True
+        if np.sum(self.ref) ==0 :
+            self.flag_empty_ref = True
         self.measures = measures if measures is not None else self.measures_dict
         self.neigh = num_neighbors
         self.pixdim = pixdim
@@ -367,7 +373,7 @@ class BinaryPairwiseMeasures(object):
 
     def __union_map(self):
         """
-        This function calculates the union map between predmentation and
+        This function calculates the union map between prediction and
         reference image
         :return: union map
         """
@@ -375,7 +381,7 @@ class BinaryPairwiseMeasures(object):
 
     def __intersection_map(self):
         """
-        This function calculates the intersection between predmentation and
+        This function calculates the intersection between prediction and
         reference image
         :return: intersection map
         """
@@ -563,6 +569,16 @@ class BinaryPairwiseMeasures(object):
             return numerator / denominator
 
     def net_benefit_treated(self):
+        """
+        This functions calculates the net benefit treated according to a specified exchange rate
+
+        .. math::
+
+            NB = \dfrac{TP}{N} - \dfrac{FP}{N} \dot ER
+        
+        where ER relates to the exchange rate. For instance if a suitable exchange rate is to find 
+        1 positive case among 10 tested (1TP for 9 FP), the exchange rate would be 1/9
+        """
         if 'exchange_rate' in self.dict_args.keys():
             er = self.dict_args['exchange_rate']
         else:
@@ -596,7 +612,7 @@ class BinaryPairwiseMeasures(object):
     def dice_score(self):
         """
         This function returns the dice score coefficient between a reference
-        and predmentation images
+        and prediction images
         :return: dice score
         """
         if not 'fbeta' in self.dict_args.keys():
@@ -640,7 +656,7 @@ class BinaryPairwiseMeasures(object):
         :return:
         """
         print("pred sum ", self.n_pos_pred(), "ref_sum ", self.n_pos_ref())
-        if self.flag_empty:
+        if self.flag_empty_pred or self.flag_empty_ref:
             return -1
         else:
             com_ref = compute_center_of_mass(self.ref)
@@ -663,17 +679,19 @@ class BinaryPairwiseMeasures(object):
     def com_ref(self):
         """
         This function calculates the centre of mass of the reference
-        predmentation
+        prediction
         :return:
         """
+        if self.flag_empty_ref:
+            return -1
         return ndimage.center_of_mass(self.ref)
 
     def com_pred(self):
         """
         This functions provides the centre of mass of the predmented element
-        :return:
+        :return: -1 if empty image, centre of mass of prediction otherwise
         """
-        if self.flag_empty:
+        if self.flag_empty_pred:
             return -1
         else:
             return ndimage.center_of_mass(self.pred)
@@ -686,7 +704,7 @@ class BinaryPairwiseMeasures(object):
     def vol_diff(self):
         """
         This function calculates the ratio of difference in volume between
-        the reference and predmentation images.
+        the reference and prediction images.
         :return: vol_diff
         """
         return np.abs(self.n_pos_ref() - self.n_pos_pred()) / self.n_pos_ref()
@@ -747,7 +765,7 @@ class BinaryPairwiseMeasures(object):
     def border_distance(self):
         """
         This functions determines the map of distance from the borders of the
-        predmentation and the reference and the border maps themselves
+        prediction and the reference and the border maps themselves
         :return: distance_border_ref, distance_border_pred, border_ref,
         border_pred
         """
@@ -781,18 +799,19 @@ class BinaryPairwiseMeasures(object):
         denominator = np.sum(border_ref) + np.sum(border_pred)
         return numerator / denominator
 
-    def measured_distance(self, perc=95):
+    def measured_distance(self):
         """
         This functions calculates the average symmetric distance and the
-        hausdorff distance between a predmentation and a reference image
-        :return: hausdorff distance and average symmetric distance
+        hausdorff distance between a prediction and a reference image
+        :return: hausdorff distance and average symmetric distance, hausdorff distance at perc 
+        and masd
         """
         if 'hd_perc' in self.dict_args.keys():
             perc = self.dict_args['hd_perc']
         else:
-            perc = perc
+            perc = 95
         if np.sum(self.pred + self.ref) == 0:
-            return 0, 0, 0
+            return 0, 0, 0, 0
         (
             ref_border_dist,
             pred_border_dist,
@@ -829,7 +848,7 @@ class BinaryPairwiseMeasures(object):
     def measured_average_distance(self):
         """
         This function returns only the average distance when calculating the
-        distances between predmentation and reference
+        distances between prediction and reference
         :return:
         """
         return self.measured_distance()[1]
@@ -840,17 +859,13 @@ class BinaryPairwiseMeasures(object):
     def measured_hausdorff_distance(self):
         """
         This function returns only the hausdorff distance when calculated the
-        distances between predmentation and reference
+        distances between prediction and reference
         :return:
         """
         return self.measured_distance()[0]
 
     def measured_hausdorff_distance_perc(self):
-        if "hd" in self.dict_args.keys():
-            perc = self.dict_args["hd"]
-        else:
-            perc = 95
-        return self.measured_distance(perc)[2]
+        return self.measured_distance()[2]
 
     def to_dict_meas(self, fmt="{:.4f}"):
         result_dict = {}
