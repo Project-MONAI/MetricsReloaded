@@ -241,7 +241,7 @@ f59_pred2 = np.zeros([15, 15])
 f59_pred2[4:8, 5:9] = 1
 
 
-def test_ba():
+def test_balanced_accuracy():
     list_values = [0, 1, 2, 3]
     mpm = MPM(pred, ref, list_values)
     ohp = mpm.one_hot_pred().T
@@ -369,15 +369,29 @@ def test_mcc():
     print(mcc)
     assert mcc < 1
 
+def test_distance_empty():
+    pred = np.zeros([14,14])
+    ref = np.zeros([14,14])
+    bpm = PM(pred, ref)
+    value_test = bpm.measured_distance()
+    expected_dist = (0,0,0,0)
+    assert_allclose(value_test, expected_dist)
 
-def test_dsc():
+def test_dsc_fbeta():
     bpm = PM(p_pred, p_ref)
+    bpm2 = PM(p_pred, p_ref, dict_args={'fbeta':2})
     print(np.sum(p_ref), np.sum(p_pred))
     value_test = bpm.fbeta()
     print("DSC test", value_test)
     expected_dsc = 0.862
+    value_test2 = bpm.dice_score()
+    match = 'Modifying fbeta option to get dice score'
+    with pytest.warns(UserWarning, match=match):
+        value_test3 = bpm2.dice_score()
     assert_allclose(value_test, expected_dsc, atol=0.001)
-    
+    assert_allclose(value_test2, expected_dsc, atol=0.001)
+    assert_allclose(value_test3, expected_dsc, atol=0.001)
+
 def test_assd():
     bpm = PM(p_pred, p_ref)
     value_test = bpm.measured_average_distance()
@@ -520,6 +534,9 @@ def test_empty_reference():
 
     expected_fbeta = 1
     assert fbeta == expected_fbeta
+    assert sens != sens # True if nan
+    assert spec != spec # True if nan
+
 
 def test_pred_in_ref():
     pred = np.zeros([14,14])
@@ -530,3 +547,35 @@ def test_pred_in_ref():
     expected_pir = 1
     value_test = bpm.pred_in_ref()
     assert value_test == expected_pir
+    ref[3,3] = 0
+    bpm2 = PM(pred, ref)
+    expected_pir2 = 0
+    value_test2 = bpm2.pred_in_ref()
+    assert value_test2 == expected_pir2
+
+def test_com_empty():
+    pred0 = np.zeros([14,14])
+    ref0 = np.zeros([14,14])
+    bpm = PM(pred0, ref0)
+    value_test = bpm.com_dist()
+    value_pred = bpm.com_pred()
+    value_ref = bpm.com_ref()
+    expected_empty = -1
+    assert value_test == expected_empty
+    assert value_ref == expected_empty
+    assert value_pred == expected_empty
+
+def test_com_dist():
+    pred = np.zeros([14,14])
+    ref = np.zeros([14,14])
+    pred[0:5,0:5] = 1
+    ref[0:5,0:5] = 1
+    bpm = PM(pred, ref)
+    value_dist = bpm.com_dist()
+    value_pred = bpm.com_pred()
+    value_ref = bpm.com_ref()
+    expected_dist = 0
+    expected_com  = (2,2)
+    assert_allclose(value_pred, expected_com)
+    assert_allclose(value_ref, expected_com)
+    assert_allclose(value_dist, expected_dist, atol=0.01)

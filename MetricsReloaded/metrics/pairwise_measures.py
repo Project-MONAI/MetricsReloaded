@@ -324,6 +324,12 @@ class BinaryPairwiseMeasures(object):
         self.pred = pred
         self.ref = ref
         self.flag_empty = empty
+        self.flag_empty_pred = False
+        self.flag_empty_ref = False
+        if np.sum(self.pred) == 0:
+            self.flag_empty_pred = True
+        if np.sum(self.ref) ==0 :
+            self.flag_empty_ref = True
         self.measures = measures if measures is not None else self.measures_dict
         self.neigh = num_neighbors
         self.pixdim = pixdim
@@ -650,7 +656,7 @@ class BinaryPairwiseMeasures(object):
         :return:
         """
         print("pred sum ", self.n_pos_pred(), "ref_sum ", self.n_pos_ref())
-        if self.flag_empty:
+        if self.flag_empty_pred or self.flag_empty_ref:
             return -1
         else:
             com_ref = compute_center_of_mass(self.ref)
@@ -676,6 +682,8 @@ class BinaryPairwiseMeasures(object):
         prediction
         :return:
         """
+        if self.flag_empty_ref:
+            return -1
         return ndimage.center_of_mass(self.ref)
 
     def com_pred(self):
@@ -683,7 +691,7 @@ class BinaryPairwiseMeasures(object):
         This functions provides the centre of mass of the predmented element
         :return: -1 if empty image, centre of mass of prediction otherwise
         """
-        if self.flag_empty:
+        if self.flag_empty_pred:
             return -1
         else:
             return ndimage.center_of_mass(self.pred)
@@ -791,18 +799,19 @@ class BinaryPairwiseMeasures(object):
         denominator = np.sum(border_ref) + np.sum(border_pred)
         return numerator / denominator
 
-    def measured_distance(self, perc=95):
+    def measured_distance(self):
         """
         This functions calculates the average symmetric distance and the
         hausdorff distance between a prediction and a reference image
-        :return: hausdorff distance and average symmetric distance
+        :return: hausdorff distance and average symmetric distance, hausdorff distance at perc 
+        and masd
         """
         if 'hd_perc' in self.dict_args.keys():
             perc = self.dict_args['hd_perc']
         else:
-            perc = perc
+            perc = 95
         if np.sum(self.pred + self.ref) == 0:
-            return 0, 0, 0
+            return 0, 0, 0, 0
         (
             ref_border_dist,
             pred_border_dist,
@@ -856,11 +865,7 @@ class BinaryPairwiseMeasures(object):
         return self.measured_distance()[0]
 
     def measured_hausdorff_distance_perc(self):
-        if "hd" in self.dict_args.keys():
-            perc = self.dict_args["hd"]
-        else:
-            perc = 95
-        return self.measured_distance(perc)[2]
+        return self.measured_distance()[2]
 
     def to_dict_meas(self, fmt="{:.4f}"):
         result_dict = {}
