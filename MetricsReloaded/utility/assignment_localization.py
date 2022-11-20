@@ -27,21 +27,27 @@ Performing the process associated with instance segmentation
 """
 
 
-
 import pandas as pd
 import numpy as np
 from scipy.optimize import linear_sum_assignment as lsa
 from scipy.spatial.distance import cdist
 from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures
-from MetricsReloaded.utility.utils import intersection_boxes, area_box, union_boxes, box_ior, box_iou
+from MetricsReloaded.utility.utils import (
+    intersection_boxes,
+    area_box,
+    union_boxes,
+    box_ior,
+    box_iou,
+)
 
 __all__ = [
-    'AssignmentMapping',
+    "AssignmentMapping",
 ]
+
 
 class AssignmentMapping(object):
     """
-    Class allowing the assignment and localization of individual objects of interests. 
+    Class allowing the assignment and localization of individual objects of interests.
     The localization strategies are either based on box characteristics:
     - box_iou
     - box_ior
@@ -56,6 +62,7 @@ class AssignmentMapping(object):
     - greedy_matching: based on best matching
     - greedy_performance: based on probability score
     """
+
     def __init__(
         self,
         pred_loc,
@@ -65,7 +72,7 @@ class AssignmentMapping(object):
         thresh=0.5,
         assignment="greedy_matching",
     ):
-    
+
         self.pred_loc = np.asarray(pred_loc)
         self.pred_prob = pred_prob
         # self.pred_class = pred_class
@@ -93,7 +100,7 @@ class AssignmentMapping(object):
 
     def pairwise_comdist(self):
         """
-        Creates a matrix of size numb_prediction elements x number of reference elements 
+        Creates a matrix of size numb_prediction elements x number of reference elements
         indicating the pairwise distance of the centre of mass of the location boxes
         """
         matrix_cdist = cdist(self.pred_loc, self.ref_loc)
@@ -138,7 +145,7 @@ class AssignmentMapping(object):
 
     def pairwise_maskiou(self):
         """
-        Creates a matrix of size number of prediction elements x number of reference elements 
+        Creates a matrix of size number of prediction elements x number of reference elements
         indicating the pairwise mask iou.
         """
         matrix_iou = np.zeros([self.pred_loc.shape[0], self.ref_loc.shape[0]])
@@ -163,7 +170,7 @@ class AssignmentMapping(object):
     def initial_mapping(self):
         """
         Identifies an original ideal mapping between references and prediction element for all those
-        when there is no ambiguity in the assignment (only one to one matching available). Creates the list of 
+        when there is no ambiguity in the assignment (only one to one matching available). Creates the list of
         possible options when multiple are possible and populates the relevant dataframes with performance of the
         localization metrics and the assigned score probability.
         """
@@ -238,7 +245,7 @@ class AssignmentMapping(object):
         """
         Finalise the mapping based on the initial guess by deciding on the possible ambiguities
         Returns a final pandas dataframe with all attribution and erroneous detection / non detections.
-        
+
         """
         matrix = self.matrix
         df_matching, df_fn, df_fp, list_valid = self.initial_mapping()
@@ -337,7 +344,7 @@ class AssignmentMapping(object):
     def matching_ref_predseg(self):
         """
         In case mask of individual elements are available (Instance segmentation task)
-        provides the list of true positive prediction, associated list of reference segmentation, 
+        provides the list of true positive prediction, associated list of reference segmentation,
         list of false positive masks and of false negative masks as
         returns: list_pred, list_ref, list_fp, list_fn
         """
@@ -345,8 +352,8 @@ class AssignmentMapping(object):
         df_tp = df_matching_all[
             (df_matching_all["ref"] >= 0) & (df_matching_all["pred"] >= 0)
         ]
-        df_fp = df_matching_all[(df_matching_all['ref']<0)]
-        df_fn = df_matching_all[(df_matching_all['pred']<0)]
+        df_fp = df_matching_all[(df_matching_all["ref"] < 0)]
+        df_fn = df_matching_all[(df_matching_all["pred"] < 0)]
         list_pred = []
         list_ref = []
         list_fp = []
@@ -356,7 +363,7 @@ class AssignmentMapping(object):
             list_pred.append(self.pred_loc[int(df_tp.iloc[r]["pred"]), ...])
             list_ref.append(self.ref_loc[int(df_tp.iloc[r]["ref"]), ...])
         for r in range(df_fp.shape[0]):
-            list_fp.append(self.pred_loc[int(df_fp.iloc[r]['pred']),...])
+            list_fp.append(self.pred_loc[int(df_fp.iloc[r]["pred"]), ...])
         for r in range(df_fn.shape[0]):
-            list_fn.append(self.ref_loc[int(df_fn.iloc[r]['ref']),...])
+            list_fn.append(self.ref_loc[int(df_fn.iloc[r]["ref"]), ...])
         return list_pred, list_ref, list_fp, list_fn

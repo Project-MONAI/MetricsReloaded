@@ -8,7 +8,10 @@ from MetricsReloaded.processes.mixed_measures_processes import (
     MultiLabelLocSegPairwiseMeasure,
     MultiLabelPairwiseMeasures,
 )
-from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures, MorphologyOps
+from MetricsReloaded.metrics.pairwise_measures import (
+    BinaryPairwiseMeasures,
+    MorphologyOps,
+)
 
 # from assignment_localization import AssignmentMapping
 import numpy as np
@@ -65,7 +68,7 @@ class ProcessEvaluation(object):
         flag_map=False,
         file=[],
         thresh_ass=0.5,
-        case=False
+        case=False,
     ):
         self.data = data
         self.category = category
@@ -77,10 +80,10 @@ class ProcessEvaluation(object):
         self.measures_mcc = measures_mcc
         self.measures_pcc = measures_pcc
         self.measures_detseg = measures_detseg
-        
-        self.flag_map=flag_map
-        self.thresh_ass=thresh_ass
-        self.case=case
+
+        self.flag_map = flag_map
+        self.thresh_ass = thresh_ass
+        self.case = case
 
     def process_data(self):
         data = self.data
@@ -95,7 +98,7 @@ class ProcessEvaluation(object):
                 pred_prob=data["pred_prob"],
                 ref_class=data["ref_class"],
                 pred_class=data["pred_class"],
-                file=data['file'],
+                file=data["file"],
                 flag_map=self.flag_map,
                 assignment=self.assignment,
                 localization=self.localization,
@@ -106,7 +109,7 @@ class ProcessEvaluation(object):
                 measures_detseg=self.measures_detseg,
                 thresh=self.thresh_ass,
                 list_values=data["list_values"],
-                per_case=self.case
+                per_case=self.case,
             )
             df_resseg, df_resdet, df_resmt = MLLS.per_label_dict()
         elif self.category == "Object Detection":
@@ -122,7 +125,7 @@ class ProcessEvaluation(object):
                 thresh=self.thresh_ass,
                 measures_pcc=self.measures_pcc,
                 measures_mt=self.measures_mt,
-                per_case=self.case
+                per_case=self.case,
             )
             df_resdet, df_resmt = MLDT.per_label_dict()
             df_resseg = None
@@ -137,7 +140,7 @@ class ProcessEvaluation(object):
                 measures_mcc=self.measures_mcc,
                 measures_mt=self.measures_mt,
                 list_values=data["list_values"],
-                per_case=self.case
+                per_case=self.case,
             )
             df_bin, df_mt = MLPM.per_label_dict()
             df_mcc = MLPM.multi_label_res()
@@ -188,7 +191,7 @@ def main(argv):
         "-localization",
         dest="localization",
         action="store",
-        choices=["mask_iou", "mask_ior", "box_iou", "box_ior", "box_com","mask_com"],
+        choices=["mask_iou", "mask_ior", "box_iou", "box_ior", "box_com", "mask_com"],
         default="box_iou",
         type=str,
         help="Choice of localisation method",
@@ -392,7 +395,13 @@ def main(argv):
     data = pkl.load(f)
     f.close()
     if args.task == "ILC":
-        measures_pcc = args.pcc + ['numb_ref','numb_pred','numb_tp','numb_fn','numb_fp']
+        measures_pcc = args.pcc + [
+            "numb_ref",
+            "numb_pred",
+            "numb_tp",
+            "numb_fn",
+            "numb_fp",
+        ]
 
         PE = ProcessEvaluation(
             data,
@@ -403,7 +412,13 @@ def main(argv):
             dict_args=dict_args,
         )
     elif args.task == "SS":
-        measures_overlap = args.overlap + ['numb_ref','numb_pred','numb_tp','numb_fn','numb_fp']
+        measures_overlap = args.overlap + [
+            "numb_ref",
+            "numb_pred",
+            "numb_tp",
+            "numb_fn",
+            "numb_fp",
+        ]
         PE = ProcessEvaluation(
             data,
             "Semantic Segmentation",
@@ -411,8 +426,20 @@ def main(argv):
             measures_overlap=measures_overlap,
         )
     elif args.task == "IS":
-        measures_overlap = args.overlap + ['numb_ref','numb_pred','numb_tp','numb_fn','numb_fp']
-        measures_pcc = args.pcc + ['numb_ref','numb_pred','numb_tp','numb_fn','numb_fp']
+        measures_overlap = args.overlap + [
+            "numb_ref",
+            "numb_pred",
+            "numb_tp",
+            "numb_fn",
+            "numb_fp",
+        ]
+        measures_pcc = args.pcc + [
+            "numb_ref",
+            "numb_pred",
+            "numb_tp",
+            "numb_fn",
+            "numb_fp",
+        ]
         PE = ProcessEvaluation(
             data,
             "Instance Segmentation",
@@ -426,7 +453,13 @@ def main(argv):
             dict_args=dict_args,
         )
     elif args.task == "OD":
-        measures_pcc = args.pcc + ['numb_ref','numb_pred','numb_tp','numb_fn','numb_fp']
+        measures_pcc = args.pcc + [
+            "numb_ref",
+            "numb_pred",
+            "numb_tp",
+            "numb_fn",
+            "numb_fp",
+        ]
         PE = ProcessEvaluation(
             data,
             "Object Detection",

@@ -41,7 +41,13 @@ import numpy as np
 from scipy import ndimage
 from functools import partial
 from skimage.morphology import skeletonize
-from MetricsReloaded.utility.utils import one_hot_encode, compute_center_of_mass, compute_skeleton, CacheFunctionOutput, MorphologyOps
+from MetricsReloaded.utility.utils import (
+    one_hot_encode,
+    compute_center_of_mass,
+    compute_skeleton,
+    CacheFunctionOutput,
+    MorphologyOps,
+)
 
 # from assignment_localization import AssignmentMapping
 from scipy.spatial.distance import cdist
@@ -50,98 +56,19 @@ from scipy.optimize import linear_sum_assignment as lsa
 
 
 __all__ = [
-    'MultiClassPairwiseMeasures',
-    'BinaryPairwiseMeasures',
+    "MultiClassPairwiseMeasures",
+    "BinaryPairwiseMeasures",
 ]
-
-# class CacheFunctionOutput(object):
-#     """
-#     this provides a decorator to cache function outputs
-#     to avoid repeating some heavy function computations
-#     """
-
-#     def __init__(self, func):
-#         self.func = func
-
-#     def __get__(self, obj, _=None):
-#         if obj is None:
-#             return self
-#         return partial(self, obj)  # to remember func as self.func
-
-#     def __call__(self, *args, **kw):
-#         obj = args[0]
-#         try:
-#             cache = obj.__cache
-#         except AttributeError:
-#             cache = obj.__cache = {}
-#         key = (self.func, args[1:], frozenset(kw.items()))
-#         try:
-#             value = cache[key]
-#         except KeyError:
-#             value = cache[key] = self.func(*args, **kw)
-#         return value
-
-
-
-
-
-# class MorphologyOps(object):
-#     """
-#     Class that performs the morphological operations needed to get notably
-#     connected component. To be used in the evaluation
-#     """
-
-#     def __init__(self, binary_img, neigh):
-#         self.binary_map = np.asarray(binary_img, dtype=np.int8)
-#         self.neigh = neigh
-
-#     def border_map(self):
-#         eroded = ndimage.binary_erosion(self.binary_map)
-#         border = self.binary_map - eroded
-#         return border
-
-#     def border_map2(self):
-#         """
-#         Creates the border for a 3D image
-#         :return:
-#         """
-#         west = ndimage.shift(self.binary_map, [-1, 0, 0], order=0)
-#         east = ndimage.shift(self.binary_map, [1, 0, 0], order=0)
-#         north = ndimage.shift(self.binary_map, [0, 1, 0], order=0)
-#         south = ndimage.shift(self.binary_map, [0, -1, 0], order=0)
-#         top = ndimage.shift(self.binary_map, [0, 0, 1], order=0)
-#         bottom = ndimage.shift(self.binary_map, [0, 0, -1], order=0)
-#         cumulative = west + east + north + south + top + bottom
-#         border = ((cumulative < 6) * self.binary_map) == 1
-#         return border
-
-#     def foreground_component(self):
-#         return ndimage.label(self.binary_map)
-
-#     @CacheFunctionOutput
-#     def list_foreground_component(self):
-#         labels, _ = self.foreground_component()
-#         list_ind_lab = []
-#         list_vol_lab = []
-#         list_com_lab = []
-#         list_values = np.unique(labels)
-#         for f in list_values:
-#             if f > 0:
-#                 tmp_lab = np.where(
-#                     labels == f, np.ones_like(labels), np.zeros_like(labels)
-#                 )
-#                 list_ind_lab.append(tmp_lab)
-#                 list_vol_lab.append(np.sum(tmp_lab))
-#                 list_com_lab.append(np.mean(np.asarray(np.where(tmp_lab==1)).T,0))
-#         return list_ind_lab, list_vol_lab, list_com_lab
-
-    
-    
-
 
 
 class MultiClassPairwiseMeasures(object):
-    """Class dealing with measures of direct multi-class such as MCC, Cohen's kappa or balanced accuracy"""
+    """
+
+    Class dealing with measures of direct multi-class such as MCC, Cohen's kappa, Expected cost
+    or balanced accuracy
+
+
+    """
 
     def __init__(self, pred, ref, list_values, measures=[], dict_args={}):
         self.pred = np.asarray(pred, dtype=np.int32)
@@ -153,21 +80,21 @@ class MultiClassPairwiseMeasures(object):
             "mcc": (self.matthews_correlation_coefficient, "MCC"),
             "wck": (self.weighted_cohens_kappa, "WCK"),
             "balanced_accuracy": (self.balanced_accuracy, "BAcc"),
-            "expected_cost": (self.expected_cost, "EC")
+            "expected_cost": (self.expected_cost, "EC"),
         }
 
     def expected_cost(self):
         cm = self.confusion_matrix()
-        priors = np.sum(cm,0)/np.sum(cm)
-        #print(priors,cm)
-        numb_perc = np.sum(cm,0)
+        priors = np.sum(cm, 0) / np.sum(cm)
+        # print(priors,cm)
+        numb_perc = np.sum(cm, 0)
         rmatrix = cm / numb_perc
-        prior_matrix = np.tile(priors,[cm.shape[0],1])
-        priorbased_weights = 1.0/(cm.shape[1] * prior_matrix)
+        prior_matrix = np.tile(priors, [cm.shape[0], 1])
+        priorbased_weights = 1.0 / (cm.shape[1] * prior_matrix)
         for c in range(cm.shape[0]):
-            priorbased_weights[c,c] = 0
-        if 'ec_costs' in self.dict_args.keys():
-            weights = self.dict_args['ec_costs']
+            priorbased_weights[c, c] = 0
+        if "ec_costs" in self.dict_args.keys():
+            weights = self.dict_args["ec_costs"]
         else:
             weights = priorbased_weights
         print(weights, prior_matrix, rmatrix)
@@ -176,27 +103,41 @@ class MultiClassPairwiseMeasures(object):
 
     def best_naive_ec(self):
         cm = self.confusion_matrix()
-        priors = np.sum(cm, 0)/np.sum(cm)
-        prior_matrix = np.tile(priors,[cm.shape[0],1])
-        priorbased_weights = 1/(cm.shape[1] * prior_matrix)
+        priors = np.sum(cm, 0) / np.sum(cm)
+        prior_matrix = np.tile(priors, [cm.shape[0], 1])
+        priorbased_weights = 1 / (cm.shape[1] * prior_matrix)
         for c in range(cm.shape[0]):
-            priorbased_weights[c,c] = 0
+            priorbased_weights[c, c] = 0
 
-        if 'ec_costs' in self.dict_args.keys():
-            weights = self.dict_args['ec_costs']
+        if "ec_costs" in self.dict_args.keys():
+            weights = self.dict_args["ec_costs"]
         else:
             weights = priorbased_weights
-        total_cost = np.sum(weights * prior_matrix,1)
+        total_cost = np.sum(weights * prior_matrix, 1)
         return np.min(total_cost)
 
     def normalised_expected_cost(self):
         naive_cost = self.best_naive_ec()
-        #print(naive_cost)
+        # print(naive_cost)
         ec = self.expected_cost()
         print(ec, naive_cost)
         return ec / naive_cost
 
     def matthews_correlation_coefficient(self):
+        """
+        Calculates the multiclass Matthews Correlation Coefficient defined as
+
+        .. math::
+
+            R_k = \dfrac{cov_k(Pred,Ref)}{\sqrt{cov_k(Pred,Pred)*cov_k(Ref,Ref)}}
+
+        with
+
+        .. math::
+            cov_k(X,Y) = \dfrac{1}{K}\sum_{k=1}^{K}cov(X_k,Y_k)
+
+        :return: Matthews Correlation Coefficient
+        """
         one_hot_pred = one_hot_encode(self.pred, len(self.list_values))
         one_hot_ref = one_hot_encode(self.ref, len(self.list_values))
         cov_pred = 0
@@ -213,7 +154,10 @@ class MultiClassPairwiseMeasures(object):
 
     def chance_agreement_probability(self):
         """Determines the probability of agreeing by chance given two classifications.
-        To be used for CK calculation"""
+        To be used for CK calculation
+
+
+        """
         chance = 0
         for f in self.list_values:
             prob_pred = len(np.where(self.pred == f)[0]) / np.size(self.pred)
@@ -222,21 +166,26 @@ class MultiClassPairwiseMeasures(object):
         return chance
 
     def confusion_matrix(self):
-        """Provides the confusion matrix Prediction in rows, Reference in columns"""
+        """
+        Provides the confusion matrix Prediction in rows, Reference in columns
+
+        :return: confusion_matrix
+        """
         one_hot_pred = one_hot_encode(self.pred, len(self.list_values))
         one_hot_ref = one_hot_encode(self.ref, len(self.list_values))
         confusion_matrix = np.matmul(one_hot_pred.T, one_hot_ref)
         return confusion_matrix
 
-    def one_hot_pred(self):
-        return np.eye(np.max(self.list_values) + 1)[self.pred]
-
-    def one_hot_ref(self):
-        return np.eye(np.max(self.list_values) + 1)[self.ref]
-
     def balanced_accuracy(self):
         """Calculation of balanced accuracy as average of correctly classified
-        by reference class across all classes"""
+        by reference class across all classes
+
+        .. math::
+
+            BA = \dfrac{\sum_{k=1}^{K} \dfrac{TP_k}{TP_k+FN_k}}{K}
+
+        :return: balanced_accuracy
+        """
         cm = self.confusion_matrix()
         col_sum = np.sum(cm, 0)
         numerator = np.sum(np.diag(cm) / col_sum)
@@ -244,7 +193,11 @@ class MultiClassPairwiseMeasures(object):
         return numerator / denominator
 
     def expectation_matrix(self):
-        """Determination of the expectation matrix to be used for CK derivation"""
+        """
+        Determination of the expectation matrix to be used for CK derivation
+
+        :return: expectation_matrix
+        """
         one_hot_pred = one_hot_encode(self.pred, len(self.list_values))
         one_hot_ref = one_hot_encode(self.ref, len(self.list_values))
         pred_numb = np.sum(one_hot_pred, 0)
@@ -256,8 +209,12 @@ class MultiClassPairwiseMeasures(object):
         )
 
     def weighted_cohens_kappa(self):
-        """Derivation of weighted cohen's kappa. The weight matrix is set to 1-ID(len(list_values))
-        - cost of 1 for each error type if no weight provided"""
+        """
+        Derivation of weighted cohen's kappa. The weight matrix is set to 1-ID(len(list_values))
+        - cost of 1 for each error type if no weight provided
+
+        :return: weighted_cohens_kappa
+        """
         cm = self.confusion_matrix()
         exp = self.expectation_matrix()
         if "weights" in self.dict_args.keys():
@@ -274,12 +231,8 @@ class MultiClassPairwiseMeasures(object):
     def to_dict_meas(self, fmt="{:.4f}"):
         """Given the selected metrics provides a dictionary with relevant metrics"""
         result_dict = {}
-        # list_space = ['com_ref', 'com_pred', 'list_labels']
         for key in self.measures:
-            if len(self.measures_dict[key]) == 2:
-                result = self.measures_dict[key][0]()
-            else:
-                result = self.measures_dict[key][0](self.measures_dict[key][2])
+            result = self.measures_dict[key][0]()
             result_dict[key] = fmt.format(result)
         return result_dict  # trim the last comma
 
@@ -300,10 +253,10 @@ class BinaryPairwiseMeasures(object):
             "numb_ref": (self.n_pos_ref, "NumbRef"),
             "numb_pred": (self.n_pos_pred, "NumbPred"),
             "numb_tp": (self.n_intersection, "NumbTP"),
-            "numb_fp":(self.fp, "NumbFP"),
+            "numb_fp": (self.fp, "NumbFP"),
             "numb_fn": (self.fn, "NumbFN"),
             "accuracy": (self.accuracy, "Accuracy"),
-            "net_benefit":(self.net_benefit_treated, "NB"),
+            "net_benefit": (self.net_benefit_treated, "NB"),
             "expected_cost": (self.normalised_expected_cost, "ECn"),
             "balanced_accuracy": (self.balanced_accuracy, "BalAcc"),
             "cohens_kappa": (self.cohens_kappa, "CohensKappa"),
@@ -328,7 +281,7 @@ class BinaryPairwiseMeasures(object):
         self.flag_empty_ref = False
         if np.sum(self.pred) == 0:
             self.flag_empty_pred = True
-        if np.sum(self.ref) ==0 :
+        if np.sum(self.ref) == 0:
             self.flag_empty_ref = True
         self.measures = measures if measures is not None else self.measures_dict
         self.neigh = num_neighbors
@@ -338,6 +291,7 @@ class BinaryPairwiseMeasures(object):
     def __fp_map(self):
         """
         This function calculates the false positive map
+
         :return: FP map
         """
         ref_float = np.asarray(self.ref, dtype=np.float32)
@@ -347,6 +301,7 @@ class BinaryPairwiseMeasures(object):
     def __fn_map(self):
         """
         This function calculates the false negative map
+
         :return: FN map
         """
         ref_float = np.asarray(self.ref, dtype=np.float32)
@@ -356,6 +311,7 @@ class BinaryPairwiseMeasures(object):
     def __tp_map(self):
         """
         This function calculates the true positive map
+
         :return: TP map
         """
         ref_float = np.asarray(self.ref, dtype=np.float32)
@@ -365,6 +321,7 @@ class BinaryPairwiseMeasures(object):
     def __tn_map(self):
         """
         This function calculates the true negative map
+
         :return: TN map
         """
         ref_float = np.asarray(self.ref, dtype=np.float32)
@@ -375,6 +332,7 @@ class BinaryPairwiseMeasures(object):
         """
         This function calculates the union map between prediction and
         reference image
+
         :return: union map
         """
         return np.asarray((self.ref + self.pred) > 0.5, dtype=np.float32)
@@ -383,100 +341,200 @@ class BinaryPairwiseMeasures(object):
         """
         This function calculates the intersection between prediction and
         reference image
+
         :return: intersection map
         """
         return np.multiply(self.ref, self.pred)
 
     @CacheFunctionOutput
     def n_pos_ref(self):
+        """
+        Returns the number of elements in ref
+        """
         return np.sum(self.ref)
 
     @CacheFunctionOutput
     def n_neg_ref(self):
+        """
+        Returns the number of negative elements in ref
+        """
         return np.sum(1 - self.ref)
 
     @CacheFunctionOutput
     def n_pos_pred(self):
+        """
+        Returns the number of positive elements in the prediction
+        """
         return np.sum(self.pred)
 
     @CacheFunctionOutput
     def n_neg_pred(self):
+        """
+        Returns the number of negative elements in the prediction
+        """
         return np.sum(1 - self.pred)
 
     @CacheFunctionOutput
     def fp(self):
+        """
+        Calculates the number of FP as sum of elements in FP_map
+        """
         return np.sum(self.__fp_map())
 
     @CacheFunctionOutput
     def fn(self):
+        """
+        Calculates the number of FN as sum of elements of FN_map
+        """
         return np.sum(self.__fn_map())
 
     @CacheFunctionOutput
     def tp(self):
+        """
+        Returns the number of true positive (TP) elements
+        """
         return np.sum(self.__tp_map())
 
     @CacheFunctionOutput
     def tn(self):
+        """
+        Returns the number of True Negative (TN) elements
+        """
         return np.sum(self.__tn_map())
 
     @CacheFunctionOutput
     def n_intersection(self):
+        """
+        Returns the number of elements in the intersection of reference and prediction (=TP)
+        """
         return np.sum(self.__intersection_map())
 
     @CacheFunctionOutput
     def n_union(self):
+        """
+        Returns the number of elements in the union of reference and prediction
+
+        .. math::
+
+            U = {\vert} Pred {\vert} + {\vert} Ref {\vert} - TP
+
+        """
         return np.sum(self.__union_map())
 
     def youden_index(self):
+        """
+        Calculates the Youden Index (YI) defined as:
+
+        .. math::
+
+            YI = Specificity + Sensitivity - 1
+
+        """
         return self.specificity() + self.sensitivity() - 1
 
     def sensitivity(self):
+        """
+        Calculates the sensitivity defined as
+
+        .. math::
+
+            Sens = \dfrac{TP}{\sharp Ref}
+
+        This measure is not defined for empty reference. Will raise a warning and return a nan value
+
+        :return: sensitivity
+        """
         if self.n_pos_ref() == 0:
             warnings.warn("reference empty, sensitivity not defined")
             return np.nan
         return self.tp() / self.n_pos_ref()
 
     def specificity(self):
+        """
+        Calculates the specificity defined as
+
+        .. math::
+
+            Spec = \dfrac{TN}{\sharp {1-Ref}}
+
+        This measure is not defined when there is no reference negative. This will
+        raise a warning and return a nan
+
+        :return: specificity
+        """
         if self.n_neg_ref() == 0:
             warnings.warn("reference all positive, specificity not defined")
             return np.nan
         return self.tn() / self.n_neg_ref()
 
     def balanced_accuracy(self):
+        """
+        Calculates and returns the balanced accuracy defined for the
+        binary case as the average between sensitivity and specificity
+
+        :return: balanced accuracy
+        """
         return 0.5 * self.sensitivity() + 0.5 * self.specificity()
 
     def accuracy(self):
+        """
+        Calculate and returns the accuracy defined as
+
+        .. math::
+
+            Acc = \dfrac{TN+TP}{TN+TP+FN+FP}
+
+        :return: accuracy
+        """
         return (self.tn() + self.tp()) / (self.tn() + self.tp() + self.fn() + self.fp())
 
     def false_positive_rate(self):
+        """
+        Calculates and returns the false positive rate defined as
+
+        .. math::
+
+            FPR = \dfrac{FP}{\sharp \bar{Ref}}
+
+        :return: false positive rate
+        """
         return self.fp() / self.n_neg_ref()
 
     def normalised_expected_cost(self):
-        prior_background = (self.tn() + self.fp())/(np.size(self.ref))
-        prior_foreground = (self.tp() + self.fn())/np.size(self.ref)
+        prior_background = (self.tn() + self.fp()) / (np.size(self.ref))
+        prior_foreground = (self.tp() + self.fn()) / np.size(self.ref)
 
-        if 'cost_fn' in self.dict_args.keys():
-            c_fn = self.dict_args['cost_fn']
+        if "cost_fn" in self.dict_args.keys():
+            c_fn = self.dict_args["cost_fn"]
         else:
-            c_fn = 1.0/(2*prior_foreground)
-        if 'cost_fp' in self.dict_args.keys():
-            c_fp = self.dict_args['cost_fp']
+            c_fn = 1.0 / (2 * prior_foreground)
+        if "cost_fp" in self.dict_args.keys():
+            c_fp = self.dict_args["cost_fp"]
         else:
-            c_fp = 1.0/(2*prior_background)
-        prior_background = (self.tn() + self.fp())/(np.size(self.ref))
-        prior_foreground = (self.tp() + self.fn())/np.size(self.ref)
+            c_fp = 1.0 / (2 * prior_background)
+        prior_background = (self.tn() + self.fp()) / (np.size(self.ref))
+        prior_foreground = (self.tp() + self.fn()) / np.size(self.ref)
         alpha = c_fp * prior_background / (c_fn * prior_foreground)
         print(prior_background, prior_foreground, alpha)
-        r_fp = self.fp()/self.n_neg_ref()
-        r_fn = self.fn()/self.n_pos_ref()
+        r_fp = self.fp() / self.n_neg_ref()
+        r_fn = self.fn() / self.n_pos_ref()
         print(r_fn, r_fp)
         if alpha >= 1:
             ecn = alpha * r_fp + r_fn
         else:
-            ecn = r_fp + 1/alpha * r_fn
+            ecn = r_fp + 1 / alpha * r_fn
         return ecn
 
     def matthews_correlation_coefficient(self):
+        """
+        Calculates and returns the MCC for the binary case
+
+        .. math::
+
+            MCC = \dfrac{TP * TN - FP * FN}{(TP+FP)*(TP+FN)*(TN+FP)*(TN+FN)}
+
+        :return: MCC
+        """
         numerator = self.tp() * self.tn() - self.fp() * self.fn()
         denominator = (
             (self.tp() + self.fp())
@@ -504,6 +562,19 @@ class BinaryPairwiseMeasures(object):
         return p_e
 
     def cohens_kappa(self):
+        """
+        Calculates and return the Cohen's kappa score defined as
+
+        .. math::
+
+            CK = \dfrac{p_o - p_e}{1-p_e}
+
+        where
+
+        :math:`p_e = ` expected chance matching and :math:`p_o = `observed accuracy
+
+        :return: CK
+        """
         p_e = self.expected_matching_ck()
         p_o = self.accuracy()
         numerator = p_o - p_e
@@ -511,11 +582,25 @@ class BinaryPairwiseMeasures(object):
         return numerator / denominator
 
     def positive_likelihood_ratio(self):
+        """
+        Calculates the positive likelihood ratio
+
+        .. math::
+
+            LR+ = \dfrac{Sensitivity}{1-Specificity}
+
+        :return: LR+
+        """
         numerator = self.sensitivity()
         denominator = 1 - self.specificity()
         return numerator / denominator
 
     def pred_in_ref(self):
+        """
+        Determines if prediction and reference overlap on at least one voxel.
+
+        :return: 1 if true, 0 otherwise
+        """
         intersection = np.sum(self.pred * self.ref)
         if intersection > 0:
             return 1
@@ -523,8 +608,20 @@ class BinaryPairwiseMeasures(object):
             return 0
 
     def positive_predictive_values(self):
-        if self.n_pos_pred() == 0:
-            if self.n_pos_ref() == 0:
+        """
+        Calculates the positive predictive value
+
+        .. math::
+
+            PPV = \dfrac{TP}{TP+FP}
+
+        Not defined when no positives in the prediction - returns nan if both
+        reference and prediction empty. Returns 0 if only prediction empty
+
+        :return: PPV
+        """
+        if self.flag_empty_pred:
+            if self.flag_empty_ref:
                 warnings.warn("ref and prediction empty ppv not defined")
                 return np.nan
             else:
@@ -533,6 +630,11 @@ class BinaryPairwiseMeasures(object):
         return self.tp() / (self.tp() + self.fp())
 
     def recall(self):
+        """
+        Calculates and returns recall = sensitivity
+
+        :return: Recall = Sensitivity
+        """
         if self.n_pos_ref() == 0:
             warnings.warn("reference is empty, recall not defined")
             return np.nan
@@ -544,6 +646,19 @@ class BinaryPairwiseMeasures(object):
         return self.tp() / (self.tp() + self.fn())
 
     def fbeta(self):
+        """
+        Calculates FBeta score defined as
+
+        .. math::
+
+            F_{\\beta} = (1+{\\beta}^2) \dfrac{Precision  * Recall}{{\\beta}^2 * Precision + recall}
+
+        When :math:`{\\beta}=1` it corresponds to the dice score. The :math:`{\\beta}` parameter is
+        set up in the class dictionary of options
+
+        :return: fbeta value
+
+        """
         if "beta" in self.dict_args.keys():
             beta = self.dict_args["beta"]
         else:
@@ -574,26 +689,29 @@ class BinaryPairwiseMeasures(object):
 
         .. math::
 
-            NB = \dfrac{TP}{N} - \dfrac{FP}{N} \dot ER
-        
-        where ER relates to the exchange rate. For instance if a suitable exchange rate is to find 
+            NB = \dfrac{TP}{N} - \dfrac{FP}{N} * ER
+
+        where ER relates to the exchange rate. For instance if a suitable exchange rate is to find
         1 positive case among 10 tested (1TP for 9 FP), the exchange rate would be 1/9
+
+        :return: NB
         """
-        if 'exchange_rate' in self.dict_args.keys():
-            er = self.dict_args['exchange_rate']
+        if "exchange_rate" in self.dict_args.keys():
+            er = self.dict_args["exchange_rate"]
         else:
             er = 1
         n = np.size(self.pred)
         tp = self.tp()
         fp = self.fp()
-        nb = tp/n - fp/n * er
+        nb = tp / n - fp / n * er
         return nb
 
     def negative_predictive_values(self):
         """
         This function calculates the negative predictive value ratio between
         the number of true negatives and the total number of negative elements
-        :return:
+
+        :return: NPV
         """
         if self.tn() + self.fn() == 0:
             if self.n_neg_ref() == 0:
@@ -613,15 +731,16 @@ class BinaryPairwiseMeasures(object):
         """
         This function returns the dice score coefficient between a reference
         and prediction images
+
         :return: dice score
         """
-        if not 'fbeta' in self.dict_args.keys():
-            self.dict_args['fbeta'] = 1
-        elif self.dict_args['fbeta'] != 1:
-            warnings.warn('Modifying fbeta option to get dice score')
-            self.dict_args['fbeta'] = 1
+        if not "fbeta" in self.dict_args.keys():
+            self.dict_args["fbeta"] = 1
+        elif self.dict_args["fbeta"] != 1:
+            warnings.warn("Modifying fbeta option to get dice score")
+            self.dict_args["fbeta"] = 1
         else:
-            print('Already correct value for fbeta option')
+            print("Already correct value for fbeta option")
         return self.fbeta()
 
     def fppi(self):
@@ -636,24 +755,36 @@ class BinaryPairwiseMeasures(object):
 
     def intersection_over_reference(self):
         """
-        This function the intersection over reference ratio
-        :return:
+        This function calculates the ratio of the intersection of prediction and
+        reference over reference.
+
+        :return: IoR
         """
+        if self.flag_empty_ref:
+            warnings.warn("Empty reference")
+            return np.nan
         return self.n_intersection() / self.n_pos_ref()
 
     def intersection_over_union(self):
         """
-        This function the intersection over union ratio - Definition of
+        This function calculates the intersection of prediction and
+        reference over union - This is also the definition of
         jaccard coefficient
-        :return:
+
+        :return: IoU
         """
+        if self.flag_empty_pred and self.flag_empty_ref:
+            warnings.warn("Both reference and prediction are empty")
+            return np.nan
         return self.n_intersection() / self.n_union()
 
     def com_dist(self):
         """
         This function calculates the euclidean distance between the centres
         of mass of the reference and prediction.
-        :return:
+
+        :return: Euclidean distance between centre of mass when reference and prediction not empty
+        -1 otherwise
         """
         print("pred sum ", self.n_pos_pred(), "ref_sum ", self.n_pos_ref())
         if self.flag_empty_pred or self.flag_empty_ref:
@@ -661,7 +792,7 @@ class BinaryPairwiseMeasures(object):
         else:
             com_ref = compute_center_of_mass(self.ref)
             com_pred = compute_center_of_mass(self.pred)
-            
+
             print(com_ref, com_pred)
             if self.pixdim is not None:
                 com_dist = np.sqrt(
@@ -680,7 +811,8 @@ class BinaryPairwiseMeasures(object):
         """
         This function calculates the centre of mass of the reference
         prediction
-        :return:
+
+        :return: Centre of mass coordinates of reference when not empty, -1 otherwise
         """
         if self.flag_empty_ref:
             return -1
@@ -689,7 +821,7 @@ class BinaryPairwiseMeasures(object):
     def com_pred(self):
         """
         This functions provides the centre of mass of the predmented element
-        :return: -1 if empty image, centre of mass of prediction otherwise
+        :returns: -1 if empty image, centre of mass of prediction otherwise
         """
         if self.flag_empty_pred:
             return -1
@@ -705,17 +837,34 @@ class BinaryPairwiseMeasures(object):
         """
         This function calculates the ratio of difference in volume between
         the reference and prediction images.
+
         :return: vol_diff
         """
         return np.abs(self.n_pos_ref() - self.n_pos_pred()) / self.n_pos_ref()
 
     @CacheFunctionOutput
     def skeleton_versions(self):
+        """
+        Creates the skeletonised version of both reference and prediction
+
+        :return: skeleton_ref, skeleton_pred
+        """
         skeleton_ref = compute_skeleton(self.ref)
         skeleton_pred = compute_skeleton(self.pred)
         return skeleton_ref, skeleton_pred
 
     def topology_precision(self):
+        """
+        Calculates topology precision defined as
+
+        .. math::
+
+            Prec_{Top} = \dfrac{|S_{Pred} \cap Ref|}{|S_{Pred}|}
+
+        with :math:`S_{Pred}` the skeleton of Pred
+
+        :return: topology_precision
+        """
         skeleton_ref, skeleton_pred = self.skeleton_versions()
         numerator = np.sum(skeleton_pred * self.ref)
         denominator = np.sum(skeleton_pred)
@@ -723,6 +872,17 @@ class BinaryPairwiseMeasures(object):
         return numerator / denominator
 
     def topology_sensitivity(self):
+        """
+        Calculates the topology sensitivity defined as
+
+        .. math::
+
+            Sens_{Top} = \dfrac{|S_{Ref} \cap Pred|}{|S_{Ref}|}
+
+        with :math:`S_{Ref}` the skeleton of Ref
+
+        :return: topology_sensitivity
+        """
         skeleton_ref, skeleton_pred = self.skeleton_versions()
         numerator = np.sum(skeleton_ref * self.pred)
         denominator = np.sum(skeleton_ref)
@@ -730,6 +890,15 @@ class BinaryPairwiseMeasures(object):
         return numerator / denominator
 
     def centreline_dsc(self):
+        """
+        Calculates the centre line dice score defined as
+
+        .. math::
+
+            cDSC = 2\dfrac{Sens_{Top} * Prec_{Top}}{Sens_{Top} + Prec_{Top}}
+
+        :return: cDSC
+        """
         top_prec = self.topology_precision()
         top_sens = self.topology_sensitivity()
         numerator = 2 * top_sens * top_prec
@@ -739,22 +908,38 @@ class BinaryPairwiseMeasures(object):
     def boundary_iou(self):
         """
         This functions determines the boundary iou
+
+        :return: boundary_iou
         """
-        if 'boundary_dist' in self.dict_args.keys():
-            distance = self.dict_args['boundary_dist']
+        if "boundary_dist" in self.dict_args.keys():
+            distance = self.dict_args["boundary_dist"]
         else:
             distance = 1
         border_ref = MorphologyOps(self.ref, self.neigh).border_map()
-        distance_border_ref = ndimage.distance_transform_edt(1-border_ref)
+        distance_border_ref = ndimage.distance_transform_edt(1 - border_ref)
 
         border_pred = MorphologyOps(self.pred, self.neigh).border_map()
-        distance_border_pred = ndimage.distance_transform_edt(1-border_pred)
+        distance_border_pred = ndimage.distance_transform_edt(1 - border_pred)
 
-        lim_dbp = np.where(distance_border_pred < distance, np.ones_like(border_pred), np.zeros_like(border_pred))
-        lim_dbr = np.where(distance_border_ref < distance, np.ones_like(border_ref), np.zeros_like(border_ref))
+        lim_dbp = np.where(
+            distance_border_pred < distance,
+            np.ones_like(border_pred),
+            np.zeros_like(border_pred),
+        )
+        lim_dbr = np.where(
+            distance_border_ref < distance,
+            np.ones_like(border_ref),
+            np.zeros_like(border_ref),
+        )
 
-        intersect = np.sum(lim_dbp*lim_dbr)
-        union = np.sum(np.where(lim_dbp + lim_dbr>0,np.ones_like(border_ref),np.zeros_like(border_pred)))
+        intersect = np.sum(lim_dbp * lim_dbr)
+        union = np.sum(
+            np.where(
+                lim_dbp + lim_dbr > 0,
+                np.ones_like(border_ref),
+                np.zeros_like(border_pred),
+            )
+        )
         print(intersect, union)
         return intersect / union
         # return np.sum(border_ref * border_pred) / (
@@ -766,6 +951,7 @@ class BinaryPairwiseMeasures(object):
         """
         This functions determines the map of distance from the borders of the
         prediction and the reference and the border maps themselves
+
         :return: distance_border_ref, distance_border_pred, border_ref,
         border_pred
         """
@@ -784,6 +970,12 @@ class BinaryPairwiseMeasures(object):
         return distance_border_ref, distance_border_pred, border_ref, border_pred
 
     def normalised_surface_distance(self):
+        """
+        Calculates the normalised surface distance (NSD) between prediction and reference
+        using the distance parameter :math:`{\\tau}`
+
+        :return: NSD
+        """
         if "nsd" in self.dict_args.keys():
             tau = self.dict_args["nsd"]
         else:
@@ -803,11 +995,12 @@ class BinaryPairwiseMeasures(object):
         """
         This functions calculates the average symmetric distance and the
         hausdorff distance between a prediction and a reference image
-        :return: hausdorff distance and average symmetric distance, hausdorff distance at perc 
+
+        :return: hausdorff distance and average symmetric distance, hausdorff distance at perc
         and masd
         """
-        if 'hd_perc' in self.dict_args.keys():
-            perc = self.dict_args['hd_perc']
+        if "hd_perc" in self.dict_args.keys():
+            perc = self.dict_args["hd_perc"]
         else:
             perc = 95
         if np.sum(self.pred + self.ref) == 0:
@@ -840,16 +1033,23 @@ class BinaryPairwiseMeasures(object):
                 np.percentile(pred_border_dist[self.ref + self.pred > 0], q=perc),
             ]
         )
-        print(ref_border_dist[self.ref + self.pred > 0], pred_border_dist[self.ref + self.pred > 0])
-        print(len(ref_border_dist[self.ref + self.pred > 0]), len(pred_border_dist[self.ref + self.pred > 0]))
-        
+        print(
+            ref_border_dist[self.ref + self.pred > 0],
+            pred_border_dist[self.ref + self.pred > 0],
+        )
+        print(
+            len(ref_border_dist[self.ref + self.pred > 0]),
+            len(pred_border_dist[self.ref + self.pred > 0]),
+        )
+
         return hausdorff_distance, average_distance, hausdorff_distance_perc, masd
 
     def measured_average_distance(self):
         """
         This function returns only the average distance when calculating the
         distances between prediction and reference
-        :return:
+
+        :return: assd
         """
         return self.measured_distance()[1]
 
@@ -860,11 +1060,17 @@ class BinaryPairwiseMeasures(object):
         """
         This function returns only the hausdorff distance when calculated the
         distances between prediction and reference
-        :return:
+
+        :return: hausdorff_distance
         """
         return self.measured_distance()[0]
 
     def measured_hausdorff_distance_perc(self):
+        """
+        This function returns the xth percentile hausdorff distance
+
+        :return: hausdorff_distance_perc
+        """
         return self.measured_distance()[2]
 
     def to_dict_meas(self, fmt="{:.4f}"):
@@ -894,7 +1100,7 @@ class BinaryPairwiseMeasures(object):
 
     def to_string_dist(self, fmt="{:.4f}"):
         result_str = ""
-        
+
         for key in self.measures_dist:
             if len(self.distance_dict[key]) == 2:
                 result = self.distance_dict[key][0]()
@@ -910,7 +1116,7 @@ class BinaryPairwiseMeasures(object):
 
     def to_string_mt(self, fmt="{:.4f}"):
         result_str = ""
-        
+
         for key in self.measures_mthresh:
             if len(self.multi_thresholds_dict[key]) == 2:
                 result = self.multi_thresholds_dict[key][0]()

@@ -1,7 +1,9 @@
 import pytest
 from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures as PM
 from MetricsReloaded.metrics.pairwise_measures import MultiClassPairwiseMeasures as MPM
-from MetricsReloaded.processes.mixed_measures_processes import MultiLabelLocSegPairwiseMeasure as MLIS
+from MetricsReloaded.processes.mixed_measures_processes import (
+    MultiLabelLocSegPairwiseMeasure as MLIS,
+)
 import numpy as np
 from numpy.testing import assert_allclose
 from sklearn.metrics import cohen_kappa_score as cks
@@ -13,22 +15,25 @@ from MetricsReloaded.metrics.prob_pairwise_measures import ProbabilityPairwiseMe
 
 
 def test_auc():
-    ref = np.asarray([0,0,0,1,1,1])
-    pred_proba  = np.asarray([0.21,0.35,0.63, 0.92,0.32,0.79])
+    ref = np.asarray([0, 0, 0, 1, 1, 1])
+    pred_proba = np.asarray([0.21, 0.35, 0.63, 0.92, 0.32, 0.79])
     ppm = ProbabilityPairwiseMeasures(pred_proba, ref)
     value_test = ppm.auroc()
     print(value_test)
     expected_auc = 0.78
     assert_allclose(value_test, expected_auc, atol=0.01)
 
+
 def test_ap():
-    ref = np.asarray([0,0,0,1,1,1])
+    ref = np.asarray([0, 0, 0, 1, 1, 1])
     pred_proba = np.asarray([0.21, 0.35, 0.63, 0.92, 0.32, 0.79])
     ppm = ProbabilityPairwiseMeasures(pred_proba, ref)
     threshs = [0, 0.21, 0.32, 0.35, 0.63, 0.79, 0.92]
-    recall = [1,1,0.66667,0.66667,0.66667,0.33,0]
-    prec =[0.5, 0.6, 0.5, 0.66667, 1, 1, 1]
-    expected_ap = trapezoidal_integration(np.asarray(recall)[::-1], np.asarray(prec)[::-1])
+    recall = [1, 1, 0.66667, 0.66667, 0.66667, 0.33, 0]
+    prec = [0.5, 0.6, 0.5, 0.66667, 1, 1, 1]
+    expected_ap = trapezoidal_integration(
+        np.asarray(recall)[::-1], np.asarray(prec)[::-1]
+    )
     print("From SK", prc(ref, pred_proba))
 
     expected_aps = aps(ref, pred_proba)
@@ -36,10 +41,9 @@ def test_ap():
     assert_allclose(value_test, expected_ap, atol=0.01)
 
 
-
 def test_sensitivity_at_specificity():
     ref = np.concatenate([np.zeros([50]), np.ones([50])])
-    pred = np.arange(0,1,0.01)
+    pred = np.arange(0, 1, 0.01)
     ppm = ProbabilityPairwiseMeasures(pred, ref)
     value_sensspec = ppm.sensitivity_at_specificity()
     value_specsens = ppm.specificity_at_sensitivity()
@@ -53,4 +57,3 @@ def test_sensitivity_at_specificity():
     assert_allclose(value_sensppv, expected_sensatppv, atol=0.01)
     assert_allclose(value_specsens, expected_specatsens, atol=0.01)
     assert_allclose(value_ppvsens, expected_ppvatsens, atol=0.01)
-
