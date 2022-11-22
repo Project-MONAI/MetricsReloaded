@@ -1,4 +1,36 @@
-"""Various utility functions and classes
+"""
+Utility functions - :mod:`MetricsReloaded.utility.utils`
+========================================================
+
+This module provides functions for calculating common useful outputs and :ref:`morphological
+<morphological>` operations.
+
+.. _morphological:
+
+Calculating morphological operations
+------------------------------------
+
+.. autoclass:: MorphologyOps
+    :members:
+
+Defining utility functions
+--------------------------
+
+.. currentmodule:: MetricsReloaded.utility.utils
+
+.. autofunction:: intersection_boxes
+.. autofunction:: union_boxes
+.. autofunction:: area_box
+.. autofunction:: box_iou
+.. autofunction:: compute_center_of_mass
+.. autofunction:: distance_transform_edt
+.. autofunction:: max_x_at_y_more
+.. autofunction:: max_x_at_y_less
+.. autofunction:: min_x_at_y_more
+.. autofunction:: min_x_at_y_less
+.. autofunction:: trapezoidal_integration
+
+
 """
 from functools import partial
 
@@ -68,6 +100,12 @@ class MorphologyOps(object):
         self.neigh = neigh
 
     def border_map(self):
+        """
+        Create the border map defined as the difference between the original image 
+        and its eroded version
+
+        :return: border
+        """
         eroded = ndimage.binary_erosion(self.binary_map)
         border = self.binary_map - eroded
         return border
@@ -109,6 +147,8 @@ class MorphologyOps(object):
 def intersection_boxes(box1, box2):
     """
     Intersection between two boxes given the corners
+
+    :return: intersection 
     """
     min_values = np.minimum(box1, box2)
     max_values = np.maximum(box1, box2)
@@ -189,6 +229,9 @@ def max_x_at_y_less(x, y, cut_off):
 def min_x_at_y_less(x, y, cut_off):
     """Gets min of elements in x where elements 
     in y are leq to a cut off value
+
+    :param:
+    :return: minimum of x such as y is <= cutoff
     """
     x = np.asarray(x)
     y = np.asarray(y)    
@@ -197,7 +240,11 @@ def min_x_at_y_less(x, y, cut_off):
 
 def min_x_at_y_more(x,y,cut_off):
     """Gets min of elements in x where elements in 
-    y are greater than cutoff value"""
+    y are greater than cutoff value
+    
+    :param: x, y, cutoff
+    :return: min of x where y >= cut_off
+    """
     x = np.asarray(x)
     y = np.asarray(y)    
     ix = np.where(y >= cut_off)

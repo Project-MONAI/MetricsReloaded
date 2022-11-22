@@ -15,59 +15,61 @@ from __future__ import unicode_literals
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('...'))
+
+sys.path.insert(0, os.path.abspath("..."))
 
 # -- Project information -----------------------------------------------------
 
-project = 'Metrics Reloaded'
-year = '2022'
-author = 'Carole Sudre'
-copyright = '{0}, {1}'.format(year, author)
+project = "Metrics Reloaded"
+year = "2022"
+author = "Carole Sudre"
+copyright = "{0}, {1}".format(year, author)
 
 # The full version, including alpha/beta/rc tags
-version = release = '0.1.0'
+version = release = "0.1.0"
 
 # -- General configuration ---------------------------------------------------
 autodoc_mock_imports = [
-    'numpy',
-    'scipy',
-    'pandas',
-    'sklearn',
-    'skimage',
-    'nibabel',
+    "numpy",
+    "scipy",
+    "pandas",
+    "sklearn",
+    "skimage",
+    "nibabel",
 ]
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.coverage',
-    'sphinx.ext.doctest',
-    'sphinx.ext.extlinks',
-    'sphinx.ext.ifconfig',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.todo',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.intersphinx'
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.coverage",
+    "sphinx.ext.doctest",
+    "sphinx.ext.extlinks",
+    "sphinx.ext.ifconfig",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.todo",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.mathjax",
 ]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
-autodoc_typehints = 'signature'
+autodoc_typehints = "signature"
 autodoc_docstring_signature = True
-autoclass_content = 'both'
-autodoc_member_order = 'bysource'
+autoclass_content = "both"
+autodoc_member_order = "bysource"
 
 html_static_path = ["_static"]
-templates_path = ['_templates']
+templates_path = ["_templates"]
 extlinks = {
-    'issue': ('https://github.com/csudre/MetricsReloaded/issues/%s', '#'),
-    'pr': ('https://github.com/csudre/MetricsReloaded/pull/%s', 'PR #'),
+    "issue": ("https://github.com/csudre/MetricsReloaded/issues/%s", "#"),
+    "pr": ("https://github.com/csudre/MetricsReloaded/pull/%s", "PR #"),
 }
 
 # -- Options for HTML output -------------------------------------------------
@@ -77,17 +79,17 @@ extlinks = {
 #
 
 # on_rtd is whether we are on readthedocs.org
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+on_rtd = os.environ.get("READTHEDOCS", None) == "True"
 if not on_rtd:  # only set the theme if we're building docs locally
-    html_theme = 'sphinx_rtd_theme'
+    html_theme = "sphinx_rtd_theme"
 
 html_use_smartypants = True
-html_last_updated_fmt = '%b %d, %Y'
+html_last_updated_fmt = "%b %d, %Y"
 html_split_index = False
 html_sidebars = {
-   '**': ['searchbox.html', 'globaltoc.html', 'sourcelink.html'],
+    "**": ["searchbox.html", "globaltoc.html", "sourcelink.html"],
 }
-html_short_title = '%s-%s' % (project, version)
+html_short_title = "%s-%s" % (project, version)
 
 napoleon_use_ivar = True
 napoleon_use_rtype = False

@@ -1,7 +1,9 @@
 import pytest
 from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures as PM
 from MetricsReloaded.metrics.pairwise_measures import MultiClassPairwiseMeasures as MPM
-from MetricsReloaded.processes.mixed_measures_processes import MultiLabelLocSegPairwiseMeasure as MLIS
+from MetricsReloaded.processes.mixed_measures_processes import (
+    MultiLabelLocSegPairwiseMeasure as MLIS,
+)
 import numpy as np
 from numpy.testing import assert_allclose
 from sklearn.metrics import cohen_kappa_score as cks
@@ -28,6 +30,7 @@ pq_ref3 = np.zeros([21, 21])
 pq_ref3[2:7, 14:17] = 1
 pq_ref3[2:4, 12:14] = 1
 
+
 def test_mismatch_category():
     ref = [pq_ref1, pq_ref2, pq_ref3]
     pred = [pq_pred1, pq_pred2, pq_pred3, pq_pred4]
@@ -48,7 +51,6 @@ def test_mismatch_category():
     assert value_test == 0
 
 
-
 def test_panoptic_quality():
     ref = [pq_ref1, pq_ref2, pq_ref3]
     pred = [pq_pred1, pq_pred2, pq_pred3, pq_pred4]
@@ -67,4 +69,3 @@ def test_panoptic_quality():
     print("PQ ", value_test)
     expected_pq = 0.350
     assert_allclose(value_test, expected_pq, atol=0.001)
-    
