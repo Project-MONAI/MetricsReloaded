@@ -162,14 +162,25 @@ def intersection_boxes(box1, box2):
 
 
 def area_box(box1):
-    """Determines the area / volume given the coordinates of extreme corners"""
+    """
+    Determines the area / volume given the coordinates of extreme corners
+    
+    :param: box extreme corners specified as :math:`x_{min},y_{min},x_{max},y_{max}` or
+    :math:`x_{min},y_{min},z_{min},x_{max},y_{max},z_{max}` 
+    :return: area/volume of the box (in pixels/voxels)
+    """
     box_corner1 = box1[: box1.shape[0] // 2]
     box_corner2 = box1[box1.shape[0] // 2 :]
     return np.prod(box_corner2 + 1 - box_corner1)
 
 
 def union_boxes(box1, box2):
-    """Calculates the union of two boxes given their corner coordinates"""
+    """
+    Calculates the union of two boxes given their corner coordinates
+    
+    :param: box1 and box2 specified as for area_box
+    :return: union of two boxes in number of pixels
+    """
     value = area_box(box1) + area_box(box2) - intersection_boxes(box1, box2)
     return value
 
