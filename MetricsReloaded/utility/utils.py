@@ -37,6 +37,7 @@ from functools import partial
 import numpy as np
 from scipy import ndimage
 from skimage.morphology import skeletonize
+from scipy.spatial.distance import squareform, pdist
 
 
 __all__ = [
@@ -162,29 +163,55 @@ def intersection_boxes(box1, box2):
 
 
 def area_box(box1):
-    """Determines the area / volume given the coordinates of extreme corners"""
+    """
+    Determines the area / volume given the coordinates of extreme corners
+    
+    :param: box extreme corners specified as :math:`x_{min},y_{min},x_{max},y_{max}` or
+    :math:`x_{min},y_{min},z_{min},x_{max},y_{max},z_{max}` 
+    :return: area/volume of the box (in pixels/voxels)
+    """
     box_corner1 = box1[: box1.shape[0] // 2]
     box_corner2 = box1[box1.shape[0] // 2 :]
     return np.prod(box_corner2 + 1 - box_corner1)
 
 
 def union_boxes(box1, box2):
-    """Calculates the union of two boxes given their corner coordinates"""
+    """
+    Calculates the union of two boxes given their corner coordinates
+    
+    :param: box1 and box2 specified as for area_box
+    :return: union of two boxes in number of pixels
+    """
     value = area_box(box1) + area_box(box2) - intersection_boxes(box1, box2)
     return value
 
 
 def box_iou(box1, box2):
-    """Calculates the iou of two boxes given their extreme corners coordinates"""
+    """
+    Calculates the iou of two boxes given their extreme corners coordinates
+    
+    :param: box1, box2
+    :return: intersection over union of the two boxes
+    """
     numerator = intersection_boxes(box1, box2)
     denominator = union_boxes(box1, box2)
     return numerator / denominator
 
 
 def box_ior(box1, box2):
+    """
+    Calculates the intersection over reference between two boxes (reference box being the second one)
+
+    """
     numerator = intersection_boxes(box1, box2)
     denominator = area_box(box2)
     return numerator / denominator
+
+def median_heuristic(matrix_proba):
+    pairwise_dist = squareform(pdist(matrix_proba))
+    median_heuristic = np.median(pairwise_dist)
+    return median_heuristic
+
 
 
 def compute_skeleton(img):
@@ -194,9 +221,12 @@ def compute_skeleton(img):
     return skeletonize(img)
 
 
+
 def compute_center_of_mass(img):
     """
     Computes center of mass using scipy.ndimage
+
+    :param: img as multidimensional array
     """
     return ndimage.center_of_mass(img)
 

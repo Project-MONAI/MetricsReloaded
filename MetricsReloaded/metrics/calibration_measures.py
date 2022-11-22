@@ -40,6 +40,7 @@ from MetricsReloaded.utility.utils import (
     min_x_at_y_less,
     trapezoidal_integration,
     one_hot_encode,
+    median_heuristic
 )
 
 
@@ -189,6 +190,40 @@ class CalibrationMeasures(object):
         ls = np.mean(overall)
         print(ls)
         return ls
+
+    def distance_ij(self,i,j):
+        pred_i = self.pred[i,:]
+        pred_j = self.pred[j,:]
+        distance = np.sqrt(np.sum(np.square(pred_i - pred_j)))
+        return distance
+
+
+    def kernel_calculation(self, i,j):
+        distance = self.distance_ij(i,j)
+        if 'bandwidth_kce' in self.dict_args.keys():
+            bandwidth = self.dict_args['bandwidth_kce']
+        else:
+            bandwidth = median_heuristic(self.pred)
+        value = np.exp(-distance/bandwidth)
+        identity = np.ones([self.pred.shape[1], self.pred.shape[1]])
+        return value * identity
+
+    def kernel_calibration_error(self):
+        one_hot_ref = one_hot_encode(self.ref)
+        numb_samples = self.pred.shape[0]
+        sum_tot = 0
+        for i in range(0,numb_samples):
+            for j in range(0,i):
+                kernel = self.kernel_calculation(i,j)
+                vect_i = one_hot_ref[i,:] - self.pred[i,:]
+                vect_j = one_hot_ref[j,:] - self.pred[j,:]
+                value_ij = np.matmul(vect_i, np.matmul(kernel,vect_j.T))
+                sum_tot += value_ij
+        multiplicative_factor = np.math.factorial(numb_samples)/ (2 * np.math.factorial(numb_samples-2))
+        kce = 1/multiplicative_factor * sum_tot
+        return kce
+
+
 
     def top_label_classification_error(self):
         """

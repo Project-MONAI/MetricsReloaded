@@ -2,6 +2,7 @@ from MetricsReloaded.metrics.calibration_measures import CalibrationMeasures
 from numpy.testing import assert_allclose
 import numpy as np
 from scipy.special import gamma
+from MetricsReloaded.utility.utils import median_heuristic
 
 
 def test_expected_calibration_error():
@@ -101,6 +102,56 @@ def test_dirichlet_kernel():
     expected_dir = numerator * prod / denominator
     assert_allclose(value_test, expected_dir, atol=0.001)
 
+def test_kernel_calibration_error():
+    pred = [[0.1, 0.8, 0, 0.1], [0.6, 0.1, 0, 0.7], [0.3, 0.1, 1, 0.2]]
+    pred = np.asarray(pred).T
+    ref = np.asarray([1, 0, 2, 1])
+    expected_median_heuristic = 0.90
+    value_median = median_heuristic(pred)
+    assert_allclose(value_median, expected_median_heuristic, atol = 0.01)
+    kernel_01 = np.exp(-np.sqrt(0.78)/value_median) * np.ones([3,3])
+    kernel_02 = np.exp(-np.sqrt(0.86)/value_median) * np.ones([3,3])
+    kernel_03 = np.exp(-np.sqrt(0.02)/value_median) * np.ones([3,3])
+    kernel_12 = np.exp(-np.sqrt(1.26)/value_median) * np.ones([3,3])
+    kernel_13 = np.exp(-np.sqrt(0.86)/value_median) * np.ones([3,3])
+    kernel_23 = np.exp(-np.sqrt(1.14)/value_median) * np.ones([3,3])
+
+    vect_0 = np.asarray([-0.1, 0.4, -0.3])
+    vect_1 = np.asarray([0.2, -0.1, -0.1])
+    vect_2 = np.asarray([0, 0, 0])
+    vect_3 = np.asarray([-0.1, 0.3, -0.2])
+
+    val_01 = np.matmul(vect_0, np.matmul(kernel_01, vect_1.T))
+    val_02 = np.matmul(vect_0, np.matmul(kernel_02, vect_2.T))
+    val_03 = np.matmul(vect_0, np.matmul(kernel_03, vect_3.T))
+    val_12 = np.matmul(vect_1, np.matmul(kernel_12, vect_2.T))
+    val_13 = np.matmul(vect_1, np.matmul(kernel_13, vect_3.T))
+    val_23 = np.matmul(vect_2, np.matmul(kernel_23, vect_3.T))
+
+    sum_tot = val_01 + val_02 + val_03 + val_12 + val_13 + val_23
+    mult = 1/6
+    expected_kce = sum_tot * mult
+    cm = CalibrationMeasures(pred, ref)
+    value_test = cm.kernel_calibration_error()
+    assert_allclose(value_test, expected_kce, atol=0.01)
+
+    # 0.1 0.6 0.3
+    # 0.8 0.1 0.1
+    # 0 0 1
+    # 0.1 0.7 0.2
+    # 0.49+0.25+0.04
+    # 0.01 + 0.36 + 0.49 
+
+    # 0.7^2 + 0.5^2 + 0.2^2 = 0.78 0.88
+    # 0.1^2 + 0.6^2 + 0.7^2 = 0.86 0.92
+    # 0 + 0.1^2 + 0.1^2 = 0.02
+    # 0.8^2 + 0.1^2 + 0.9^2 = 1.26
+    # 0.7^2 + 0.6^2 + 0.1^2 = 0.86
+    # 0.1^2 + 0.7^2 + 0.8^2 = 1.14
+
+    # 0 0 0.02 0.78 0.86 0.86 1.14 1.26
+
+    
 
 def test_ece_kde():
     pred = [[0.1, 0.8, 0, 0.1], [0.6, 0.1, 0, 0.7], [0.3, 0.1, 1, 0.2]]
