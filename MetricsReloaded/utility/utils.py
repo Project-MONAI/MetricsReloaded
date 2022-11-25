@@ -162,6 +162,48 @@ def intersection_boxes(box1, box2):
     return np.max([0, box_intersect_area])
 
 
+def guess_input_style(a):
+    """
+    Given an array a, guess whether it represents a mask, a box or a centre of mass
+
+    """
+    print(a.ndim)
+    if a.ndim > 1:
+        return 'mask'
+    else:
+        if np.size(a) > 3:
+            return 'box'
+        else:
+            return 'com'
+
+def com_from_box(box):
+    min_corner = box[:box.shape[0]//2]
+    max_corner = box[box.shape[0]//2:]
+    aggregate = np.vstack([min_corner,max_corner])
+    com = np.mean(aggregate, 0)
+    return com
+
+def point_in_box(point, box):
+    min_corner = box[:box.shape[0]//2]
+    max_corner = box[box.shape[0]//2:]
+    diff_min = point - min_corner
+    diff_max = max_corner - point
+    diff_all = np.concatenate([diff_min, diff_max])
+    diff_select = diff_all[diff_all<0]
+    if diff_select.size > 0 :
+        return 0
+    else:
+        return 1
+
+def point_in_mask(point, mask):
+    new_mask = np.zeros_like(mask)
+    new_mask[point] = 1
+    overlap = new_mask * mask
+    if np.sum(overlap) > 0:
+        return 1
+    else:
+        return 0
+
 def area_box(box1):
     """
     Determines the area / volume given the coordinates of extreme corners
@@ -220,6 +262,12 @@ def compute_skeleton(img):
     """
     return skeletonize(img)
 
+def compute_box(img):
+    indices = np.asarray(np.where(img>0)).T
+    min_corner = np.min(indices,0)
+    max_corner = np.max(indices, 0)
+    box_final = np.concatenate([min_corner, max_corner])
+    return box_final
 
 
 def compute_center_of_mass(img):
@@ -350,6 +398,7 @@ def to_dict_meas_(measures, measures_dict, fmt="{:.4f}"):
             result = measures_dict[key][0](measures_dict[key][2])
         result_dict[key] = fmt.format(result)
     return result_dict  # trim the last comma
+
 
 
 def trapezoidal_integration(x, fx):
