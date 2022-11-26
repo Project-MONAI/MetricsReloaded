@@ -65,7 +65,7 @@ class AssignmentMapping(object):
     - mask_com
     - boundary_iou
     or using only centre of mass
-    - point_com
+    - com_dist
     or a mix of mask and box
     - point_in_box
     or of point and mask
@@ -100,30 +100,37 @@ class AssignmentMapping(object):
         self.flag_usable = flag_usable
         self.flag_predmod = flag_predmod
         self.flag_refmod = flag_refmod
-        if localization == "box_iou":
-            self.matrix = self.pairwise_boxiou()
-        elif localization == "box_com":
-            self.matrix = self.pairwise_boxcomdist()
-        elif localization == "box_ior":
-            self.matrix = self.pairwise_boxior()
-        elif localization == "mask_iou":
-            self.matrix = self.pairwise_maskiou()
-        elif localization == "mask_ior":
-            self.matrix = self.pairwise_maskior()
-        elif localization == "mask_com":
-            self.matrix = self.pairwise_maskcom()
-        elif localization == "boundary_iou":
-            self.matrix = self.pairwise_boundaryiou()
-        elif localization == "point_in_mask":
-            self.matrix = self.pairwise_pointinmask()
-        elif localization == "point_in_box":
-            self.matrix = self.pairwise_pointinbox()
-        elif localization == "point_com":
-            self.matrix = self.pairwise_pointcomdist()
-        else:
-            
-            warnings.warn("No adequate localization strategy chosen, defaulting to %s")
-        self.df_matching, self.valid = self.resolve_ambiguities_matching()
+        if self.flag_usable:
+            if localization == "box_iou":
+                self.matrix = self.pairwise_boxiou()
+            elif localization == "box_com":
+                self.matrix = self.pairwise_pointcomdist()
+            elif localization == "box_ior":
+                self.matrix = self.pairwise_boxior()
+            elif localization == "mask_iou":
+                self.matrix = self.pairwise_maskiou()
+            elif localization == "mask_ior":
+                self.matrix = self.pairwise_maskior()
+            elif localization == "mask_com":
+                self.matrix = self.pairwise_maskcom()
+            elif localization == "boundary_iou":
+                self.matrix = self.pairwise_boundaryiou()
+            elif localization == "point_in_mask":
+                self.matrix = self.pairwise_pointinmask()
+            elif localization == "point_in_box":
+                self.matrix = self.pairwise_pointinbox()
+            elif localization == "com_dist":
+                self.matrix = self.pairwise_pointcomdist()
+            else:
+                self.flag_usable = False
+                warnings.warn("No adequate localization strategy chosen - not going ahead")
+        
+        if self.localization in ['point_in_mask','point_in_box']:
+            if self.assignment == 'greedy_matching':
+                self.flag_usable = False
+                warnings.warn("The localization strategy does not provide grading. Impossible to base assignment on localization performance!")
+        if self.flag_usable:        
+            self.df_matching, self.valid = self.resolve_ambiguities_matching()
 
     
     def check_input_localization(self):
@@ -187,7 +194,7 @@ class AssignmentMapping(object):
             if input_ref == 'mask':
                 flag_refmod = True
                 warnings.warn('We will need to modify ref to make it interpretable as box corners')
-        elif self.localization == 'point_com':
+        elif self.localization == 'com_dist':
             if input_ref == 'mask':
                 flag_refmod = True
                 self.com_fromrefmask()
@@ -261,14 +268,19 @@ class AssignmentMapping(object):
         matrix_cdist = cdist(pred_coms, ref_coms)
         return matrix_cdist
 
+    
     def pairwise_pointinbox(self):
+        """
+        Creates a matrix of size number of prediction elements x number of reference elements
+        indicating binarily whether the point representing the prediction element is in the reference box
+        """
         ref_boxes = self.ref_loc
         pred_points = self.pred_loc
         if self.flag_refmod:
             ref_boxes = self.ref_loc_mod
         if self.flag_predmod:
             pred_points = self.pred_loc_mod
-        matrix_pinb = np.zeros(pred_points.shape[0],ref_boxes.shape[0])
+        matrix_pinb = np.zeros([pred_points.shape[0],ref_boxes.shape[0]])
         for (p, p_point) in enumerate(pred_points):
             for (r, r_box) in enumerate(ref_boxes):
                 matrix_pinb[p,r] = point_in_box(p_point, r_box)
@@ -281,7 +293,7 @@ class AssignmentMapping(object):
             ref_masks = self.ref_loc_mod
         if self.flag_predmod:
             pred_points = self.pred_loc_mod
-        matrix_pinm = np.zeros(pred_points.shape[0],ref_masks.shape[0])
+        matrix_pinm = np.zeros([pred_points.shape[0],ref_masks.shape[0]])
         for (p,p_point) in enumerate(pred_points):
             for (r,r_mask) in enumerate(ref_masks):
                 matrix_pinm[p, r] = point_in_mask(p_point, r_mask)
@@ -385,7 +397,7 @@ class AssignmentMapping(object):
         localization metrics and the assigned score probability.
         """
         matrix = self.matrix
-        if "com" in self.localization:
+        if self.localization in ['mask_com', 'box_com','com_dist']:
             possible_binary = np.where(
                 matrix < self.thresh, np.ones_like(matrix), np.zeros_like(matrix)
             )
@@ -490,7 +502,7 @@ class AssignmentMapping(object):
         else:
             if self.assignment == "hungarian":
                 valid_matrix = matrix[list_valid, :]
-                if self.localization != "com":
+                if self.localization not in ['mask_com', 'box_com','com_dist'] :
                     valid_matrix = 1 - valid_matrix
                 row, col = lsa(valid_matrix)
                 list_matching = []
@@ -501,7 +513,7 @@ class AssignmentMapping(object):
                     list_matching.append(df_tmp)
                 df_ordered2 = pd.concat(list_matching)
             elif self.assignment == "greedy_matching":
-                if self.localization == "com":
+                if self.localization not in ['mask_com','box_com','com_dist'] :
                     df_ordered = df_matching.sort_values("performance").drop_duplicates(
                         "pred"
                     )

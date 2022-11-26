@@ -197,8 +197,12 @@ def point_in_box(point, box):
 
 def point_in_mask(point, mask):
     new_mask = np.zeros_like(mask)
-    new_mask[point] = 1
-    overlap = new_mask * mask
+    if new_mask.ndim == 2:
+        new_mask[point[0],point[1]] = 1
+    else:
+        new_mask[point[0],point[1],point[2]] = 1
+    overlap = np.multiply(new_mask, mask)
+    print(point, new_mask, overlap, 'sum_overlap ', np.sum(overlap))
     if np.sum(overlap) > 0:
         return 1
     else:
