@@ -67,13 +67,15 @@ The MetricsReloaded metrics can then be used in, e.g., a MONAI training script a
         CategoricalMetric4Monai,
     )
 
-    # Example of using one of the binary pair-wise metrics
-    metric = CategoricalMetric4Monai(metric_name="Cohens Kappa")
+    # Use binary pair-wise metrics
+    metric_name = "Cohens Kappa"
+    metric = BinaryMetric4Monai(metric_name=metric_name)
     metric(y_pred=y_pred, y=y)
     value = metric.aggregate().item()
 
-    # Example of using one of the cateogrical pair-wise metrics
-    metric = CategoricalMetric4Monai(metric_name="Matthews Correlation Coefficient")
+    # Use categorical pair-wise metric
+    metric_name = "Matthews Correlation Coefficient"
+    metric = CategoricalMetric4Monai(metric_name=metric_name)
     metric(y_pred=y_pred, y=y)
     value = metric.aggregate().item()
 
