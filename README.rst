@@ -51,6 +51,32 @@ You can alternatively install the package in editable mode:
 
 This is useful if you are developing MetricsReloaded and want to see changes in the code automatically applied to the installed library.
 
+With MONAI support
+---------
+
+Install the package as:
+
+    python -m pip install .[monai]
+
+to ensure that the MONAI dependency is installed.
+
+The MetricsReloaded metrics can then be used in, e.g., a MONAI training script as::
+
+    from MetricsReloaded.metrics.monai_wrapper import (
+        BinaryMetric4Monai,
+        CategoricalMetric4Monai,
+    )
+
+    # Example of using one of the binary pair-wise metrics
+    metric = CategoricalMetric4Monai(metric_name="Cohens Kappa")
+    metric(y_pred=y_pred, y=y)
+    value = metric.aggregate().item()
+
+    # Example of using one of the cateogrical pair-wise metrics
+    metric = CategoricalMetric4Monai(metric_name="Matthews Correlation Coefficient")
+    metric(y_pred=y_pred, y=y)
+    value = metric.aggregate().item()
+
 Overview
 ========
 

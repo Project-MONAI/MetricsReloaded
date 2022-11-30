@@ -214,12 +214,43 @@ def median_heuristic(matrix_proba):
 
 
 
-def compute_skeleton(img):
+def compute_skeleton(img, axes=None):
     """
     Computes skeleton using skimage.morphology.skeletonize
-    """
-    return skeletonize(img)
 
+    Supported input dimensions are:
+        img=(batch, channel, *spatial)
+        img=(batch, *spatial)
+        img=(*spatial)
+    where spatial can be a 2D or 3D image.
+
+    Note that, if given, this function iterates over batch and
+    channel dimensions, which is very inefficient.
+    """
+    ndimensions = len(img.shape)
+    if ndimensions < 2 or ndimensions > 5:
+        raise ValueError(
+            f"Image dimensions should be in range [2, 5], got {ndimensions}"
+        )
+    # Do we have to deal with batch/channel dimensions?
+    if axes is None:  axes = [0]
+    iter_ix = [i for i in range(0, axes[0])]
+    if not iter_ix:
+        # No
+        return skeletonize(img)
+    else:
+        # Yes
+        skeleton = np.zeros_like(img)
+        if len(iter_ix) == 1:
+            # Data has channel or batch dimension
+            for i in img.shape[0]:
+                skeleton[i, ...] = skeletonize(img[i, ...])
+        else:
+            # Data has both channel and batch dimension
+            for i0 in range(img.shape[0]):
+                for i1 in range(img.shape[1]):
+                    skeleton[i0, i1, ...] = skeletonize(img[i0, i1, ...])
+        return skeleton
 
 
 def compute_center_of_mass(img):
@@ -228,6 +259,8 @@ def compute_center_of_mass(img):
 
     :param: img as multidimensional array
     """
+    if img.sum() == 0:
+        return -1
     return ndimage.center_of_mass(img)
 
 

@@ -54,7 +54,9 @@ setup(
     },
     python_requires=">=3.7",
     install_requires=requirements,
-    extras_require={},
+    extras_require={
+        'monai': ['monai'],
+    },
     setup_requires=[
         "pytest-runner",
     ],
