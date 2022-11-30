@@ -21,7 +21,7 @@ This module provides classes for performing the evaluation processes of
 .. _instanceseg:
 
 Performing the process associated with instance segmentation
-------------------------------------
+------------------------------------------------------------
 
 .. autoclass:: MixedLocSegPairwiseMeasure
     :members:
@@ -29,19 +29,19 @@ Performing the process associated with instance segmentation
 .. _mlinstanceseg:
 
 Performing the process associated with multiple labels in instance segmentation
-----------------------------------------
+-------------------------------------------------------------------------------
 
 .. autoclass:: MultiLabelLocSegPairwiseMeasure
     :members:
 
 Performing the process associated with multiple labels in instance segmentation
-----------------------------------------
+-------------------------------------------------------------------------------
 
 .. autoclass:: MultiLabelLocMeasures
     :members:
 
 Performing the process associated with multiple labels in classification (semantic segmentation or image level classification)
-----------------------------------------
+------------------------------------------------------------------------------------------------------------------------------
 
 .. autoclass:: MultiLabelPairwiseMeasures
     :members:
@@ -228,6 +228,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
             list_pred_loc = []
             list_ref_loc = []
             for (case, name) in zip(range(len(self.pred_class)), self.names):
+                print(self.pred_prob[case], self.pred_prob[case].shape)
                 pred_class_case = np.asarray(self.pred_class[case])
                 ref_class_case = np.asarray(self.ref_class[case])
                 ind_pred = np.where(pred_class_case == lab)
@@ -245,7 +246,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
                 ind_ref = np.where(ref_class_case == lab)
                 pred_loc_tmp = [self.pred_loc[case][i] for i in ind_pred[0]]
                 ref_loc_tmp = [self.ref_loc[case][i] for i in ind_ref[0]]
-                pred_prob_tmp = [self.pred_prob[case][i] for i in ind_pred[0]]
+                pred_prob_tmp = [self.pred_prob[case][i, lab] for i in ind_pred[0]]
                 print(len(pred_loc_tmp), len(ref_loc_tmp), lab, case)
                 AS = AssignmentMapping(
                     pred_loc=pred_loc_tmp,
@@ -419,7 +420,7 @@ class MultiLabelLocMeasures(object):
                 ind_ref = np.where(ref_arr == lab)
                 pred_loc_tmp = [self.pred_loc[case][f] for f in ind_pred[0]]
                 ref_loc_tmp = [self.ref_loc[case][f] for f in ind_ref[0]]
-                pred_prob_tmp = [self.pred_prob[case][f] for f in ind_pred[0]]
+                pred_prob_tmp = [self.pred_prob[case][lab,f] for f in ind_pred[0]]
                 AS = AssignmentMapping(
                     pred_loc=pred_loc_tmp,
                     ref_loc=ref_loc_tmp,

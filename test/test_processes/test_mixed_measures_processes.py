@@ -35,12 +35,12 @@ def test_mismatch_category():
     ref = [pq_ref1, pq_ref2, pq_ref3]
     pred = [pq_pred1, pq_pred2, pq_pred3, pq_pred4]
     mlis = MLIS(
-        [[1, 1, 1, 1]],
-        ref_class=[[1, 2, 2]],
+        [[0, 0, 0, 0]],
+        ref_class=[[0, 1, 1]],
         pred_loc=[pred],
         ref_loc=[ref],
-        pred_prob=[[1, 1, 1, 1]],
-        list_values=[1, 2],
+        pred_prob=[np.asarray([[1,0], [1,0],[1,0],[1,0]])],
+        list_values=[0, 1],
         localization="mask_iou",
         measures_detseg=["PQ"],
         measures_pcc=["fbeta"],
@@ -59,7 +59,7 @@ def test_panoptic_quality():
         ref_class=[[1, 1, 1]],
         pred_loc=[pred],
         ref_loc=[ref],
-        pred_prob=[[1, 1, 1, 1]],
+        pred_prob=[np.asarray([[0,1], [0,1], [0,1], [0,1]])],
         list_values=[1],
         localization="mask_iou",
         measures_detseg=["PQ"],
