@@ -75,6 +75,7 @@ class AssignmentMapping(object):
     - hungarian: minimising assignment cost
     - greedy_matching: based on best matching
     - greedy_performance: based on probability score
+    flag_fp_in indicates whether or not to consider the double detection of reference objects as false positives or not 
     """
 
     def __init__(
@@ -85,6 +86,7 @@ class AssignmentMapping(object):
         localization="box_iou",
         thresh=0.5,
         assignment="greedy_matching",
+        flag_fp_in=True
     ):
 
         self.pred_loc = np.asarray(pred_loc)
@@ -93,6 +95,7 @@ class AssignmentMapping(object):
         self.localization = localization
         self.assignment = assignment
         self.thresh = thresh
+        self.flag_fp_in = flag_fp_in
         flag_usable, flag_predmod, flag_refmod = self.check_input_localization()
         # self.pred_class = pred_class
         
@@ -560,7 +563,10 @@ class AssignmentMapping(object):
                 list_ref_fn.append(new_dict)
             df_fp_new = pd.DataFrame.from_dict(list_pred_fp)
             df_fn_all = pd.DataFrame.from_dict(list_ref_fn)
-            df_matching_all = pd.concat([df_ordered2, df_fn_all, df_fp, df_fp_new])
+            if self.flag_fp_in:
+                df_matching_all = pd.concat([df_ordered2, df_fn_all, df_fp, df_fp_new])
+            else:
+                df_matching_all = pd.concat([df_ordered2, df_fp, df_fn_all])
             return df_matching_all, list_valid
 
     def matching_ref_predseg(self):

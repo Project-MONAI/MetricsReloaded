@@ -176,6 +176,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
         assignment="Greedy_IoU",
         localization="iou",
         thresh=0.5,
+        flag_fp_in=True,
         dict_args={},
     ):
         self.pred_loc = pred_loc
@@ -198,6 +199,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
         self.dict_args = dict_args
         self.flag_map = flag_map
         self.names = names
+        self.flag_fp_in = flag_fp_in
         if len(self.names) == 0:
             self.names = self.file
         if len(self.names) < len(self.ref_loc):
@@ -255,6 +257,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
                     assignment=self.assignment,
                     localization=self.localization,
                     thresh=self.thresh,
+                    flag_fp_in=self.flag_fp_in
                 )
 
                 pred_tmp_fin = np.asarray(AS.df_matching["pred"])
@@ -381,6 +384,7 @@ class MultiLabelLocMeasures(object):
         assignment="Greedy IoU",
         localization="iou",
         thresh=0.5,
+        flag_fp_in=True,
         dict_args={},
     ):
         self.pred_loc = pred_loc
@@ -397,6 +401,7 @@ class MultiLabelLocMeasures(object):
         self.thresh = thresh
         self.dict_args = {}
         self.names = names
+        self.flag_fp_in = flag_fp_in
         if len(self.names) < len(self.ref):
             self.names = range(len(self.ref))
 
@@ -428,6 +433,7 @@ class MultiLabelLocMeasures(object):
                     assignment=self.assignment,
                     localization=self.localization,
                     thresh=self.thresh,
+                    flag_fp_in=self.flag_fp_in
                 )
                 df_matching = AS.df_matching
                 pred_tmp_fin = np.asarray(df_matching["pred"])

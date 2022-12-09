@@ -69,6 +69,7 @@ class ProcessEvaluation(object):
         file=[],
         thresh_ass=0.5,
         case=False,
+        flag_fp_in=True,
     ):
         self.data = data
         self.category = category
@@ -84,6 +85,7 @@ class ProcessEvaluation(object):
         self.flag_map = flag_map
         self.thresh_ass = thresh_ass
         self.case = case
+        self.flag_fp_in = flag_fp_in
 
     def process_data(self):
         data = self.data
@@ -110,6 +112,7 @@ class ProcessEvaluation(object):
                 thresh=self.thresh_ass,
                 list_values=data["list_values"],
                 per_case=self.case,
+                flag_fp_in=self.flag_fp_in
             )
             df_resseg, df_resdet, df_resmt = MLLS.per_label_dict()
         elif self.category == "Object Detection":
@@ -126,6 +129,7 @@ class ProcessEvaluation(object):
                 measures_pcc=self.measures_pcc,
                 measures_mt=self.measures_mt,
                 per_case=self.case,
+                flag_fp_in=self.flag_fp_in
             )
             df_resdet, df_resmt = MLDT.per_label_dict()
             df_resseg = None
