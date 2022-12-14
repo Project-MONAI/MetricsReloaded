@@ -841,8 +841,8 @@ class BinaryPairwiseMeasures(object):
         elif self.dict_args["fbeta"] != 1:
             warnings.warn("Modifying fbeta option to get dice score")
             self.dict_args["fbeta"] = 1
-        else:
-            print("Already correct value for fbeta option")
+        # else:
+        #     print("Already correct value for fbeta option")
         return self.fbeta()
 
     def fppi(self):
@@ -884,14 +884,14 @@ class BinaryPairwiseMeasures(object):
         :return: Euclidean distance between centre of mass when reference and prediction not empty
         -1 otherwise
         """
-        print("pred sum ", self.n_pos_pred(), "ref_sum ", self.n_pos_ref())
+        # print("pred sum ", self.n_pos_pred(), "ref_sum ", self.n_pos_ref())
         if self.flag_empty_pred or self.flag_empty_ref:
             return -1
         else:
             com_ref = compute_center_of_mass(self.ref)
             com_pred = compute_center_of_mass(self.pred)
 
-            print(com_ref, com_pred)
+            # print(com_ref, com_pred)
             if self.pixdim is not None:
                 com_dist = np.sqrt(
                     np.dot(
