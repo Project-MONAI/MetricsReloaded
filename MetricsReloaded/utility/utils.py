@@ -403,6 +403,20 @@ def to_dict_meas_(measures, measures_dict, fmt="{:.4f}"):
         result_dict[key] = fmt.format(result)
     return result_dict  # trim the last comma
 
+def combine_df(df1,df2):
+    if df1 == None or df1.shape[0]==0:
+        if df2 == None:
+            return None
+        elif df2.shape[0] == 0:
+            return None
+        else:
+            return df2
+    elif df2 == None or df2.shape[0]==0:
+        return df1
+    else:
+        return pd.concat([df1, df2])
+    
+
 
 
 def trapezoidal_integration(x, fx):

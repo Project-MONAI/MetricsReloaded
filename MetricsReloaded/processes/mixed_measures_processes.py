@@ -53,6 +53,7 @@ from MetricsReloaded.metrics.pairwise_measures import (
     BinaryPairwiseMeasures,
     MultiClassPairwiseMeasures,
 )
+from MetricsReloaded.metrics.calibration_measures import CalibrationMeasures
 from MetricsReloaded.utility.assignment_localization import AssignmentMapping
 import numpy as np
 import pandas as pd
@@ -152,7 +153,11 @@ class MixedLocSegPairwiseMeasure(object):
 
 
 class MultiLabelLocSegPairwiseMeasure(object):
-    # Instance segmentation
+    """
+    This class represents the processing for instance segmentation on true positive 
+    Characterised by the predicted classes and associated reference classes
+    """
+    
     def __init__(
         self,
         pred_class,
@@ -179,6 +184,8 @@ class MultiLabelLocSegPairwiseMeasure(object):
         flag_fp_in=True,
         dict_args={},
     ):
+
+   
         self.pred_loc = pred_loc
         self.list_values = list_values
         self.ref_class = ref_class
@@ -514,6 +521,7 @@ class MultiLabelPairwiseMeasures(object):
         measures_mcc=[],
         measures_overlap=[],
         measures_boundary=[],
+        measures_calibration=[],
         num_neighbors=8,
         per_case=False,
         pixdim=[1, 1, 1],
@@ -527,6 +535,7 @@ class MultiLabelPairwiseMeasures(object):
         self.measures_binary = measures_pcc + measures_overlap + measures_boundary
         self.measures_mcc = measures_mcc
         self.measures_mt = measures_mt
+        self.measures_calibration = measures_calibration
         self.num_neighbors = num_neighbors
         self.pixdim = pixdim
         self.dict_args = dict_args
@@ -550,9 +559,8 @@ class MultiLabelPairwiseMeasures(object):
                 pred_tmp = np.where(
                     pred_case == lab, np.ones_like(pred_case), np.zeros_like(pred_case)
                 )
-                pred_proba_tmp = np.where(
-                    pred_case == lab, prob_case, np.zeros_like(prob_case)
-                )
+                pred_proba_tmp = prob_case[...,lab]
+                
                 ref_tmp = np.where(
                     ref_case == lab, np.ones_like(ref_case), np.zeros_like(ref_case)
                 )
@@ -615,10 +623,13 @@ class MultiLabelPairwiseMeasures(object):
     def multi_label_res(self):
         list_pred = []
         list_ref = []
+        list_prob = []
         list_mcc = []
+        list_cal = []
         for (case, name) in zip(range(len(self.ref)), self.names):
             pred_case = np.asarray(self.pred[case])
             ref_case = np.asarray(self.ref[case])
+            prob_case = np.asarray(self.pred_proba[case])
             if self.per_case:
                 MPM = MultiClassPairwiseMeasures(
                     pred_case,
@@ -627,17 +638,26 @@ class MultiLabelPairwiseMeasures(object):
                     measures=self.measures_mcc,
                     dict_args=self.dict_args,
                 )
+                
                 dict_mcc = MPM.to_dict_meas()
                 dict_mcc["case"] = name
                 list_mcc.append(dict_mcc)
+                CM = CalibrationMeasures(prob_case, ref_case,measures=self.measures_calibration, dict_args=self.dict_args)
+                dict_cm = CM.to_dict_meas()
+                dict_cm['case'] = name
+                list_cal.append(dict_cm)
+
             else:
                 list_pred.append(pred_case)
                 list_ref.append(ref_case)
+                list_prob.append(prob_case)
         if self.per_case:
             pd_mcc = pd.DataFrame.from_dict(list_mcc)
+            pd_cal = pd.DataFrame.from_dict(list_cal)
         else:
             overall_pred = np.concatenate(list_pred)
             overall_ref = np.concatenate(list_ref)
+            overall_prob = np.concatenate(list_prob)
             MPM = MultiClassPairwiseMeasures(
                 overall_pred,
                 overall_ref,
@@ -649,4 +669,9 @@ class MultiLabelPairwiseMeasures(object):
             dict_mcc = MPM.to_dict_meas()
             list_mcc.append(dict_mcc)
             pd_mcc = pd.DataFrame.from_dict(list_mcc)
-        return pd_mcc
+
+            CM = CalibrationMeasures(overall_prob, overall_ref,measures=self.measures_calibration)
+            dict_cal = CM.to_dict_meas()
+            list_cal.append(dict_cal)
+            pd_cal = pd.DataFrame.from_dict(list_cal)
+        return pd_mcc, pd_cal
