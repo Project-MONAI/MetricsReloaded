@@ -29,12 +29,44 @@ Performing the process associated with instance segmentation
 
 from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures
 from MetricsReloaded.processes.mixed_measures_processes import *
-
+import warnings
+from MetricsReloaded.utility.utils import combine_df
+import pandas as pd
 
 __all__ = [
     "ProcessEvaluation",
 ]
 
+MAX = 1000
+
+WORSE = {
+    "ap": 0,
+    "auroc": 0,
+    "froc": MAX,
+    "sens@spec": 0,
+    "sens@ppv": 0,
+    "spec@sens": 0,
+    "fppi@sens": MAX,
+    "ppv@sens": 0,
+    "sens@fppi": 0,
+    "fbeta": 0,
+    "accuracy": 0,
+    "balanced_accuracy": 0,
+    "lr+": 0,
+    "youden_ind": -1,
+    "mcc": 0,
+    "wck": -1,
+    "cohens_kappa": -1,
+    "iou": 0,
+    "dsc": 0,
+    "centreline_dsc": 0,
+    "masd": MAX,
+    "assd": MAX,
+    "hd_perc": MAX,
+    "hd": MAX,
+    "boundary_iou": 0,
+    "nsd": 0,
+}
 
 class ProcessEvaluation(object):
     """
@@ -45,18 +77,19 @@ class ProcessEvaluation(object):
         self,
         data,
         category,
-        localization,
-        assignment,
         measures_pcc=[],
         measures_mcc=[],
         measures_boundary=[],
         measures_overlap=[],
         measures_mt=[],
         measures_detseg=[],
+        localization='mask_iou',
+        assignment='greedy_matching',
         flag_map=False,
         file=[],
         thresh_ass=0.5,
-        case=False,
+        case=True,
+        flag_fp_in=True
     ):
         self.data = data
         self.category = category
@@ -72,6 +105,9 @@ class ProcessEvaluation(object):
         self.flag_map = flag_map
         self.thresh_ass = thresh_ass
         self.case = case
+        self.flag_fp_in = flag_fp_in
+        self.resdet, self.resseg, self.resmt, self.resmcc, self.rescal = self.process_data()
+
 
     def process_data(self):
         data = self.data
@@ -79,6 +115,7 @@ class ProcessEvaluation(object):
         df_resseg = None
         df_resmt = None
         df_resmcc = None
+        df_rescal = None
         if self.category == "Instance Segmentation":
             MLLS = MultiLabelLocSegPairwiseMeasure(
                 pred_loc=data["pred_loc"],
@@ -98,6 +135,7 @@ class ProcessEvaluation(object):
                 thresh=self.thresh_ass,
                 list_values=data["list_values"],
                 per_case=self.case,
+                flag_fp_in=self.flag_fp_in,
             )
             df_resseg, df_resdet, df_resmt = MLLS.per_label_dict()
         elif self.category == "Object Detection":
@@ -114,6 +152,7 @@ class ProcessEvaluation(object):
                 measures_pcc=self.measures_pcc,
                 measures_mt=self.measures_mt,
                 per_case=self.case,
+                flag_fp_in=self.flag_fp_in,
             )
             df_resdet, df_resmt = MLDT.per_label_dict()
             df_resseg = None
@@ -131,15 +170,73 @@ class ProcessEvaluation(object):
                 per_case=self.case,
             )
             df_bin, df_mt = MLPM.per_label_dict()
-            df_mcc = MLPM.multi_label_res()
+            df_mcc, df_cal = MLPM.multi_label_res()
             if self.category == "Image Classification":
                 df_resdet = df_bin
                 df_resseg = None
                 df_resmt = df_mt
                 df_resmcc = df_mcc
+                df_rescal = df_cal
             else:
                 df_resdet = None
                 df_resseg = df_bin
                 df_resmt = df_mt
                 df_resmcc = df_mcc
-        return df_resdet, df_resseg, df_resmt, df_resmcc
+        return df_resdet, df_resseg, df_resmt, df_resmcc, df_rescal
+
+    def complete_missing_cases(self):
+        if len(self.ref_missing) == 0:
+            return
+        if self.flag_ignore_missing:
+            warnings.warn("The set up currently ignores any missing case / dataset")
+            return 
+        else:
+            list_missing_det = []
+            list_missing_seg = []
+            list_missing_mt = []
+            list_missing_mcc = []
+            
+            if self.case:
+                for (i,f) in enumerate(self.ref_missing):
+                    dict_mt = {}
+                    dict_mcc = {}
+                    dict_seg = {}
+                    dict_det = {}
+                    dict_mcc['case'] = i
+                    for m in self.measures_mcc:
+                        dict_mcc[m] = WORSE[m]
+                    list_missing_mcc.append(dict_mcc)    
+                    for l in self.list_values:
+                        dict_seg = {}
+                        dict_mt = {}
+                        dict_det = {}
+                        dict_seg['case'] = i
+                        dict_det['case'] = i
+                        dict_mt['case'] = i
+                        dict_seg["label"] = l
+                        dict_det["label"] = l
+                        dict_mt["label"] = l
+                        for m in self.measures_boundary:
+                            dict_seg[m] = WORSE[m]
+                        for m in self.measures_overlap:
+                            dict_seg[m] = WORSE[m]
+                        for m in self.measures_pcc:
+                            dict_det[m] = WORSE[m]
+                        for m in self.measures_mt:
+                            dict_mt[m] = WORSE[m]
+                        for m in self.measures_detseg:
+                            dict_seg[m] = WORSE[m]
+                        list_missing_seg.append(dict_seg)
+                        list_missing_det.append(dict_det)
+                        list_missing_mt.append(dict_mt)
+            df_miss_det = pd.DataFrame.from_dict(list_missing_det)
+            df_miss_seg = pd.DataFrame.from_dict(list_missing_seg)
+            df_miss_mcc = pd.DataFrame.from_dict(list_missing_mcc)
+            df_miss_mt = pd.DataFrame.from_dict(list_missing_mt)
+            
+            self.resdet = combine_df(self.resdet, df_miss_det)
+            self.resseg = combine_df(self.resseg, df_miss_seg)
+            self.resmt = combine_df(self.resmt, df_miss_mt)
+            self.resmcc = combine_df(self.resmcc, df_miss_mcc)
+
+

@@ -243,7 +243,7 @@ class BinaryPairwiseMeasures(object):
         pred,
         ref,
         measures=[],
-        num_neighbors=8,
+        connectivity_type=1,
         pixdim=None,
         empty=False,
         dict_args={},
@@ -284,7 +284,7 @@ class BinaryPairwiseMeasures(object):
         if np.sum(self.ref) == 0:
             self.flag_empty_ref = True
         self.measures = measures if measures is not None else self.measures_dict
-        self.neigh = num_neighbors
+        self.connectivity = connectivity_type
         self.pixdim = pixdim
         self.dict_args = dict_args
 
@@ -915,10 +915,10 @@ class BinaryPairwiseMeasures(object):
             distance = self.dict_args["boundary_dist"]
         else:
             distance = 1
-        border_ref = MorphologyOps(self.ref, self.neigh).border_map()
+        border_ref = MorphologyOps(self.ref, self.connectivity).border_map()
         distance_border_ref = ndimage.distance_transform_edt(1 - border_ref)
 
-        border_pred = MorphologyOps(self.pred, self.neigh).border_map()
+        border_pred = MorphologyOps(self.pred, self.connectivity).border_map()
         distance_border_pred = ndimage.distance_transform_edt(1 - border_pred)
 
         lim_dbp = np.where(
@@ -955,8 +955,8 @@ class BinaryPairwiseMeasures(object):
         :return: distance_border_ref, distance_border_pred, border_ref,
         border_pred
         """
-        border_ref = MorphologyOps(self.ref, self.neigh).border_map()
-        border_pred = MorphologyOps(self.pred, self.neigh).border_map()
+        border_ref = MorphologyOps(self.ref, self.connectivity).border_map()
+        border_pred = MorphologyOps(self.pred, self.connectivity).border_map()
         oppose_ref = 1 - self.ref
         oppose_pred = 1 - self.pred
         distance_ref = ndimage.distance_transform_edt(

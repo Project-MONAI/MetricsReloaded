@@ -38,6 +38,7 @@ import numpy as np
 from scipy import ndimage
 from skimage.morphology import skeletonize
 from scipy.spatial.distance import squareform, pdist
+import pandas as pd
 
 
 __all__ = [
@@ -96,9 +97,9 @@ class MorphologyOps(object):
     connected component. To be used in the evaluation
     """
 
-    def __init__(self, binary_img, neigh):
+    def __init__(self, binary_img, connectivity):
         self.binary_map = np.asarray(binary_img, dtype=np.int8)
-        self.neigh = neigh
+        self.connectivity = connectivity
 
     def border_map(self):
         """

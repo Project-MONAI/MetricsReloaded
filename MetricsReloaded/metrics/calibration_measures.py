@@ -56,8 +56,6 @@ class CalibrationMeasures(object):
         ref,
         case=None,
         measures=[],
-        num_neighbors=8,
-        pixdim=[1, 1, 1],
         empty=False,
         dict_args={},
     ):
