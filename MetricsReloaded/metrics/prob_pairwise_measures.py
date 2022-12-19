@@ -474,5 +474,6 @@ class ProbabilityPairwiseMeasures(object):
         result_dict = {}
         for key in self.measures:
             result = self.measures_dict[key][0]()
-            result_dict[key] = fmt.format(result)
+            #result_dict[key] = fmt.format(result)
+            result_dict[key] = result
         return result_dict  # trim the last comma

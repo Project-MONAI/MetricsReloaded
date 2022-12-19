@@ -114,6 +114,12 @@ class ProcessEvaluation(object):
         self.process_data()
         if 'ref_missing' in self.data.keys():
             self.complete_missing_cases()
+        if 'weights_labels' in self.data.keys():
+            self.weights_labels = self.data['weights_labels']
+        else:
+            self.weights_labels = {}
+            for v in self.data['list_values']:
+                self.weights_labels[v] = 1
         self.grouped_lab = self.label_aggregation()
         if self.case:
             self.get_stats_res()
@@ -273,15 +279,22 @@ class ProcessEvaluation(object):
         df_all_labels['prevalence_labels'] = 1 
         for k in self.weights_labels.keys():
             df_all_labels['weights_labels'] = np.where(df_all_labels['label']==k,self.weights_labels[k],df_all_labels['weights_labels'])
-        for (c,rc) in enumerate(self.ref):
+        for (c,rc) in enumerate(self.data['ref_class']):
             values,counts = np.unique(rc, return_counts=True)
             for (v,co) in zip(values,counts):
                 df_all_labels['prevalence_labels'] = np.where(np.logical_and(df_all_labels['case']==c, df_all_labels['label']==v),co,df_all_labels['prevalence_labels'])
-        wm = lambda x: np.average(x, weights=df_all_labels.loc[x.index, "prevalence_labels"])
-        wm2 = lambda x: np.average(x, weights=df_all_labels.loc[x.index, "weights_labels"])
-        f = {'average':['average'], 'prevalence_mean':{'weighted_mean': wm}, 'weights_mean':{'weighted_mean':wm2}}
-        df_grouped_lab = df_all_labels.groupby('case').agg(f)
-        df_grouped_all = merge_list_df([df_grouped_lab, self.resmcc, self.rescal], on='case')
+        wm = lambda x: np.ma.average(np.ma.masked_array(x,np.isnan(x)), weights=df_all_labels.loc[x.index, "prevalence_labels"])
+        wm2 = lambda x: np.ma.average(np.ma.masked_array(x,np.isnan(x)), weights=df_all_labels.loc[x.index, "weights_labels"])
+        wm3 = lambda x: np.ma.average(np.ma.masked_array(x,np.isnan(x)))
+        list_measures = self.measures_boundary + self.measures_overlap + self.measures_detseg + self.measures_pcc + self.measures_mt
+        dict_measures = {k:[('prevalence',wm),('weights',wm2),('average',wm3)] for k in list_measures}
+        df_grouped_lab = df_all_labels.groupby('case',as_index=False).agg(dict_measures).reset_index()
+        df_grouped_lab.columns = ['_'.join(col).rstrip('_') for col in df_grouped_lab.columns.values
+]
+        
+        print(df_grouped_lab, " grouped lab ")                                             
+        df_grouped_all = merge_list_df([df_grouped_lab.reset_index(), self.resmcc, self.rescal], on=['case'])
+        print(df_grouped_all, 'grouped all')
         return df_grouped_all
 
     def get_stats_res(self):

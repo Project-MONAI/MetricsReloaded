@@ -233,7 +233,8 @@ class MultiClassPairwiseMeasures(object):
         result_dict = {}
         for key in self.measures:
             result = self.measures_dict[key][0]()
-            result_dict[key] = fmt.format(result)
+            #result_dict[key] = fmt.format(result)
+            result_dict[key] = result
         return result_dict  # trim the last comma
 
 
@@ -1080,54 +1081,8 @@ class BinaryPairwiseMeasures(object):
                 result = self.measures_dict[key][0]()
             else:
                 result = self.measures_dict[key][0](self.measures_dict[key][2])
-            result_dict[key] = fmt.format(result)
+            #result_dict[key] = fmt.format(result)
+            result_dict[key] = result
         return result_dict  # trim the last comma
 
-    def to_string_count(self, fmt="{:.4f}"):
-        result_str = ""
-        for key in self.measures_count:
-            if len(self.counting_dict[key]) == 2:
-                result = self.counting_dict[key][0]()
-            else:
-                result = self.counting_dict[key][0](self.counting_dict[key][2])
-            result_str += (
-                ",".join(fmt.format(x) for x in result)
-                if isinstance(result, tuple)
-                else fmt.format(result)
-            )
-            result_str += ","
-        return result_str[:-1]  # trim the last comma
-
-    def to_string_dist(self, fmt="{:.4f}"):
-        result_str = ""
-
-        for key in self.measures_dist:
-            if len(self.distance_dict[key]) == 2:
-                result = self.distance_dict[key][0]()
-            else:
-                result = self.distance_dict[key][0](self.distance_dict[key][2])
-            result_str += (
-                ",".join(fmt.format(x) for x in result)
-                if isinstance(result, tuple)
-                else fmt.format(result)
-            )
-            result_str += ","
-        return result_str[:-1]  # trim the last comma
-
-    def to_string_mt(self, fmt="{:.4f}"):
-        result_str = ""
-
-        for key in self.measures_mthresh:
-            if len(self.multi_thresholds_dict[key]) == 2:
-                result = self.multi_thresholds_dict[key][0]()
-            else:
-                result = self.multi_thresholds_dict[key][0](
-                    self.multi_thresholds_dict[key][2]
-                )
-            result_str += (
-                ",".join(fmt.format(x) for x in result)
-                if isinstance(result, tuple)
-                else fmt.format(result)
-            )
-            result_str += ","
-        return result_str[:-1]  # trim the last comma
+    
