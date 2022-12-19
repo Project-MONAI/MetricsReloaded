@@ -70,4 +70,4 @@ def test_op_agg_label():
 def test_op_agg_label_nan():
     pe = PE(data_agg2, category="Semantic Segmentation", measures_overlap=['fbeta'],measures_boundary=['boundary_iou'])
     print(pe.grouped_lab, pe.resseg)
-    assert_allclose(pe.grouped_lab.shape, [2,8])
+    assert_allclose(pe.grouped_lab.shape, [2,9])
