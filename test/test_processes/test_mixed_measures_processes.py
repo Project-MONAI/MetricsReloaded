@@ -65,6 +65,7 @@ def test_panoptic_quality():
         measures_detseg=["PQ"],
     )
     _, value_tmp, _ = mlis.per_label_dict()
+    print(value_tmp, ' is mlis per label in PQ')
     value_test = np.asarray(value_tmp[value_tmp["label"] == 1]["PQ"])[0]
     print("PQ ", value_test)
     expected_pq = 0.350

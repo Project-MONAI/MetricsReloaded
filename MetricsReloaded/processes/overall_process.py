@@ -30,8 +30,9 @@ Performing the process associated with instance segmentation
 from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures
 from MetricsReloaded.processes.mixed_measures_processes import *
 import warnings
-from MetricsReloaded.utility.utils import combine_df
+from MetricsReloaded.utility.utils import combine_df, merge_list_df
 import pandas as pd
+import numpy as np
 
 __all__ = [
     "ProcessEvaluation",
@@ -83,13 +84,15 @@ class ProcessEvaluation(object):
         measures_overlap=[],
         measures_mt=[],
         measures_detseg=[],
+        measures_cal=[],
         localization='mask_iou',
         assignment='greedy_matching',
         flag_map=False,
         file=[],
         thresh_ass=0.5,
         case=True,
-        flag_fp_in=True
+        flag_fp_in=True,
+        ignore_missing = False
     ):
         self.data = data
         self.category = category
@@ -101,12 +104,19 @@ class ProcessEvaluation(object):
         self.measures_mcc = measures_mcc
         self.measures_pcc = measures_pcc
         self.measures_detseg = measures_detseg
+        self.measures_cal = measures_cal
 
         self.flag_map = flag_map
         self.thresh_ass = thresh_ass
         self.case = case
         self.flag_fp_in = flag_fp_in
-        self.resdet, self.resseg, self.resmt, self.resmcc, self.rescal = self.process_data()
+        self.flag_ignore_missing = ignore_missing
+        self.process_data()
+        if 'ref_missing' in self.data.keys():
+            self.complete_missing_cases()
+        self.grouped_lab = self.label_aggregation()
+        if self.case:
+            self.get_stats_res()
 
 
     def process_data(self):
@@ -166,11 +176,16 @@ class ProcessEvaluation(object):
                 measures_boundary=self.measures_boundary,
                 measures_mcc=self.measures_mcc,
                 measures_mt=self.measures_mt,
+                measures_calibration=self.measures_cal,
                 list_values=data["list_values"],
                 per_case=self.case,
             )
             df_bin, df_mt = MLPM.per_label_dict()
             df_mcc, df_cal = MLPM.multi_label_res()
+            print(df_bin, 'BIN')
+            print(df_mt, 'MT')
+            print(df_mcc, 'MCC'),
+            print(df_cal, 'CAL')
             if self.category == "Image Classification":
                 df_resdet = df_bin
                 df_resseg = None
@@ -182,10 +197,15 @@ class ProcessEvaluation(object):
                 df_resseg = df_bin
                 df_resmt = df_mt
                 df_resmcc = df_mcc
-        return df_resdet, df_resseg, df_resmt, df_resmcc, df_rescal
+        self.resdet = df_resdet
+        self.resseg = df_resseg
+        self.resmt = df_resmt
+        self.resmcc = df_resmcc
+        self.rescal = df_rescal
+        return
 
     def complete_missing_cases(self):
-        if len(self.ref_missing) == 0:
+        if len(self.data['ref_missing']) == 0:
             return
         if self.flag_ignore_missing:
             warnings.warn("The set up currently ignores any missing case / dataset")
@@ -195,27 +215,22 @@ class ProcessEvaluation(object):
             list_missing_seg = []
             list_missing_mt = []
             list_missing_mcc = []
-            
+            numb_valid = len(self.data['ref_class'])
             if self.case:
-                for (i,f) in enumerate(self.ref_missing):
+                for (i,f) in enumerate(self.data['ref_missing']):
                     dict_mt = {}
                     dict_mcc = {}
                     dict_seg = {}
                     dict_det = {}
-                    dict_mcc['case'] = i
+                    dict_mcc['case'] = i + numb_valid
                     for m in self.measures_mcc:
                         dict_mcc[m] = WORSE[m]
                     list_missing_mcc.append(dict_mcc)    
-                    for l in self.list_values:
+                    for l in self.data['list_values']:
                         dict_seg = {}
                         dict_mt = {}
                         dict_det = {}
-                        dict_seg['case'] = i
-                        dict_det['case'] = i
-                        dict_mt['case'] = i
-                        dict_seg["label"] = l
-                        dict_det["label"] = l
-                        dict_mt["label"] = l
+                        
                         for m in self.measures_boundary:
                             dict_seg[m] = WORSE[m]
                         for m in self.measures_overlap:
@@ -226,17 +241,60 @@ class ProcessEvaluation(object):
                             dict_mt[m] = WORSE[m]
                         for m in self.measures_detseg:
                             dict_seg[m] = WORSE[m]
-                        list_missing_seg.append(dict_seg)
-                        list_missing_det.append(dict_det)
-                        list_missing_mt.append(dict_mt)
+                        if len(self.measures_boundary) + len(self.measures_overlap) > 0:
+                            dict_seg['case'] = i + numb_valid
+                            dict_seg["label"] = l
+                            list_missing_seg.append(dict_seg)
+                        if len(self.measures_pcc) + len(self.measures_detseg) > 0 : 
+                            dict_det['case'] = i + numb_valid
+                            dict_det["label"] = l
+                            list_missing_det.append(dict_det)
+                        if len(self.measures_mt) > 0:
+                            dict_mt['case'] = i + numb_valid
+                            dict_mt["label"] = l
+                            list_missing_mt.append(dict_mt)
             df_miss_det = pd.DataFrame.from_dict(list_missing_det)
             df_miss_seg = pd.DataFrame.from_dict(list_missing_seg)
             df_miss_mcc = pd.DataFrame.from_dict(list_missing_mcc)
             df_miss_mt = pd.DataFrame.from_dict(list_missing_mt)
-            
+            print(self.resseg, ' is resseg before combination')
             self.resdet = combine_df(self.resdet, df_miss_det)
             self.resseg = combine_df(self.resseg, df_miss_seg)
             self.resmt = combine_df(self.resmt, df_miss_mt)
             self.resmcc = combine_df(self.resmcc, df_miss_mcc)
+
+    def label_aggregation(self, option='average',dict_args={}):
+        if len(self.data['list_values']) == 1:
+            print('DET', self.resdet,'CAL',self.rescal, 'SEG',self.resseg,'MT', self.resmt,'MCC', self.resmcc)
+            df_grouped_all = merge_list_df([self.resdet, self.resseg, self.resmt,self.resmcc, self.rescal])
+            return df_grouped_all
+        df_all_labels = merge_list_df([self.resdet, self.resseg, self.resmt], on=['label','case'])
+        df_all_labels['weights_labels'] = 1
+        df_all_labels['prevalence_labels'] = 1 
+        for k in self.weights_labels.keys():
+            df_all_labels['weights_labels'] = np.where(df_all_labels['label']==k,self.weights_labels[k],df_all_labels['weights_labels'])
+        for (c,rc) in enumerate(self.ref):
+            values,counts = np.unique(rc, return_counts=True)
+            for (v,co) in zip(values,counts):
+                df_all_labels['prevalence_labels'] = np.where(np.logical_and(df_all_labels['case']==c, df_all_labels['label']==v),co,df_all_labels['prevalence_labels'])
+        wm = lambda x: np.average(x, weights=df_all_labels.loc[x.index, "prevalence_labels"])
+        wm2 = lambda x: np.average(x, weights=df_all_labels.loc[x.index, "weights_labels"])
+        f = {'average':['average'], 'prevalence_mean':{'weighted_mean': wm}, 'weights_mean':{'weighted_mean':wm2}}
+        df_grouped_lab = df_all_labels.groupby('case').agg(f)
+        df_grouped_all = merge_list_df([df_grouped_lab, self.resmcc, self.rescal], on='case')
+        return df_grouped_all
+
+    def get_stats_res(self):
+        df_stats_all = self.grouped_lab.describe()
+        df_all_labels = merge_list_df([self.resdet, self.resseg, self.resmt], on=['label','case'])
+        df_stats_lab = df_all_labels.groupby('label').describe()
+        self.stats_lab = df_stats_lab
+        self.stats_all = df_stats_all
+        return 
+
+    
+
+
+
 
 

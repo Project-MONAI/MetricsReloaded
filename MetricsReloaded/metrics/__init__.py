@@ -13,3 +13,4 @@ __all__ = []
 
 from . import pairwise_measures
 from . import prob_pairwise_measures
+from . import calibration_measures

@@ -212,6 +212,9 @@ class MultiLabelLocSegPairwiseMeasure(object):
             self.names = self.file
         if len(self.names) < len(self.ref_loc):
             self.names = range(len(self.ref_loc))
+        self.flag_valid_prob = True
+        if pred_prob is None or pred_prob[0] is None:
+            self.flag_valid_prob = False
 
     def create_map(self, list_maps, file_ref, category):
         affine = nib.load(file_ref).affine
@@ -311,18 +314,21 @@ class MultiLabelLocSegPairwiseMeasure(object):
                         measures_mt=self.measures_mt,
                         dict_args=self.dict_args,
                     )
-                    seg_res = MLSPM.to_pd_seg()
-                    seg_res["label"] = lab
-                    seg_res["case"] = name
-                    det_res = MLSPM.to_dict_det()
-                    det_res["label"] = lab
-                    det_res["case"] = name
-                    mt_res = MLSPM.to_dict_mt()
-                    mt_res["label"] = lab
-                    mt_res["case"] = name
-                    list_det.append(det_res)
-                    list_seg.append(seg_res)
-                    list_mt.append(mt_res)
+                    if len(self.measures_boundary) + len(self.measures_overlap)  > 0:
+                        seg_res = MLSPM.to_pd_seg()
+                        seg_res["label"] = lab
+                        seg_res["case"] = name
+                        list_seg.append(seg_res)
+                    if len(self.measures_pcc) + len(self.measures_detseg)>0:
+                        det_res = MLSPM.to_dict_det()
+                        det_res["label"] = lab
+                        det_res["case"] = name
+                        list_det.append(det_res)
+                    if len(self.measures_mt) > 0 :
+                        mt_res = MLSPM.to_dict_mt()
+                        mt_res["label"] = lab
+                        mt_res["case"] = name
+                        list_mt.append(mt_res)
                     df_matching = AS.df_matching
                     df_matching["case"] = name
                     df_matching["label"] = lab
@@ -359,18 +365,25 @@ class MultiLabelLocSegPairwiseMeasure(object):
                     measures_mt=self.measures_mt,
                     dict_args=self.dict_args,
                 )
-                res_seg = MLSPM.to_pd_seg()
-                res_seg["label"] = lab
-                res_det = MLSPM.to_dict_det()
-                res_det["label"] = lab
-                res_mt = MLSPM.to_dict_mt()
-                res_mt["label"] = lab
-                list_det.append(res_det)
-                list_seg.append(res_seg)
-                list_mt.append(res_mt)
+                if len(self.measures_boundary) + len(self.measures_overlap) > 0 :
+                    res_seg = MLSPM.to_pd_seg()
+                    res_seg["label"] = lab
+                    list_seg.append(res_seg)
+                if len(self.measures_pcc) + len(self.measures_detseg) > 0:
+                    res_det = MLSPM.to_dict_det()
+                    res_det["label"] = lab
+                    list_det.append(res_det)
+                if len(self.measures_mt) > 0:
+                    res_mt = MLSPM.to_dict_mt()
+                    res_mt["label"] = lab
+                    list_mt.append(res_mt)
         self.matching = pd.concat(self.matching)
+        if len(list_seg) == 0:
+            df_seg = None
+        else:
+            df_seg = pd.concat(list_seg)
         return (
-            pd.concat(list_seg),
+            df_seg,
             pd.DataFrame.from_dict(list_det),
             pd.DataFrame.from_dict(list_mt),
         )
@@ -412,6 +425,9 @@ class MultiLabelLocMeasures(object):
         self.flag_fp_in = flag_fp_in
         if len(self.names) < len(self.ref):
             self.names = range(len(self.ref))
+        self.flag_valid_proba = True
+        if pred_prob is None or pred_prob[0] is None:
+            self.flag_valid_proba=False
 
     def per_label_dict(self):
         list_det = []
@@ -433,7 +449,10 @@ class MultiLabelLocMeasures(object):
                 ind_ref = np.where(ref_arr == lab)
                 pred_loc_tmp = [self.pred_loc[case][f] for f in ind_pred[0]]
                 ref_loc_tmp = [self.ref_loc[case][f] for f in ind_ref[0]]
-                pred_prob_tmp = [self.pred_prob[case][lab,f] for f in ind_pred[0]]
+                if self.flag_valid_proba:
+                    pred_prob_tmp = [self.pred_prob[case][lab,f] for f in ind_pred[0]]
+                else:
+                    pred_prob_tmp = None
                 AS = AssignmentMapping(
                     pred_loc=pred_loc_tmp,
                     ref_loc=ref_loc_tmp,
@@ -458,27 +477,28 @@ class MultiLabelLocMeasures(object):
                 )
                 pred_prob_tmp_fin = np.asarray(df_matching["pred_prob"])
                 if self.per_case:
-
-                    BPM = BinaryPairwiseMeasures(
-                        pred=pred_tmp_fin,
-                        ref=ref_tmp_fin,
-                        measures=self.measures_pcc,
-                        dict_args=self.dict_args,
-                    )
-                    det_res = BPM.to_dict_meas()
-                    det_res["label"] = lab
-                    det_res["case"] = name
-                    list_det.append(det_res)
-                    PPM = ProbabilityPairwiseMeasures(
-                        pred_prob_tmp_fin,
-                        ref_tmp_fin,
-                        measures=self.measures_mt,
-                        dict_args=self.dict_args,
-                    )
-                    mt_res = PPM.to_dict_meas()
-                    mt_res["label"] = lab
-                    mt_res["case"] = name
-                    list_mt.append(mt_res)
+                    if len(self.measures_pcc) > 0:
+                        BPM = BinaryPairwiseMeasures(
+                            pred=pred_tmp_fin,
+                            ref=ref_tmp_fin,
+                            measures=self.measures_pcc,
+                            dict_args=self.dict_args,
+                        )
+                        det_res = BPM.to_dict_meas()
+                        det_res["label"] = lab
+                        det_res["case"] = name
+                        list_det.append(det_res)
+                    if len(self.measures_mt) > 0:
+                        PPM = ProbabilityPairwiseMeasures(
+                            pred_prob_tmp_fin,
+                            ref_tmp_fin,
+                            measures=self.measures_mt,
+                            dict_args=self.dict_args,
+                        )
+                        mt_res = PPM.to_dict_meas()
+                        mt_res["label"] = lab
+                        mt_res["case"] = name
+                        list_mt.append(mt_res)
                 else:
                     list_pred.append(pred_tmp_fin)
                     list_ref.append(ref_tmp_fin)
@@ -487,24 +507,26 @@ class MultiLabelLocMeasures(object):
                 overall_pred = np.concatenate(list_pred)
                 overall_ref = np.concatenate(list_ref)
                 overall_prob = np.concatenate(list_prob)
-                BPM = BinaryPairwiseMeasures(
-                    pred=overall_pred,
-                    ref=overall_ref,
-                    measures=self.measures_pcc,
-                    dict_args=self.dict_args,
-                )
-                det_res = BPM.to_dict_meas()
-                det_res["label"] = lab
-                list_det.append(det_res)
-                PPM = ProbabilityPairwiseMeasures(
-                    pred_prob_tmp_fin,
-                    ref_tmp_fin,
-                    measures=self.measures_mt,
-                    dict_args=self.dict_args,
-                )
-                mt_res = PPM.to_dict_meas()
-                mt_res["label"] = lab
-                list_mt.append(mt_res)
+                if len(self.measures_pcc) > 0:
+                    BPM = BinaryPairwiseMeasures(
+                        pred=overall_pred,
+                        ref=overall_ref,
+                        measures=self.measures_pcc,
+                        dict_args=self.dict_args,
+                    )
+                    det_res = BPM.to_dict_meas()
+                    det_res["label"] = lab
+                    list_det.append(det_res)
+                if len(self.measures_mt) > 0 and self.flag_valid_proba:
+                    PPM = ProbabilityPairwiseMeasures(
+                        overall_prob,
+                        ref_tmp_fin,
+                        measures=self.measures_mt,
+                        dict_args=self.dict_args,
+                    )
+                    mt_res = PPM.to_dict_meas()
+                    mt_res["label"] = lab
+                    list_mt.append(mt_res)
         return pd.DataFrame.from_dict(list_det), pd.DataFrame.from_dict(list_mt)
 
 
@@ -531,6 +553,7 @@ class MultiLabelPairwiseMeasures(object):
     ):
         self.pred = pred
         self.pred_proba = pred_proba
+        self.flag_valid_proba = True
         self.ref = ref
         self.list_values = list_values
         self.measures_binary = measures_pcc + measures_overlap + measures_boundary
@@ -546,6 +569,9 @@ class MultiLabelPairwiseMeasures(object):
         self.names = names
         if len(self.names) < len(self.ref):
             self.names = range(len(self.ref))
+        
+        if pred_proba is None or pred_proba[0] is None:
+            self.flag_valid_proba = False
         #print(self.names, ' is names')
 
     def per_label_dict(self):
@@ -574,25 +600,27 @@ class MultiLabelPairwiseMeasures(object):
                     pred_proba_tmp = prob_case[...,lab]
                 else:
                     pred_proba_tmp = None
+                    self.flag_valid_proba = False
                 
                 ref_tmp = np.where(
                     ref_case == lab, np.ones_like(ref_case), np.zeros_like(ref_case)
                 )
                 #print(pred_tmp, ref_tmp)
                 if self.per_case:
-                    BPM = BinaryPairwiseMeasures(
-                        pred_tmp,
-                        ref_tmp,
-                        measures=self.measures_binary,
-                        connectivity_type=self.connectivity_type,
-                        pixdim=self.pixdim,
-                        dict_args=self.dict_args,
-                    )
-                    dict_bin = BPM.to_dict_meas()
-                    dict_bin["label"] = lab
-                    dict_bin["case"] = name
-                    list_bin.append(dict_bin)
-                    if pred_proba_tmp is not None:
+                    if len(self.measures_binary) > 0:
+                        BPM = BinaryPairwiseMeasures(
+                            pred_tmp,
+                            ref_tmp,
+                            measures=self.measures_binary,
+                            connectivity_type=self.connectivity_type,
+                            pixdim=self.pixdim,
+                            dict_args=self.dict_args,
+                        )
+                        dict_bin = BPM.to_dict_meas()
+                        dict_bin["label"] = lab
+                        dict_bin["case"] = name
+                        list_bin.append(dict_bin)
+                    if self.flag_valid_proba and len(self.measures_mt)>0:
                         PPM = ProbabilityPairwiseMeasures(
                         pred_proba=pred_proba_tmp,
                         ref_proba=ref_tmp,
@@ -604,37 +632,45 @@ class MultiLabelPairwiseMeasures(object):
                         dict_mt["case"] = name
                         list_mt.append(dict_mt)
                     else:
-                        warnings.warn('No probabilistic input so impossible to get multi-threshold metric')
+                        warnings.warn('No probabilistic input or no probabilistic measure so impossible to get multi-threshold metric')
                 else:
                     list_pred.append(pred_tmp)
                     list_ref.append(ref_tmp)
-                    list_prob.append(pred_proba_tmp)
+                    if self.flag_valid_proba:
+                        list_prob.append(pred_proba_tmp)
                     list_case.append(np.ones_like(pred_case) * case)
             if not self.per_case:
                 overall_pred = np.concatenate(list_pred)
                 overall_ref = np.concatenate(list_ref)
-                overall_prob = np.concatenate(list_prob)
-                BPM = BinaryPairwiseMeasures(
-                    overall_pred,
-                    overall_ref,
-                    measures=self.measures_binary,
-                    connectivity_type=self.connectivity_type,
-                    pixdim=self.pixdim,
-                    dict_args=self.dict_args,
-                )
-                PPM = ProbabilityPairwiseMeasures(
-                    overall_prob,
-                    overall_ref,
-                    case=list_case,
-                    measures=self.measures_mt,
-                    dict_args=self.dict_args,
-                )
-                dict_mt = PPM.to_dict_meas()
-                dict_mt["label"] = lab
-                dict_bin = BPM.to_dict_meas()
-                dict_bin["label"] = lab
-                list_bin.append(dict_bin)
-                list_mt.append(dict_mt)
+                if self.flag_valid_proba:
+                    overall_prob = np.concatenate(list_prob)
+                else:
+                    overall_prob = None
+                if len(self.measures_binary)>0:
+                    BPM = BinaryPairwiseMeasures(
+                        overall_pred,
+                        overall_ref,
+                        measures=self.measures_binary,
+                        connectivity_type=self.connectivity_type,
+                        pixdim=self.pixdim,
+                        dict_args=self.dict_args,
+                    )
+                    dict_bin = BPM.to_dict_meas()
+                    dict_bin["label"] = lab
+                    list_bin.append(dict_bin)
+                
+                if len(self.measures_mt)>0 and self.flag_valid_proba:
+                    PPM = ProbabilityPairwiseMeasures(
+                        overall_prob,
+                        overall_ref,
+                        case=list_case,
+                        measures=self.measures_mt,
+                        dict_args=self.dict_args,
+                    )
+                    dict_mt = PPM.to_dict_meas()
+                    dict_mt["label"] = lab
+                    
+                    list_mt.append(dict_mt)
 
         return pd.DataFrame.from_dict(list_bin), pd.DataFrame.from_dict(list_mt)
 
@@ -647,7 +683,7 @@ class MultiLabelPairwiseMeasures(object):
         for (case, name) in zip(range(len(self.ref)), self.names):
             pred_case = np.asarray(self.pred[case])
             ref_case = np.asarray(self.ref[case])
-            if self.pred_proba[case] is not None:
+            if self.pred_proba[case] is not None and self.flag_valid_proba:
                 prob_case = np.asarray(self.pred_proba[case])
             else:
                 prob_case = None
@@ -680,7 +716,10 @@ class MultiLabelPairwiseMeasures(object):
         else:
             overall_pred = np.concatenate(list_pred)
             overall_ref = np.concatenate(list_ref)
-            overall_prob = np.concatenate(list_prob)
+            if self.flag_valid_proba:
+                overall_prob = np.concatenate(list_prob)
+            else:
+                overall_prob = None
             if len(self.measures_mcc) > 0:
                 MPM = MultiClassPairwiseMeasures(
                     overall_pred,
@@ -695,7 +734,7 @@ class MultiLabelPairwiseMeasures(object):
                 pd_mcc = pd.DataFrame.from_dict(list_mcc)
             else:
                 pd_mcc = None
-            if len(self.measures_calibration) > 0 and list_prob[0] is not None:
+            if len(self.measures_calibration) > 0 and overall_prob is not None:
                 CM = CalibrationMeasures(overall_prob, overall_ref,measures=self.measures_calibration)
                 dict_cal = CM.to_dict_meas()
                 list_cal.append(dict_cal)
