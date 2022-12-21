@@ -259,7 +259,10 @@ class MultiLabelLocSegPairwiseMeasure(object):
                 ind_ref = np.where(ref_class_case == lab)
                 pred_loc_tmp = [self.pred_loc[case][i] for i in ind_pred[0]]
                 ref_loc_tmp = [self.ref_loc[case][i] for i in ind_ref[0]]
-                pred_prob_tmp = [self.pred_prob[case][i, lab] for i in ind_pred[0]]
+                if self.flag_valid_prob:
+                    pred_prob_tmp = [self.pred_prob[case][i, lab] for i in ind_pred[0]]
+                else:
+                    pred_prob_tmp = None
                 #print(len(pred_loc_tmp), len(ref_loc_tmp), lab, case)
                 AS = AssignmentMapping(
                     pred_loc=pred_loc_tmp,
