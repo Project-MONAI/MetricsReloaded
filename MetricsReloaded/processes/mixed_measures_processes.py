@@ -116,15 +116,15 @@ class MixedLocSegPairwiseMeasure(object):
         print(list_iou, " is list iou")
         return np.mean(np.asarray(list_iou))
 
-    def recognition_quality(self):
+    def detection_quality(self):
         PE = BinaryPairwiseMeasures(self.pred, self.ref)
         #print("pred is ", self.pred, "ref is ", self.ref)
         return PE.fbeta()
 
     def panoptic_quality(self):
-        print("RQ ", self.recognition_quality())
+        print("RQ ", self.detection_quality())
         print("SQ ", self.segmentation_quality())
-        RQ = self.recognition_quality()
+        RQ = self.detection_quality()
         SQ = self.segmentation_quality()
         if np.isnan(SQ):
             if RQ == 0:
