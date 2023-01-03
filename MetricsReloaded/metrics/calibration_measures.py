@@ -66,6 +66,8 @@ class CalibrationMeasures(object):
             "ls": (self.logarithmic_score, "LS"),
             "cwece": (self.class_wise_expectation_calibration_error, "cwECE"),
             "ece_kde": (self.kernel_based_ece, "ECE-KDE"),
+            "kce":(self.kernel_calibration_error, "KCE"),
+            "nll":(self.negative_log_likelihood,"NLL")
         }
 
         self.pred = np.asarray(pred_proba)

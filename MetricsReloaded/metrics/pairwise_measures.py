@@ -79,8 +79,8 @@ class MultiClassPairwiseMeasures(object):
         self.measures_dict = {
             "mcc": (self.matthews_correlation_coefficient, "MCC"),
             "wck": (self.weighted_cohens_kappa, "WCK"),
-            "balanced_accuracy": (self.balanced_accuracy, "BAcc"),
-            "expected_cost": (self.expected_cost, "EC"),
+            "ba": (self.balanced_accuracy, "BAcc"),
+            "ec": (self.expected_cost, "EC"),
         }
 
     def expected_cost(self):
@@ -257,16 +257,17 @@ class BinaryPairwiseMeasures(object):
             "numb_fp": (self.fp, "NumbFP"),
             "numb_fn": (self.fn, "NumbFN"),
             "accuracy": (self.accuracy, "Accuracy"),
-            "net_benefit": (self.net_benefit_treated, "NB"),
-            "expected_cost": (self.normalised_expected_cost, "ECn"),
-            "balanced_accuracy": (self.balanced_accuracy, "BalAcc"),
+            "nb": (self.net_benefit_treated, "NB"),
+            "ec": (self.normalised_expected_cost, "ECn"),
+            "ba": (self.balanced_accuracy, "BalAcc"),
             "cohens_kappa": (self.cohens_kappa, "CohensKappa"),
             "lr+": (self.positive_likelihood_ratio, "LR+"),
             "iou": (self.intersection_over_union, "IoU"),
             "fbeta": (self.fbeta, "FBeta"),
+            "dsc":(self.dsc, "DSC"),
             "youden_ind": (self.youden_index, "YoudenInd"),
             "mcc": (self.matthews_correlation_coefficient, "MCC"),
-            "centreline_dsc": (self.centreline_dsc, "CentreLineDSC"),
+            "cldice": (self.centreline_dsc, "CentreLineDSC"),
             "assd": (self.measured_average_distance, "ASSD"),
             "boundary_iou": (self.boundary_iou, "BoundaryIoU"),
             "hd": (self.measured_hausdorff_distance, "HD"),
@@ -645,6 +646,25 @@ class BinaryPairwiseMeasures(object):
             )
             return 0
         return self.tp() / (self.tp() + self.fn())
+
+    def dsc(self):
+        """
+        Calculates the Dice Similarity Coefficient defined as
+
+        ..math::
+
+            DSC = \dfrac{2TP}{2TP+FP+FN}
+        
+        This is also F:math:`{\\beta}` for :math:`{\\beta}`=1
+        """
+
+        numerator = 2 * self.tp()
+        denominator = self.n_pos_pred() + self.n_pos_ref()
+        if denominator == 0:
+            warnings.warn("Both Prediction and Reference are empty - set to 1 as correct solution even if not defined")
+            return 1
+        else:
+            return numerator / denominator
 
     def fbeta(self):
         """

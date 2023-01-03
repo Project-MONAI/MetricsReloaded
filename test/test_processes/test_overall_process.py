@@ -50,24 +50,28 @@ data_agg2['pred_prob'] = [None,None]
 
 
 def test_op_aggregation():
-    pe = PE(data_init,'Semantic Segmentation',measures_overlap=['fbeta'],measures_boundary=['boundary_iou'])
+    pe = PE(data_init,'SemS',measures_overlap=['fbeta'],measures_boundary=['boundary_iou'])
     print(pe.grouped_lab)
     assert_allclose(pe.grouped_lab.shape,[2,4])
 
 
 def test_op_refmissing():
-    pe = PE(data_miss,'Semantic Segmentation',measures_overlap=['fbeta'],measures_boundary=['boundary_iou'])
+    pe = PE(data_miss,'SemS',measures_overlap=['fbeta'],measures_boundary=['boundary_iou'])
     print(pe.grouped_lab, pe.resseg)
     assert_allclose(pe.grouped_lab.shape,[3,4])
 
 
 
 def test_op_agg_label():
-    pe = PE(data_agg, category='Semantic Segmentation', measures_overlap=['fbeta'],measures_boundary=['boundary_iou'])
+    pe = PE(data_agg, category='SemS', measures_overlap=['fbeta'],measures_boundary=['boundary_iou'])
     print(pe.grouped_lab)
     assert_allclose(pe.grouped_lab.shape, [1,9])
 
 def test_op_agg_label_nan():
-    pe = PE(data_agg2, category="Semantic Segmentation", measures_overlap=['fbeta'],measures_boundary=['boundary_iou'])
+    pe = PE(data_agg2, category="SemS", measures_overlap=['fbeta'],measures_boundary=['boundary_iou'])
     print(pe.grouped_lab, pe.resseg)
     assert_allclose(pe.grouped_lab.shape, [2,9])
+
+def test_check_measures_cat_valid():
+    pe = PE(data_agg,category='ImLC',measures_mt=['froc'])
+    assert(pe.flag_valid,False)

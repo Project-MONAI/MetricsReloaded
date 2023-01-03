@@ -38,12 +38,29 @@ __all__ = [
     "ProcessEvaluation",
 ]
 
+dict_valid={
+    'ImLC': ['auroc','ap','sens@spec','spec@sens',
+    'ppv@sens','fbeta','accuracy','ba',
+    'ec','nb','mcc',
+    'wck','lr+','bs','cwece',
+    'nll','rbs','ece_kde','kce','ece']
+,
+    'ObD': ['fbeta','sens@spec','spec@sens','sens@ppv','ppv@sens','sens@fppi','fppi@sens','sensitivity','ap','froc'
+],
+    'SemS': ['dsc','fbeta','cldice','iou','assd','masd','hd','hd_perc','nsd','boundary_iou',
+],
+    'InS': ['pq','fbeta','sens@spec','spec@sens','sens@ppv','ppv@sens',
+    'fppi@sens','sens@fppi','ap','froc','dsc','cldice','iou','hd','boundary_iou',
+    'masd','assd','nsd','hd_perc']
+
+}
+
 MAX = 1000
 
 WORSE = {
     "ap": 0,
     "auroc": 0,
-    "froc": MAX,
+    "froc": 0,
     "sens@spec": 0,
     "sens@ppv": 0,
     "spec@sens": 0,
@@ -51,8 +68,9 @@ WORSE = {
     "ppv@sens": 0,
     "sens@fppi": 0,
     "fbeta": 0,
+    "ec":1,
     "accuracy": 0,
-    "balanced_accuracy": 0,
+    "ba": 0,
     "lr+": 0,
     "youden_ind": -1,
     "mcc": 0,
@@ -60,7 +78,7 @@ WORSE = {
     "cohens_kappa": -1,
     "iou": 0,
     "dsc": 0,
-    "centreline_dsc": 0,
+    "cldice": 0,
     "masd": MAX,
     "assd": MAX,
     "hd_perc": MAX,
@@ -111,18 +129,36 @@ class ProcessEvaluation(object):
         self.case = case
         self.flag_fp_in = flag_fp_in
         self.flag_ignore_missing = ignore_missing
-        self.process_data()
-        if 'ref_missing' in self.data.keys():
-            self.complete_missing_cases()
-        if 'weights_labels' in self.data.keys():
-            self.weights_labels = self.data['weights_labels']
-        else:
-            self.weights_labels = {}
-            for v in self.data['list_values']:
-                self.weights_labels[v] = 1
-        self.grouped_lab = self.label_aggregation()
-        if self.case:
-            self.get_stats_res()
+        self.flag_valid = self.check_valid_measures_cat()
+        if self.flag_valid:
+            self.process_data()
+            if 'ref_missing' in self.data.keys():
+                self.complete_missing_cases()
+            if 'weights_labels' in self.data.keys():
+                self.weights_labels = self.data['weights_labels']
+            else:
+                self.weights_labels = {}
+                for v in self.data['list_values']:
+                    self.weights_labels[v] = 1
+            self.grouped_lab = self.label_aggregation()
+            if self.case:
+                self.get_stats_res()
+
+    def check_valid_measures_cat(self):
+        flag_valid = True
+        if self.category not in ['ImLC','SemS','InS','ObD']:
+            warnings.warn('No appropriate category chosen')
+            return False
+        all_measures = self.measures_boundary + self.measures_cal + self.measures_detseg + self.measures_mcc + self.measures_mt + self.measures_overlap + self.measures_pcc
+        print(all_measures, dict_valid[self.category])
+        for k in all_measures:
+            print(k)
+            if k not in dict_valid[self.category]:
+                warnings.warn( '%s is not a suitable metric for %s' %(k,self.category))
+                flag_valid = False
+                print(flag_valid)
+        return flag_valid
+
 
 
     def process_data(self):
@@ -132,7 +168,7 @@ class ProcessEvaluation(object):
         df_resmt = None
         df_resmcc = None
         df_rescal = None
-        if self.category == "Instance Segmentation":
+        if self.category == "InS":
             MLLS = MultiLabelLocSegPairwiseMeasure(
                 pred_loc=data["pred_loc"],
                 ref_loc=data["ref_loc"],
@@ -154,7 +190,7 @@ class ProcessEvaluation(object):
                 flag_fp_in=self.flag_fp_in,
             )
             df_resseg, df_resdet, df_resmt = MLLS.per_label_dict()
-        elif self.category == "Object Detection":
+        elif self.category == "ObD":
             MLDT = MultiLabelLocMeasures(
                 pred_loc=data["pred_loc"],
                 ref_loc=data["ref_loc"],
@@ -172,7 +208,7 @@ class ProcessEvaluation(object):
             )
             df_resdet, df_resmt = MLDT.per_label_dict()
             df_resseg = None
-        elif self.category in ["Image Classification", "Semantic Segmentation"]:
+        elif self.category in ["ImLC", "SemS"]:
             MLPM = MultiLabelPairwiseMeasures(
                 data["pred_class"],
                 data["ref_class"],
@@ -192,7 +228,7 @@ class ProcessEvaluation(object):
             print(df_mt, 'MT')
             print(df_mcc, 'MCC'),
             print(df_cal, 'CAL')
-            if self.category == "Image Classification":
+            if self.category == "ImLC":
                 df_resdet = df_bin
                 df_resseg = None
                 df_resmt = df_mt
