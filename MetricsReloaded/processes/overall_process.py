@@ -43,15 +43,31 @@ dict_valid={
     'ppv@sens','fbeta','accuracy','ba',
     'ec','nb','mcc',
     'wck','lr+','bs','cwece',
-    'nll','rbs','ece_kde','kce','ece']
+    'nll','rbs','ece_kde','kce','ece',"numb_ref",
+                    "numb_pred",
+                    "numb_tp",
+                    "numb_fp",
+                    "numb_fn",]
 ,
-    'ObD': ['fbeta','sens@spec','spec@sens','sens@ppv','ppv@sens','sens@fppi','fppi@sens','sensitivity','ap','froc'
+    'ObD': ['fbeta','sens@spec','spec@sens','sens@ppv','ppv@sens','sens@fppi','fppi@sens','sensitivity','ap','froc', "numb_ref",
+                    "numb_pred",
+                    "numb_tp",
+                    "numb_fp",
+                    "numb_fn",
 ],
-    'SemS': ['dsc','fbeta','cldice','iou','assd','masd','hd','hd_perc','nsd','boundary_iou',
+    'SemS': ['dsc','fbeta','cldice','iou','assd','masd','hd','hd_perc','nsd','boundary_iou',"numb_ref",
+                    "numb_pred",
+                    "numb_tp",
+                    "numb_fp",
+                    "numb_fn",
 ],
     'InS': ['pq','fbeta','sens@spec','spec@sens','sens@ppv','ppv@sens',
     'fppi@sens','sens@fppi','ap','froc','dsc','cldice','iou','hd','boundary_iou',
-    'masd','assd','nsd','hd_perc']
+    'masd','assd','nsd','hd_perc',"numb_ref",
+                    "numb_pred",
+                    "numb_tp",
+                    "numb_fp",
+                    "numb_fn",]
 
 }
 
@@ -209,6 +225,10 @@ class ProcessEvaluation(object):
             df_resdet, df_resmt = MLDT.per_label_dict()
             df_resseg = None
         elif self.category in ["ImLC", "SemS"]:
+            if 'names' in data.keys():
+                list_names=data['names']
+            else:
+                list_names = []
             MLPM = MultiLabelPairwiseMeasures(
                 data["pred_class"],
                 data["ref_class"],
@@ -220,6 +240,7 @@ class ProcessEvaluation(object):
                 measures_mt=self.measures_mt,
                 measures_calibration=self.measures_cal,
                 list_values=data["list_values"],
+                names=list_names,
                 per_case=self.case,
             )
             df_bin, df_mt = MLPM.per_label_dict()
