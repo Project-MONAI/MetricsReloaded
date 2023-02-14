@@ -12,7 +12,7 @@
 
 """
 Mixed measures processes - :mod:`MetricsReloaded.processes.mixed_measures_processes`
-====================================================================
+===================================================================================
 
 This module provides classes for performing the evaluation processes of
  :ref:`instance segmentation <instanceseg>`, :ref:`multi label instance segmentation <mlinstanceseg>`, 

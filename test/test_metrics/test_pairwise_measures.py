@@ -400,13 +400,10 @@ def test_dsc_fbeta():
     value_test = bpm.fbeta()
     print("DSC test", value_test)
     expected_dsc = 0.862
-    value_test2 = bpm.dice_score()
-    match = "Modifying fbeta option to get dice score"
-    with pytest.warns(UserWarning, match=match):
-        value_test3 = bpm2.dice_score()
+    value_test2 = bpm.dsc()
+    
     assert_allclose(value_test, expected_dsc, atol=0.001)
     assert_allclose(value_test2, expected_dsc, atol=0.001)
-    assert_allclose(value_test3, expected_dsc, atol=0.001)
 
 
 def test_assd():

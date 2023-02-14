@@ -431,6 +431,7 @@ class BinaryPairwiseMeasures(object):
 
             YI = Specificity + Sensitivity - 1
 
+        :return: Youden index
         """
         return self.specificity() + self.sensitivity() - 1
 
@@ -748,21 +749,21 @@ class BinaryPairwiseMeasures(object):
                 return 0
         return self.tn() / (self.fn() + self.tn())
 
-    def dice_score(self):
-        """
-        This function returns the dice score coefficient between a reference
-        and prediction images
+    # def dice_score(self):
+    #     """
+    #     This function returns the dice score coefficient between a reference
+    #     and prediction images
 
-        :return: dice score
-        """
-        if not "fbeta" in self.dict_args.keys():
-            self.dict_args["fbeta"] = 1
-        elif self.dict_args["fbeta"] != 1:
-            warnings.warn("Modifying fbeta option to get dice score")
-            self.dict_args["fbeta"] = 1
-        else:
-            print("Already correct value for fbeta option")
-        return self.fbeta()
+    #     :return: dice score
+    #     """
+    #     if not "fbeta" in self.dict_args.keys():
+    #         self.dict_args["fbeta"] = 1
+    #     elif self.dict_args["fbeta"] != 1:
+    #         warnings.warn("Modifying fbeta option to get dice score")
+    #         self.dict_args["fbeta"] = 1
+    #     else:
+    #         print("Already correct value for fbeta option")
+    #     return self.fbeta()
 
     def fppi(self):
         """
@@ -930,6 +931,15 @@ class BinaryPairwiseMeasures(object):
         """
         This functions determines the boundary iou
 
+        Bowen Cheng, Ross Girshick, Piotr Dollár, Alexander C Berg, and Alexander Kirillov. 2021. Boundary IoU: Improving
+Object-Centric Image Segmentation Evaluation. In Proceedings of the IEEE/CVF Conference on Computer Vision and
+Pattern Recognition. 15334–15342.
+
+        .. math::
+
+            B_{IoU}(A,B) = \dfrac{| A_{d} \cap B_{d} |}{|A_d| + |B_d| - |A_d \cap B_d|}
+
+        where :math:A_d are the pixels of A within a distance d of the boundary
         :return: boundary_iou
         """
         if "boundary_dist" in self.dict_args.keys():
@@ -943,12 +953,12 @@ class BinaryPairwiseMeasures(object):
         distance_border_pred = ndimage.distance_transform_edt(1 - border_pred)
 
         lim_dbp = np.where(
-            distance_border_pred < distance,
+            np.logical_and(distance_border_pred < distance, self.pred>0),
             np.ones_like(border_pred),
             np.zeros_like(border_pred),
         )
         lim_dbr = np.where(
-            distance_border_ref < distance,
+            np.logical_and(distance_border_ref < distance, self.ref>0),
             np.ones_like(border_ref),
             np.zeros_like(border_ref),
         )
@@ -994,6 +1004,10 @@ class BinaryPairwiseMeasures(object):
         """
         Calculates the normalised surface distance (NSD) between prediction and reference
         using the distance parameter :math:`{\\tau}`
+
+        .. math::
+
+            NSD(A,B)^{(\\tau)} = \dfrac{|S_{A} \cap Bord_{B,\\tau}| + |S_{B} \cup Bord_{A,\\tau}|}{|S_{A}| + S_{B}}
 
         :return: NSD
         """
@@ -1070,11 +1084,24 @@ class BinaryPairwiseMeasures(object):
         This function returns only the average distance when calculating the
         distances between prediction and reference
 
+        .. math::
+
+            ASSD(A,B) = \dfrac{\sum_{a\inA}d(a,B) + \sum_{b\inB}d(b,A)}{|A|+ |B|}
+
         :return: assd
         """
         return self.measured_distance()[1]
 
     def measured_masd(self):
+        """
+        This function returns only the mean average surface distance defined as
+
+        .. math::
+
+            MASD(A,B) = \dfrac{1}{2}\left(\dfrac{\sum_{a\in A}d(a,B)}{|A|} + \dfrac{\sum_{b\inB}d(b,A)}{|B|})
+        
+        :return: masd
+        """
         return self.measured_distance()[3]
 
     def measured_hausdorff_distance(self):

@@ -20,7 +20,7 @@ required in instance segmentation and object detection tasks .
 .. _assignloc:
 
 Performing the process associated with instance segmentation
-------------------------------------
+------------------------------------------------------------
 
 .. autoclass:: AssignmentMapping
     :members:
