@@ -79,8 +79,8 @@ class MultiClassPairwiseMeasures(object):
         self.measures_dict = {
             "mcc": (self.matthews_correlation_coefficient, "MCC"),
             "wck": (self.weighted_cohens_kappa, "WCK"),
-            "balanced_accuracy": (self.balanced_accuracy, "BAcc"),
-            "expected_cost": (self.expected_cost, "EC"),
+            "ba": (self.balanced_accuracy, "BAcc"),
+            "ec": (self.expected_cost, "EC"),
         }
         self.n_classes = len(self.list_values)
 
@@ -182,6 +182,9 @@ class MultiClassPairwiseMeasures(object):
         """
         Calculates the multiclass Matthews Correlation Coefficient defined as
 
+        Brian W Matthews. 1975. Comparison of the predicted and observed secondary structure of T4 phage lysozyme.
+        Biochimica et Biophysica Acta (BBA)-Protein Structure 405, 2 (1975), 442–451.
+
         .. math::
 
             R_k = \dfrac{cov_k(Pred,Ref)}{\sqrt{cov_k(Pred,Pred)*cov_k(Ref,Ref)}}
@@ -256,7 +259,8 @@ class MultiClassPairwiseMeasures(object):
         result_dict = {}
         for key in self.measures:
             result = self.measures_dict[key][0]()
-            result_dict[key] = fmt.format(result)
+            #result_dict[key] = fmt.format(result)
+            result_dict[key] = result
         return result_dict  # trim the last comma
 
 
@@ -266,7 +270,7 @@ class BinaryPairwiseMeasures(object):
         pred,
         ref,
         measures=[],
-        num_neighbors=8,
+        connectivity_type=1,
         pixdim=None,
         empty=False,
         dict_args={},
@@ -281,16 +285,17 @@ class BinaryPairwiseMeasures(object):
             "numb_fp": (self.fp, "NumbFP"),
             "numb_fn": (self.fn, "NumbFN"),
             "accuracy": (self.accuracy, "Accuracy"),
-            "net_benefit": (self.net_benefit_treated, "NB"),
-            "expected_cost": (self.normalised_expected_cost, "ECn"),
-            "balanced_accuracy": (self.balanced_accuracy, "BalAcc"),
+            "nb": (self.net_benefit_treated, "NB"),
+            "ec": (self.normalised_expected_cost, "ECn"),
+            "ba": (self.balanced_accuracy, "BalAcc"),
             "cohens_kappa": (self.cohens_kappa, "CohensKappa"),
             "lr+": (self.positive_likelihood_ratio, "LR+"),
             "iou": (self.intersection_over_union, "IoU"),
             "fbeta": (self.fbeta, "FBeta"),
+            "dsc":(self.dsc, "DSC"),
             "youden_ind": (self.youden_index, "YoudenInd"),
             "mcc": (self.matthews_correlation_coefficient, "MCC"),
-            "centreline_dsc": (self.centreline_dsc, "CentreLineDSC"),
+            "cldice": (self.centreline_dsc, "CentreLineDSC"),
             "assd": (self.measured_average_distance, "ASSD"),
             "boundary_iou": (self.boundary_iou, "BoundaryIoU"),
             "hd": (self.measured_hausdorff_distance, "HD"),
@@ -309,7 +314,7 @@ class BinaryPairwiseMeasures(object):
         if np.sum(self.ref) == 0:
             self.flag_empty_ref = True
         self.measures = measures if measures is not None else self.measures_dict
-        self.neigh = num_neighbors
+        self.connectivity = connectivity_type
         self.pixdim = pixdim
         self.dict_args = dict_args
 
@@ -531,6 +536,7 @@ class BinaryPairwiseMeasures(object):
 
             YI = Specificity + Sensitivity - 1
 
+        :return: Youden index
         """
         return self.specificity() + self.sensitivity() - 1
 
@@ -574,6 +580,9 @@ class BinaryPairwiseMeasures(object):
         Calculates and returns the balanced accuracy defined for the
         binary case as the average between sensitivity and specificity
 
+        Margherita Grandini, Enrico Bagli, and Giorgio Visani. 2020. Metrics for multi-class classification: an overview. arXiv
+        preprint arXiv:2008.05756 (2020).
+
         :return: balanced accuracy
         """
         return 0.5 * self.sensitivity() + 0.5 * self.specificity()
@@ -581,6 +590,9 @@ class BinaryPairwiseMeasures(object):
     def accuracy(self):
         """
         Calculate and returns the accuracy defined as
+
+        Margherita Grandini, Enrico Bagli, and Giorgio Visani. 2020. Metrics for multi-class classification: an overview. arXiv
+        preprint arXiv:2008.05756 (2020).
 
         .. math::
 
@@ -603,6 +615,14 @@ class BinaryPairwiseMeasures(object):
         return self.fp() / self.n_neg_ref()
 
     def normalised_expected_cost(self):
+        """
+        Calculates and returns the normalised expected cost
+
+        Luciana Ferrer. 2022. Analysis and Comparison of Classification Metrics. arXiv preprint arXiv:2209.05355 (2022).
+
+        :return: normalised expected cost
+        """
+
         prior_background = (self.tn() + self.fp()) / (np.size(self.ref))
         prior_foreground = (self.tp() + self.fn()) / np.size(self.ref)
 
@@ -689,6 +709,9 @@ class BinaryPairwiseMeasures(object):
         """
         Calculates the positive likelihood ratio
 
+        John Attia. 2003. Moving beyond sensitivity and specificity: using likelihood ratios to help interpret diagnostic tests.
+        Australian prescriber 26, 5 (2003), 111–113.
+
         .. math::
 
             LR+ = \dfrac{Sensitivity}{1-Specificity}
@@ -746,9 +769,34 @@ class BinaryPairwiseMeasures(object):
             return 0
         return self.sensitivity()
 
+    def dsc(self):
+        """
+        Calculates the Dice Similarity Coefficient defined as
+
+        Lee R Dice. 1945. Measures of the amount of ecologic association between species. Ecology 26, 3 (1945), 297–302.
+
+        ..math::
+
+            DSC = \dfrac{2TP}{2TP+FP+FN}
+        
+        This is also F:math:`{\\beta}` for :math:`{\\beta}`=1
+        """
+
+        numerator = 2 * self.tp()
+        denominator = self.n_pos_pred() + self.n_pos_ref()
+        if denominator == 0:
+            warnings.warn("Both Prediction and Reference are empty - set to 1 as correct solution even if not defined")
+            return 1
+        else:
+            return numerator / denominator
+
     def fbeta(self):
         """
         Calculates FBeta score defined as
+
+        Nancy Chinchor. 1992. MUC-4 Evaluation Metrics. In Proceedings of the 4th Conference on Message Understanding
+        (McLean, Virginia) (MUC4 ’92). Association for Computational Linguistics, USA, 22–29. https://doi.org/10.3115/
+        1072064.1072067
 
         .. math::
 
@@ -787,6 +835,9 @@ class BinaryPairwiseMeasures(object):
     def net_benefit_treated(self):
         """
         This functions calculates the net benefit treated according to a specified exchange rate
+
+        Andrew J Vickers, Ben Van Calster, and Ewout W Steyerberg. 2016. Net benefit approaches to the evaluation of
+        prediction models, molecular markers, and diagnostic tests. bmj 352 (2016).
 
         .. math::
 
@@ -841,8 +892,8 @@ class BinaryPairwiseMeasures(object):
         elif self.dict_args["fbeta"] != 1:
             warnings.warn("Modifying fbeta option to get dice score")
             self.dict_args["fbeta"] = 1
-        # else:
-        #     print("Already correct value for fbeta option")
+        else:
+            print("Already correct value for fbeta option")
         return self.fbeta()
 
     def fppi(self):
@@ -954,6 +1005,10 @@ class BinaryPairwiseMeasures(object):
         """
         Calculates the centre line dice score defined as
 
+        Suprosanna Shit, Johannes C Paetzold, Anjany Sekuboyina, Ivan Ezhov, Alexander Unger, Andrey Zhylka, Josien PW
+        Pluim, Ulrich Bauer, and Bjoern H Menze. 2021. clDice-a novel topology-preserving loss function for tubular structure
+        segmentation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. 16560–16569
+
         .. math::
 
             cDSC = 2\dfrac{Sens_{Top} * Prec_{Top}}{Sens_{Top} + Prec_{Top}}
@@ -970,25 +1025,34 @@ class BinaryPairwiseMeasures(object):
         """
         This functions determines the boundary iou
 
+        Bowen Cheng, Ross Girshick, Piotr Dollár, Alexander C Berg, and Alexander Kirillov. 2021. Boundary IoU: Improving 
+        Object-Centric Image Segmentation Evaluation. In Proceedings of the IEEE/CVF Conference on Computer Vision and
+        Pattern Recognition. 15334–15342.
+
+        .. math::
+
+            B_{IoU}(A,B) = \dfrac{| A_{d} \cap B_{d} |}{|A_d| + |B_d| - |A_d \cap B_d|}
+
+        where :math:A_d are the pixels of A within a distance d of the boundary
         :return: boundary_iou
         """
         if "boundary_dist" in self.dict_args.keys():
             distance = self.dict_args["boundary_dist"]
         else:
             distance = 1
-        border_ref = MorphologyOps(self.ref, self.neigh).border_map()
+        border_ref = MorphologyOps(self.ref, self.connectivity).border_map()
         distance_border_ref = ndimage.distance_transform_edt(1 - border_ref)
 
-        border_pred = MorphologyOps(self.pred, self.neigh).border_map()
+        border_pred = MorphologyOps(self.pred, self.connectivity).border_map()
         distance_border_pred = ndimage.distance_transform_edt(1 - border_pred)
 
         lim_dbp = np.where(
-            distance_border_pred < distance,
+            np.logical_and(distance_border_pred < distance, self.pred>0),
             np.ones_like(border_pred),
             np.zeros_like(border_pred),
         )
         lim_dbr = np.where(
-            distance_border_ref < distance,
+            np.logical_and(distance_border_ref < distance, self.ref>0),
             np.ones_like(border_ref),
             np.zeros_like(border_ref),
         )
@@ -1012,6 +1076,15 @@ class BinaryPairwiseMeasures(object):
         Calculates the normalised surface distance (NSD) between prediction and reference
         using the distance parameter :math:`{\\tau}`
 
+        Stanislav Nikolov, Sam Blackwell, Alexei Zverovitch, Ruheena Mendes, Michelle Livne, Jeffrey De Fauw, Yojan Patel,
+        Clemens Meyer, Harry Askham, Bernadino Romera-Paredes, et al. 2021. Clinically applicable segmentation of head
+        and neck anatomy for radiotherapy: deep learning algorithm development and validation study. Journal of Medical
+        Internet Research 23, 7 (2021), e26151.
+
+        .. math::
+
+            NSD(A,B)^{(\\tau)} = \dfrac{|S_{A} \cap Bord_{B,\\tau}| + |S_{B} \cup Bord_{A,\\tau}|}{|S_{A}| + S_{B}}
+
         :return: NSD
         """
         if "nsd" in self.dict_args.keys():
@@ -1033,6 +1106,10 @@ class BinaryPairwiseMeasures(object):
         """
         This function returns the average symmetric surface distance (ASSD) between prediction and reference
 
+        .. math::
+
+            ASSD(A,B) = \dfrac{\sum_{a\inA}d(a,B) + \sum_{b\inB}d(b,A)}{|A|+ |B|}
+
         :return: assd
         """
         if self.smooth_dr == 0 and np.sum(self.pred + self.ref) == 0:
@@ -1046,8 +1123,15 @@ class BinaryPairwiseMeasures(object):
 
     def measured_masd(self):
         """
-        This function returns the mean average surfance distance (MASD) between prediction and reference
+        This function returns only the mean average surface distance defined as
+        
+        Miroslav Beneš and Barbara Zitová. 2015. Performance evaluation of image segmentation algorithms on microscopic
+        image data. Journal of microscopy 257, 1 (2015), 65–85.
 
+        .. math::
+
+            MASD(A,B) = \dfrac{1}{2}\left(\dfrac{\sum_{a\in A}d(a,B)}{|A|} + \dfrac{\sum_{b\inB}d(b,A)}{|B|})
+        
         :return: masd
         """
         if self.smooth_dr == 0 and (np.sum(self.pred) == 0 or np.sum(self.ref) == 0):
@@ -1064,7 +1148,10 @@ class BinaryPairwiseMeasures(object):
         """
         This function returns the Hausdorff distance between prediction and reference
 
-        :return: hd
+        Daniel P Huttenlocher, Gregory A. Klanderman, and William J Rucklidge. 1993. Comparing images using the Hausdorff
+        distance. IEEE Transactions on pattern analysis and machine intelligence 15, 9 (1993), 850–863.
+
+        :return: hausdorff_distance
         """
         ref_border_dist, pred_border_dist, _, _ = \
             self.border_distance()
@@ -1075,7 +1162,10 @@ class BinaryPairwiseMeasures(object):
         """
         This function returns the xth percentile Hausdorff distance between prediction and reference
 
-        :return: hdp
+        Daniel P Huttenlocher, Gregory A. Klanderman, and William J Rucklidge. 1993. Comparing images using the Hausdorff
+        distance. IEEE Transactions on pattern analysis and machine intelligence 15, 9 (1993), 850–863.
+        
+        :return: hausdorff_distance_perc
         """
         if "hd_perc" in self.dict_args.keys():
             perc = self.dict_args["hd_perc"]
@@ -1099,13 +1189,9 @@ class BinaryPairwiseMeasures(object):
                 result = self.measures_dict[key][0]()
             else:
                 result = self.measures_dict[key][0](self.measures_dict[key][2])
-            result_dict[key] = fmt.format(result)
+            #result_dict[key] = fmt.format(result)
+            result_dict[key] = result
         return result_dict  # trim the last comma
-
-    def list_labels(self):
-        if self.list_labels is None:
-            return ()
-        return tuple(np.unique(self.list_labels))
 
     def to_string_count(self, fmt="{:.4f}"):
         result_str = ""

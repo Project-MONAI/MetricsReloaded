@@ -38,6 +38,7 @@ import numpy as np
 from scipy import ndimage
 from skimage.morphology import skeletonize
 from scipy.spatial.distance import squareform, pdist
+import pandas as pd
 
 
 __all__ = [
@@ -96,9 +97,9 @@ class MorphologyOps(object):
     connected component. To be used in the evaluation
     """
 
-    def __init__(self, binary_img, neigh):
+    def __init__(self, binary_img, connectivity):
         self.binary_map = np.asarray(binary_img, dtype=np.int8)
-        self.neigh = neigh
+        self.connectivity = connectivity
 
     def border_map(self):
         """
@@ -435,6 +436,46 @@ def to_dict_meas_(measures, measures_dict, fmt="{:.4f}"):
             result = measures_dict[key][0](measures_dict[key][2])
         result_dict[key] = fmt.format(result)
     return result_dict  # trim the last comma
+
+def combine_df(df1,df2):
+    if df1 is None or df1.shape[0]==0:
+        print('Nothing in first')
+        if df2 is None:
+            return None
+        elif df2.shape[0] == 0:
+            return None
+        else:
+            return df2
+    elif df2 is None or df2.shape[0]==0:
+        return df1
+    else:
+        print("Performing concatenation")
+        return pd.concat([df1, df2])
+
+def merge_list_df(list_df, on=['label','case']):
+    list_fin = []
+    for k in list_df:
+        if k is not None and k.shape[0] > 0:
+            flag_on = True
+            for f in on:
+                if f not in k.columns:
+                    flag_on = False
+            if flag_on:
+                list_fin.append(k)
+            print(flag_on)
+    if len(list_fin) == 0:
+        return None
+    elif len(list_fin) == 1:
+        return list_fin[0]
+    else:
+        print("list fin is ",list_fin)
+        df_fin = list_fin[0]
+        for k in list_fin[1:]:
+            df_fin = pd.merge(df_fin, k, on=on)
+        return df_fin    
+
+
+    
 
 
 

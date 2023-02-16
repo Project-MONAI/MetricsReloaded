@@ -6,7 +6,17 @@ from MetricsReloaded.utility.utils import median_heuristic
 
 
 def test_expected_calibration_error():
-    f40_pred = [0.22, 0.48, 0.49, 0.96, 0.55, 0.64, 0.78, 0.82, 0.34, 0.87]
+    f40_pred = [[1-0.22, 0.22 ],
+                [1-0.48, 0.48],
+                [0.51,0.49],
+                [0.04, 0.96],
+                [0.45, 0.55],
+                [0.36, 0.64],
+                [0.22, 0.78],
+                [0.18, 0.82],
+                [0.66, 0.34],
+                [0.13, 0.87]]
+    #f40_pred = [0.22, 0.48, 0.49, 0.96, 0.55, 0.64, 0.78, 0.82, 0.34, 0.87]
     f40_ref = [0, 1, 0, 0, 1, 1, 1, 1, 1, 0]
     ppm = CalibrationMeasures(f40_pred, f40_ref)
     ppm1 = CalibrationMeasures(f40_pred, f40_ref, dict_args={"bins_ece": 2})
@@ -20,7 +30,8 @@ def test_expected_calibration_error():
 
 def test_logarithmic_score():
     ref_ls = [1, 0]
-    pred_ls = [0.8, 0.6]
+    pred_ls = [[0.2,0.8],
+                [0.4,0.6]]
     ppm = CalibrationMeasures(np.asarray(pred_ls), np.asarray(ref_ls))
     value_test = ppm.logarithmic_score()
     expected_ls = -0.57
@@ -29,10 +40,11 @@ def test_logarithmic_score():
 
 def test_brier_score():
     ref_bs = [1, 0]
-    pred_bs = [0.8, 0.6]
+    pred_bs = [[0.2,0.8],
+                [0.4,0.6]]
     ppm = CalibrationMeasures(np.asarray(pred_bs), np.asarray(ref_bs))
     value_test = ppm.brier_score()
-    expected_bs = 0.2
+    expected_bs = 0.4
     assert_allclose(expected_bs, value_test, atol=0.01)
 
 

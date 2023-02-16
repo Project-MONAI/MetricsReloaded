@@ -1,4 +1,4 @@
-import pytest
+
 from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures as PM
 from MetricsReloaded.metrics.pairwise_measures import MultiClassPairwiseMeasures as MPM
 from MetricsReloaded.processes.mixed_measures_processes import (

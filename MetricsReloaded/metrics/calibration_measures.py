@@ -53,24 +53,27 @@ class CalibrationMeasures(object):
     def __init__(
         self,
         pred_proba,
-        ref_proba,
+        ref,
         case=None,
         measures=[],
-        num_neighbors=8,
-        pixdim=[1, 1, 1],
         empty=False,
         dict_args={},
     ):
         self.measures_dict = {
             "ece": (self.expectation_calibration_error, "ECE"),
             "bs": (self.brier_score, "BS"),
+            "rbs": (self.root_brier_score, "RBS"),
             "ls": (self.logarithmic_score, "LS"),
             "cwece": (self.class_wise_expectation_calibration_error, "cwECE"),
             "ece_kde": (self.kernel_based_ece, "ECE-KDE"),
+            "kce":(self.kernel_calibration_error, "KCE"),
+            "nll":(self.negative_log_likelihood,"NLL")
         }
 
-        self.pred = pred_proba
-        self.ref = ref_proba
+        self.pred = np.asarray(pred_proba)
+        self.ref = np.asarray(ref)
+        self.n_classes = self.pred.shape[1]
+        self.one_hot_ref = one_hot_encode(ref, self.n_classes)
         self.case = case
         self.flag_empty = empty
         self.dict_args = dict_args
@@ -97,8 +100,8 @@ class CalibrationMeasures(object):
         list_values = []
         numb_samples = self.pred.shape[0]
         class_pred = np.argmax(self.pred, 1)
-        nclasses = self.pred.shape[1]
-        for k in range(nclasses):
+        n_classes = self.pred.shape[1]
+        for k in range(n_classes):
             list_values_k = []
             for (l, u) in zip(range_values[:-1], range_values[1:]):
                 pred_k = self.pred[:, k]
@@ -127,7 +130,7 @@ class CalibrationMeasures(object):
             print(list_values, numb_samples)
             list_values.append(np.sum(np.asarray(list_values_k)) / numb_samples)
         print(list_values)
-        cwece = np.sum(np.asarray(list_values)) / nclasses
+        cwece = np.sum(np.asarray(list_values)) / n_classes
         return cwece
 
     def expectation_calibration_error(self):
@@ -135,7 +138,6 @@ class CalibrationMeasures(object):
         Derives the expectation calibration error in the case of binary task
         bins_ece is the key in the dictionary for the number of bins to consider
         Default is 10
-
         """
         if "bins_ece" in self.dict_args:
             nbins = self.dict_args["bins_ece"]
@@ -146,9 +148,11 @@ class CalibrationMeasures(object):
         print(range_values)
         list_values = []
         numb_samples = 0
+        pred_prob = self.pred[:,1]
+        print(pred_prob)
         for (l, u) in zip(range_values[:-1], range_values[1:]):
             ref_tmp = np.where(
-                np.logical_and(self.pred > l, self.pred <= u),
+                np.logical_and(pred_prob > l, pred_prob <= u),
                 self.ref,
                 np.ones_like(self.ref) * -1,
             )
@@ -156,9 +160,9 @@ class CalibrationMeasures(object):
             nsamples = np.size(ref_sel)
             prop = np.sum(ref_sel) / nsamples
             pred_tmp = np.where(
-                np.logical_and(self.pred > l, self.pred <= u),
-                self.pred,
-                np.ones_like(self.pred) * -1,
+                np.logical_and(pred_prob > l, pred_prob <= u),
+                pred_prob,
+                np.ones_like(pred_prob) * -1,
             )
             pred_sel = pred_tmp[pred_tmp > -1]
             if nsamples == 0:
@@ -174,8 +178,16 @@ class CalibrationMeasures(object):
         Calculation of the Brier score https://en.wikipedia.org/wiki/Brier_score
         here considering prediction probabilities as a vector of dimension N samples
         """
-        bs = np.mean(np.square(self.ref - self.pred))
+        bs = np.mean(np.sum(np.square(self.one_hot_ref - self.pred),1))
         return bs
+
+    def root_brier_score(self):
+        """
+        Gruber S. and Buettner F., Better Uncertainty Calibration via Proper Scores
+        for Classification and Beyond, In Proceedings of the 36th International
+        Conference on  Neural Information Processing Systems, 2022
+        """
+        return np.sqrt(self.brier_score())
 
     def logarithmic_score(self):
         """
@@ -183,12 +195,16 @@ class CalibrationMeasures(object):
         """
         eps = 1e-10
         log_pred = np.log(self.pred + eps)
-        log_1pred = np.log(1 - self.pred + eps)
-        print(log_pred, log_1pred, self.ref, 1 - self.ref)
-        overall = self.ref * log_pred + (1 - self.ref) * log_1pred
-        print(overall)
-        ls = np.mean(overall)
-        print(ls)
+        to_log = self.pred[np.arange(log_pred.shape[0]),self.ref]
+        to_sum = log_pred[np.arange(log_pred.shape[0]),self.ref]
+        print(to_sum, to_log)
+        ls =  np.mean(to_sum)
+        # log_1pred = np.log(1 - self.pred + eps)
+        # print(log_pred, log_1pred, self.ref, 1 - self.ref)
+        # overall = self.ref * log_pred + (1 - self.ref) * log_1pred
+        # print(overall)
+        # ls = np.mean(overall)
+        # print(ls)
         return ls
 
     def distance_ij(self,i,j):
@@ -332,11 +348,11 @@ class CalibrationMeasures(object):
         nll = -1 * ll
         return nll
 
-    def root_brier_score(self):
-        """
-        Gruber S. and Buettner F., Better Uncertainty Calibration via Proper Scores
-        for Classification and Beyond, In Proceedings of the 36th International
-        Conference on  Neural Information Processing Systems, 2022
-        """
-        rbs = 0
-        return rbs
+    def to_dict_meas(self, fmt="{:.4f}"):
+        """Given the selected metrics provides a dictionary with relevant metrics"""
+        result_dict = {}
+        for key in self.measures:
+            result = self.measures_dict[key][0]()
+            #result_dict[key] = fmt.format(result)
+            result_dict[key] = result
+        return result_dict 

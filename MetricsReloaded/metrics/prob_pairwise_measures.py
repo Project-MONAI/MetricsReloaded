@@ -52,8 +52,6 @@ class ProbabilityPairwiseMeasures(object):
         ref_proba,
         case=None,
         measures=[],
-        num_neighbors=8,
-        pixdim=[1, 1, 1],
         empty=False,
         dict_args={},
     ):
@@ -242,6 +240,9 @@ class ProbabilityPairwiseMeasures(object):
         Calculation of AUROC using trapezoidal integration based
          on the threshold and values list obtained from the all_multi_threshold_values method
 
+        James A Hanley and Barbara J McNeil. 1982. The meaning and use of the area under a receiver operating characteristic
+        (ROC) curve. Radiology 143, 1 (1982), 29–36.
+
         :return: AUC
         """
         (
@@ -265,6 +266,11 @@ class ProbabilityPairwiseMeasures(object):
     def froc(self):
         """
         Calculation of FROC score
+
+        Bram Van Ginneken, Samuel G Armato III, Bartjan de Hoop, Saskia van Amelsvoort-van de Vorst, Thomas Duindam,
+        Meindert Niemeijer, Keelin Murphy, Arnold Schilham, Alessandra Retico, Maria Evelina Fantacci, et al. 2010.
+        Comparing and combining algorithms for computer-aided detection of pulmonary nodules in computed tomography
+        scans: the ANODE09 study. Medical image analysis 14, 6 (2010), 707–722.
         """
         (
             unique_thresh,
@@ -275,19 +281,45 @@ class ProbabilityPairwiseMeasures(object):
         ) = self.all_multi_threshold_values()
         array_fppi = np.asarray(list_fppi)
         array_sens = np.asarray(list_sens)
+        max_fppi = np.max(array_fppi)
+        added_fppi = np.asarray([1.0/8, 1.0/4, 1.0/2, 1, 2, 4, 8])
+        added_sens = np.ones([7])*array_sens[-1]
+        if np.max(array_fppi) > 8:
+            ind = np.where(array_fppi>8)
+            min_ind = np.min(ind)
+            array_sens_new = array_sens[:ind]
+            array_fppi_new = array_fppi[:ind]
+        elif max_fppi < 1.0/8:
+            array_fppi_new = np.concatenate([array_fppi, added_fppi])
+            array_sens_new = np.concatenate([array_sens, added_sens])
+        elif max_fppi == 8:
+            array_fppi_new = array_fppi
+            array_sens_new = array_sens
+        else:
+            ind = np.where(added_fppi < max_fppi)
+            added_fppi_fin = added_fppi[ind:]
+            added_sens_fin = added_sens[ind:]
+            array_fppi_new = np.concatenate([array_fppi, added_fppi_fin])
+            array_sens_new = np.concatenate([array_sens, added_sens_fin])
+        
+
         # diff_fppi = array_fppi[1:] - array_fppi[:-1]
         # diff_sens = array_sens[1:] - array_sens[:-1]
         # bottom_rect = np.sum(array_sens[:-1] * diff_fppi)
         # top_rect = np.sum(array_sens[1:] * diff_fppi)
         # diff_rect = np.sum(diff_sens * diff_fppi)
         # froc = bottom_rect + diff_rect * 0.5
-        froc = trapezoidal_integration(list_fppi, list_sens)
+        froc = trapezoidal_integration(array_fppi_new, array_sens_new)
         return froc
 
     def average_precision(self):
         """
         Average precision calculation using trapezoidal integration. This integrates
         the precision as function of recall curve
+
+        Tsung-Yi Lin, Michael Maire, Serge Belongie, James Hays, Pietro Perona, Deva Ramanan, Piotr Dollár, and C Lawrence
+        Zitnick. 2014. Microsoft coco: Common objects in context. In European conference on computer vision. Springer,
+        740–755.
 
         :return: AP
 
@@ -476,5 +508,6 @@ class ProbabilityPairwiseMeasures(object):
         result_dict = {}
         for key in self.measures:
             result = self.measures_dict[key][0]()
-            result_dict[key] = fmt.format(result)
+            #result_dict[key] = fmt.format(result)
+            result_dict[key] = result
         return result_dict  # trim the last comma
