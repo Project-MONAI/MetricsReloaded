@@ -240,6 +240,9 @@ class ProbabilityPairwiseMeasures(object):
         Calculation of AUROC using trapezoidal integration based
          on the threshold and values list obtained from the all_multi_threshold_values method
 
+        James A Hanley and Barbara J McNeil. 1982. The meaning and use of the area under a receiver operating characteristic
+        (ROC) curve. Radiology 143, 1 (1982), 29–36.
+
         :return: AUC
         """
         (
@@ -263,6 +266,11 @@ class ProbabilityPairwiseMeasures(object):
     def froc(self):
         """
         Calculation of FROC score
+
+        Bram Van Ginneken, Samuel G Armato III, Bartjan de Hoop, Saskia van Amelsvoort-van de Vorst, Thomas Duindam,
+        Meindert Niemeijer, Keelin Murphy, Arnold Schilham, Alessandra Retico, Maria Evelina Fantacci, et al. 2010.
+        Comparing and combining algorithms for computer-aided detection of pulmonary nodules in computed tomography
+        scans: the ANODE09 study. Medical image analysis 14, 6 (2010), 707–722.
         """
         (
             unique_thresh,
@@ -308,6 +316,10 @@ class ProbabilityPairwiseMeasures(object):
         """
         Average precision calculation using trapezoidal integration. This integrates
         the precision as function of recall curve
+
+        Tsung-Yi Lin, Michael Maire, Serge Belongie, James Hays, Pietro Perona, Deva Ramanan, Piotr Dollár, and C Lawrence
+        Zitnick. 2014. Microsoft coco: Common objects in context. In European conference on computer vision. Springer,
+        740–755.
 
         :return: AP
 

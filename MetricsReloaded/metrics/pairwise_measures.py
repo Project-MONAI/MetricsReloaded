@@ -127,6 +127,9 @@ class MultiClassPairwiseMeasures(object):
         """
         Calculates the multiclass Matthews Correlation Coefficient defined as
 
+        Brian W Matthews. 1975. Comparison of the predicted and observed secondary structure of T4 phage lysozyme.
+        Biochimica et Biophysica Acta (BBA)-Protein Structure 405, 2 (1975), 442–451.
+
         .. math::
 
             R_k = \dfrac{cov_k(Pred,Ref)}{\sqrt{cov_k(Pred,Pred)*cov_k(Ref,Ref)}}
@@ -475,6 +478,9 @@ class BinaryPairwiseMeasures(object):
         Calculates and returns the balanced accuracy defined for the
         binary case as the average between sensitivity and specificity
 
+        Margherita Grandini, Enrico Bagli, and Giorgio Visani. 2020. Metrics for multi-class classification: an overview. arXiv
+        preprint arXiv:2008.05756 (2020).
+
         :return: balanced accuracy
         """
         return 0.5 * self.sensitivity() + 0.5 * self.specificity()
@@ -482,6 +488,9 @@ class BinaryPairwiseMeasures(object):
     def accuracy(self):
         """
         Calculate and returns the accuracy defined as
+
+        Margherita Grandini, Enrico Bagli, and Giorgio Visani. 2020. Metrics for multi-class classification: an overview. arXiv
+        preprint arXiv:2008.05756 (2020).
 
         .. math::
 
@@ -504,6 +513,14 @@ class BinaryPairwiseMeasures(object):
         return self.fp() / self.n_neg_ref()
 
     def normalised_expected_cost(self):
+        """
+        Calculates and returns the normalised expected cost
+
+        Luciana Ferrer. 2022. Analysis and Comparison of Classification Metrics. arXiv preprint arXiv:2209.05355 (2022).
+
+        :return: normalised expected cost
+        """
+
         prior_background = (self.tn() + self.fp()) / (np.size(self.ref))
         prior_foreground = (self.tp() + self.fn()) / np.size(self.ref)
 
@@ -588,6 +605,9 @@ class BinaryPairwiseMeasures(object):
         """
         Calculates the positive likelihood ratio
 
+        John Attia. 2003. Moving beyond sensitivity and specificity: using likelihood ratios to help interpret diagnostic tests.
+        Australian prescriber 26, 5 (2003), 111–113.
+
         .. math::
 
             LR+ = \dfrac{Sensitivity}{1-Specificity}
@@ -652,6 +672,8 @@ class BinaryPairwiseMeasures(object):
         """
         Calculates the Dice Similarity Coefficient defined as
 
+        Lee R Dice. 1945. Measures of the amount of ecologic association between species. Ecology 26, 3 (1945), 297–302.
+
         ..math::
 
             DSC = \dfrac{2TP}{2TP+FP+FN}
@@ -670,6 +692,10 @@ class BinaryPairwiseMeasures(object):
     def fbeta(self):
         """
         Calculates FBeta score defined as
+
+        Nancy Chinchor. 1992. MUC-4 Evaluation Metrics. In Proceedings of the 4th Conference on Message Understanding
+        (McLean, Virginia) (MUC4 ’92). Association for Computational Linguistics, USA, 22–29. https://doi.org/10.3115/
+        1072064.1072067
 
         .. math::
 
@@ -708,6 +734,9 @@ class BinaryPairwiseMeasures(object):
     def net_benefit_treated(self):
         """
         This functions calculates the net benefit treated according to a specified exchange rate
+
+        Andrew J Vickers, Ben Van Calster, and Ewout W Steyerberg. 2016. Net benefit approaches to the evaluation of
+        prediction models, molecular markers, and diagnostic tests. bmj 352 (2016).
 
         .. math::
 
@@ -915,6 +944,10 @@ class BinaryPairwiseMeasures(object):
         """
         Calculates the centre line dice score defined as
 
+        Suprosanna Shit, Johannes C Paetzold, Anjany Sekuboyina, Ivan Ezhov, Alexander Unger, Andrey Zhylka, Josien PW
+        Pluim, Ulrich Bauer, and Bjoern H Menze. 2021. clDice-a novel topology-preserving loss function for tubular structure
+        segmentation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. 16560–16569
+
         .. math::
 
             cDSC = 2\dfrac{Sens_{Top} * Prec_{Top}}{Sens_{Top} + Prec_{Top}}
@@ -1004,6 +1037,11 @@ Pattern Recognition. 15334–15342.
         """
         Calculates the normalised surface distance (NSD) between prediction and reference
         using the distance parameter :math:`{\\tau}`
+
+        Stanislav Nikolov, Sam Blackwell, Alexei Zverovitch, Ruheena Mendes, Michelle Livne, Jeffrey De Fauw, Yojan Patel,
+        Clemens Meyer, Harry Askham, Bernadino Romera-Paredes, et al. 2021. Clinically applicable segmentation of head
+        and neck anatomy for radiotherapy: deep learning algorithm development and validation study. Journal of Medical
+        Internet Research 23, 7 (2021), e26151.
 
         .. math::
 
@@ -1095,6 +1133,9 @@ Pattern Recognition. 15334–15342.
     def measured_masd(self):
         """
         This function returns only the mean average surface distance defined as
+        
+        Miroslav Beneš and Barbara Zitová. 2015. Performance evaluation of image segmentation algorithms on microscopic
+        image data. Journal of microscopy 257, 1 (2015), 65–85.
 
         .. math::
 
@@ -1109,6 +1150,9 @@ Pattern Recognition. 15334–15342.
         This function returns only the hausdorff distance when calculated the
         distances between prediction and reference
 
+        Daniel P Huttenlocher, Gregory A. Klanderman, and William J Rucklidge. 1993. Comparing images using the Hausdorff
+        distance. IEEE Transactions on pattern analysis and machine intelligence 15, 9 (1993), 850–863.
+
         :return: hausdorff_distance
         """
         return self.measured_distance()[0]
@@ -1117,6 +1161,9 @@ Pattern Recognition. 15334–15342.
         """
         This function returns the xth percentile hausdorff distance
 
+        Daniel P Huttenlocher, Gregory A. Klanderman, and William J Rucklidge. 1993. Comparing images using the Hausdorff
+        distance. IEEE Transactions on pattern analysis and machine intelligence 15, 9 (1993), 850–863.
+        
         :return: hausdorff_distance_perc
         """
         return self.measured_distance()[2]

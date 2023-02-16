@@ -109,6 +109,9 @@ class MixedLocSegPairwiseMeasure(object):
         ]
 
     def segmentation_quality(self):
+        """
+        Calculates the segmentation quality in an instance segmentation case with SQ defined as the average IoU over TP instances
+        """
         list_iou = []
         for (p, r) in zip(self.predimg, self.refimg):
             PE = BinaryPairwiseMeasures(p, r)
@@ -117,23 +120,35 @@ class MixedLocSegPairwiseMeasure(object):
         return np.mean(np.asarray(list_iou))
 
     def detection_quality(self):
+        """
+        Calculates the detection quality for a case of instance segmentation defined as the F1 score
+        """
         PE = BinaryPairwiseMeasures(self.pred, self.ref)
         #print("pred is ", self.pred, "ref is ", self.ref)
         return PE.fbeta()
 
     def panoptic_quality(self):
-        print("RQ ", self.detection_quality())
+        """
+        Calculates the panopitic quality defined as the production between
+        detection quality and segmentation quality
+
+        Alexander Kirillov, Kaiming He, Ross Girshick, Carsten Rother, and Piotr Dollár. 2019. Panoptic segmentation. In
+        Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. 9404–9413.
+
+        :return: PQ
+        """
+        print("DQ ", self.detection_quality())
         print("SQ ", self.segmentation_quality())
-        RQ = self.detection_quality()
+        DQ = self.detection_quality()
         SQ = self.segmentation_quality()
         if np.isnan(SQ):
-            if RQ == 0:
+            if DQ == 0:
                 SQ = 0
             else:
                 SQ = 1
                 # TODO modify to nan if this is the value adopted for empty situations
-        print("PQ is ", RQ * SQ, RQ, SQ)
-        return RQ * SQ
+        print("PQ is ", DQ * SQ, DQ, SQ)
+        return DQ * SQ
 
     def to_dict_mt(self):
         dict_output = self.prob_res.to_dict_meas()
