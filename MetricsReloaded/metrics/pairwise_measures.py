@@ -516,8 +516,8 @@ class BinaryPairwiseMeasures(object):
         :return: distance_border_ref, distance_border_pred, border_ref,
         border_pred
         """
-        border_ref = MorphologyOps(self.ref, self.neigh).border_map()
-        border_pred = MorphologyOps(self.pred, self.neigh).border_map()
+        border_ref = MorphologyOps(self.ref, self.connectivity).border_map()
+        border_pred = MorphologyOps(self.pred, self.connectivity).border_map()
         distance_ref = ndimage.distance_transform_edt(
             1 - border_ref, sampling=self.pixdim
         )
