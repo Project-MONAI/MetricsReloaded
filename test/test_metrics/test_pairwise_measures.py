@@ -5,7 +5,7 @@ from MetricsReloaded.processes.mixed_measures_processes import (
     MultiLabelLocSegPairwiseMeasure as MLIS,
 )
 import numpy as np
-from MetricsReloaded.utility.utils import one_hot_encode
+from MetricsReloaded.utility.utils import (one_hot_encode, compute_center_of_mass)
 from numpy.testing import assert_allclose
 from sklearn.metrics import cohen_kappa_score as cks
 from sklearn.metrics import matthews_corrcoef as mcc
@@ -388,8 +388,15 @@ def test_distance_empty():
     pred = np.zeros([14, 14])
     ref = np.zeros([14, 14])
     bpm = PM(pred, ref)
-    value_test = bpm.measured_distance()
-    expected_dist = (0, 0, 0, 0)
+    expected_dist = 0
+    value_test = bpm.measured_average_distance()
+    assert_allclose(value_test, expected_dist)
+    value_test = bpm.measured_masd()
+    assert_allclose(value_test, expected_dist)
+    value_test = bpm.measured_hausdorff_distance()
+    assert_allclose(value_test, expected_dist)
+    value_test = bpm.measured_hausdorff_distance_perc()
+    expected_dist = np.nan
     assert_allclose(value_test, expected_dist)
 
 
@@ -585,13 +592,12 @@ def test_com_empty():
     ref0 = np.zeros([14, 14])
     bpm = PM(pred0, ref0)
     value_test = bpm.com_dist()
-    value_pred = bpm.com_pred()
-    value_ref = bpm.com_ref()
+    value_pred = compute_center_of_mass(pred0)
+    value_ref = compute_center_of_mass(ref0)
     expected_empty = -1
     assert value_test == expected_empty
     assert value_ref == expected_empty
     assert value_pred == expected_empty
-
 
 def test_com_dist():
     pred = np.zeros([14, 14])
@@ -600,8 +606,8 @@ def test_com_dist():
     ref[0:5, 0:5] = 1
     bpm = PM(pred, ref)
     value_dist = bpm.com_dist()
-    value_pred = bpm.com_pred()
-    value_ref = bpm.com_ref()
+    value_pred = compute_center_of_mass(pred)
+    value_ref = compute_center_of_mass(ref)
     expected_dist = 0
     expected_com = (2, 2)
     assert_allclose(value_pred, expected_com)
