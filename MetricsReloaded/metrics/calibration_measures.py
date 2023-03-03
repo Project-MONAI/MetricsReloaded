@@ -238,7 +238,7 @@ class CalibrationMeasures(object):
         Calibration tests in multi-class classification: A unifying framework.
         Advances in Neural Information Processing Systems, 32:12257–12267, 2019.
         """
-        one_hot_ref = one_hot_encode(self.ref)
+        one_hot_ref = one_hot_encode(self.ref, self.pred.shape[1])
         numb_samples = self.pred.shape[0]
         sum_tot = 0
         for i in range(0,numb_samples):
