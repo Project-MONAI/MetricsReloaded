@@ -83,6 +83,9 @@ class CalibrationMeasures(object):
         r"""
         Class_wise version of the expectation calibration error
 
+        Ananya Kumar, Percy S Liang, and Tengyu Ma. 2019. Verified uncertainty calibration. Advances in Neural Information
+        Processing Systems 32 (2019).
+
         .. math::
 
             cwECE = \dfrac{1}{K}\sum_{k=1}^{K}\sum_{i=1}^{N}\dfrac{\vert B_{i,k} \vert}{N} \left(y_{k}(B_{i,k}) - p_{k}(B_{i,k})\right)
@@ -149,7 +152,7 @@ class CalibrationMeasures(object):
         list_values = []
         numb_samples = 0
         pred_prob = self.pred[:,1]
-        print(pred_prob)
+        #print(pred_prob)
         for (l, u) in zip(range_values[:-1], range_values[1:]):
             ref_tmp = np.where(
                 np.logical_and(pred_prob > l, pred_prob <= u),
@@ -170,13 +173,18 @@ class CalibrationMeasures(object):
             else:
                 list_values.append(nsamples * np.abs(prop - np.mean(pred_sel)))
             numb_samples += nsamples
-        print(list_values, numb_samples)
+        #print(list_values, numb_samples)
         return np.sum(np.asarray(list_values)) / numb_samples
 
     def brier_score(self):
         """
         Calculation of the Brier score https://en.wikipedia.org/wiki/Brier_score
         here considering prediction probabilities as a vector of dimension N samples
+
+        Glenn W Brier et al. 1950. Verification of forecasts expressed in terms of probability. Monthly weather review 78, 1
+        (1950), 1–3.
+
+        :return: brier score (BS)
         """
         bs = np.mean(np.sum(np.square(self.one_hot_ref - self.pred),1))
         return bs
@@ -197,7 +205,7 @@ class CalibrationMeasures(object):
         log_pred = np.log(self.pred + eps)
         to_log = self.pred[np.arange(log_pred.shape[0]),self.ref]
         to_sum = log_pred[np.arange(log_pred.shape[0]),self.ref]
-        print(to_sum, to_log)
+        #print(to_sum, to_log)
         ls =  np.mean(to_sum)
         # log_1pred = np.log(1 - self.pred + eps)
         # print(log_pred, log_1pred, self.ref, 1 - self.ref)
@@ -225,6 +233,11 @@ class CalibrationMeasures(object):
         return value * identity
 
     def kernel_calibration_error(self):
+        """
+        Based on the paper Widmann, D., Lindsten, F., and Zachariah, D.
+        Calibration tests in multi-class classification: A unifying framework.
+        Advances in Neural Information Processing Systems, 32:12257–12267, 2019.
+        """
         one_hot_ref = one_hot_encode(self.ref)
         numb_samples = self.pred.shape[0]
         sum_tot = 0
@@ -260,17 +273,25 @@ class CalibrationMeasures(object):
                 prob[k] = prob_ref_counts[idx[0]] / numb_samples
 
         prob_expected_max = prob[class_max]
-        print(prob, prob_ref_counts, prob_expected_max, prob_pred_max)
-        print(np.square(prob_expected_max - prob_pred_max))
+        #print(prob, prob_ref_counts, prob_expected_max, prob_pred_max)
+        #print(np.square(prob_expected_max - prob_pred_max))
         tce = np.sqrt(np.mean(np.square(prob_expected_max - prob_pred_max)))
         return tce
 
     def kernel_based_ece(self):
+        """
+        Calculates kernel based ECE
+
+        Teodora Popordanoska, Raphael Sayer, and Matthew B Blaschko. 2022. A Consistent and Differentiable Lp Canonical
+        Calibration Error Estimator. In Advances in Neural Information Processing Systems.
+
+        :return: ece_kde
+        """
         ece_kde = 0
         one_hot_ref = one_hot_encode(self.ref, self.pred.shape[1])
         nclasses = self.pred.shape[1]
         numb_samples = self.pred.shape[0]
-        print(nclasses, one_hot_ref)
+        #print(nclasses, one_hot_ref)
         norm_list = []
         for j in range(numb_samples):
             new_list = []
@@ -281,14 +302,14 @@ class CalibrationMeasures(object):
                     new_list.append(new_dir)
                     ref_tmp = one_hot_ref[i, :]
                     new_add = ref_tmp * new_dir
-                    print(new_add)
+                    #print(new_add)
                     new_vect += new_add
             norm = np.sum(np.asarray(new_list))
             final_vect = new_vect / norm
             norm_list.append(final_vect - self.pred[j, :])
 
         full_array = np.vstack(norm_list)
-        print(full_array.shape)
+        #print(full_array.shape)
         ece_kde = np.mean(np.sqrt(np.sum(np.square(full_array), 1)))
 
         return ece_kde
@@ -320,22 +341,13 @@ class CalibrationMeasures(object):
         kernel_value = numerator / denominator * prod
         return kernel_value
 
-    def class_wise_brier_score(self):
-        cwbs = 0
-        return cwbs
-
-    def kernel_calibration_error(self):
-        """
-        Based on the paper Widmann, D., Lindsten, F., and Zachariah, D.
-        Calibration tests in multi-class classification: A unifying framework.
-        Advances in Neural Information Processing Systems, 32:12257–12267, 2019.
-        """
-        kce = 0
-        return kce
 
     def negative_log_likelihood(self):
         """
         Derives the negative log-likelihood defined as
+
+        George Cybenko, Dianne P O’Leary, and Jorma Rissanen. 1998. The Mathematics of Information Coding, Extraction
+        and Distribution. Vol. 107. Springer Science & Business Media.
 
         .. math::
 

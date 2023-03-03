@@ -116,7 +116,7 @@ class MixedLocSegPairwiseMeasure(object):
         for (p, r) in zip(self.predimg, self.refimg):
             PE = BinaryPairwiseMeasures(p, r)
             list_iou.append(PE.intersection_over_union())
-        print(list_iou, " is list iou")
+        #print(list_iou, " is list iou")
         return np.mean(np.asarray(list_iou))
 
     def detection_quality(self):
@@ -137,8 +137,8 @@ class MixedLocSegPairwiseMeasure(object):
 
         :return: PQ
         """
-        print("DQ ", self.detection_quality())
-        print("SQ ", self.segmentation_quality())
+        #print("DQ ", self.detection_quality())
+        #print("SQ ", self.segmentation_quality())
         DQ = self.detection_quality()
         SQ = self.segmentation_quality()
         if np.isnan(SQ):
@@ -147,7 +147,7 @@ class MixedLocSegPairwiseMeasure(object):
             else:
                 SQ = 1
                 # TODO modify to nan if this is the value adopted for empty situations
-        print("PQ is ", DQ * SQ, DQ, SQ)
+        #print("PQ is ", DQ * SQ, DQ, SQ)
         return DQ * SQ
 
     def to_dict_mt(self):

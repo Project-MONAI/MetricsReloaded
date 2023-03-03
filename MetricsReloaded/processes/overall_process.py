@@ -19,7 +19,7 @@ This module provides class to perform the :ref:`overall evaluation process  <pro
 .. _processeval:
 
 Performing the process associated with instance segmentation
-------------------------------------
+------------------------------------------------------------
 
 .. autoclass:: ProcessEvaluation
     :members:
@@ -320,7 +320,7 @@ class ProcessEvaluation(object):
             df_miss_seg = pd.DataFrame.from_dict(list_missing_seg)
             df_miss_mcc = pd.DataFrame.from_dict(list_missing_mcc)
             df_miss_mt = pd.DataFrame.from_dict(list_missing_mt)
-            print(self.resseg, ' is resseg before combination')
+            #print(self.resseg, ' is resseg before combination')
             self.resdet = combine_df(self.resdet, df_miss_det)
             self.resseg = combine_df(self.resseg, df_miss_seg)
             self.resmt = combine_df(self.resmt, df_miss_mt)

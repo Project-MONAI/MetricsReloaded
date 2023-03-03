@@ -332,7 +332,7 @@ class ProbabilityPairwiseMeasures(object):
             list_fppi,
         ) = self.all_multi_threshold_values()
 
-        print("From AP", list_sens, list_ppv)
+        #print("From AP", list_sens, list_ppv)
         ap = trapezoidal_integration(np.asarray(list_sens), np.asarray(list_ppv))
         # diff_ppv = np.asarray(list_ppv[1:]) - np.asarray(list_ppv[:-1])
         # diff_sens = np.asarray(list_sens[1:]) - np.asarray(list_sens[:-1])
