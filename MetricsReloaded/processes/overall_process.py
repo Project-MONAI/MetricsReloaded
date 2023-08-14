@@ -166,13 +166,11 @@ class ProcessEvaluation(object):
             warnings.warn('No appropriate category chosen')
             return False
         all_measures = self.measures_boundary + self.measures_cal + self.measures_detseg + self.measures_mcc + self.measures_mt + self.measures_overlap + self.measures_pcc
-        print(all_measures, dict_valid[self.category])
+
         for k in all_measures:
-            print(k)
             if k not in dict_valid[self.category]:
                 warnings.warn( '%s is not a suitable metric for %s' %(k,self.category))
                 flag_valid = False
-                print(flag_valid)
         return flag_valid
 
 
@@ -320,7 +318,6 @@ class ProcessEvaluation(object):
             df_miss_seg = pd.DataFrame.from_dict(list_missing_seg)
             df_miss_mcc = pd.DataFrame.from_dict(list_missing_mcc)
             df_miss_mt = pd.DataFrame.from_dict(list_missing_mt)
-            #print(self.resseg, ' is resseg before combination')
             self.resdet = combine_df(self.resdet, df_miss_det)
             self.resseg = combine_df(self.resseg, df_miss_seg)
             self.resmt = combine_df(self.resmt, df_miss_mt)

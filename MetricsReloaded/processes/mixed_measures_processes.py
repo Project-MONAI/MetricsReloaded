@@ -116,7 +116,7 @@ class MixedLocSegPairwiseMeasure(object):
         for (p, r) in zip(self.predimg, self.refimg):
             PE = BinaryPairwiseMeasures(p, r)
             list_iou.append(PE.intersection_over_union())
-        #print(list_iou, " is list iou")
+        
         return np.mean(np.asarray(list_iou))
 
     def detection_quality(self):
@@ -124,7 +124,6 @@ class MixedLocSegPairwiseMeasure(object):
         Calculates the detection quality for a case of instance segmentation defined as the F1 score
         """
         PE = BinaryPairwiseMeasures(self.pred, self.ref)
-        #print("pred is ", self.pred, "ref is ", self.ref)
         return PE.fbeta()
 
     def panoptic_quality(self):
@@ -137,8 +136,7 @@ class MixedLocSegPairwiseMeasure(object):
 
         :return: PQ
         """
-        #print("DQ ", self.detection_quality())
-        #print("SQ ", self.segmentation_quality())
+        
         DQ = self.detection_quality()
         SQ = self.segmentation_quality()
         if np.isnan(SQ):
@@ -147,7 +145,7 @@ class MixedLocSegPairwiseMeasure(object):
             else:
                 SQ = 1
                 # TODO modify to nan if this is the value adopted for empty situations
-        #print("PQ is ", DQ * SQ, DQ, SQ)
+        
         return DQ * SQ
 
     def to_dict_mt(self):
@@ -241,14 +239,12 @@ class MultiLabelLocSegPairwiseMeasure(object):
         path, name = os.path.split(file_ref)
         name_new = category + "_" + name
         name_fin = path + os.path.sep + name_new
-        print(name_fin)
         nib.save(nib_img, name_fin)
 
     def per_label_dict(self):
         list_det = []
         list_seg = []
         list_mt = []
-        #print(self.list_values)
         for lab in self.list_values:
             list_pred = []
             list_ref = []
@@ -256,11 +252,11 @@ class MultiLabelLocSegPairwiseMeasure(object):
             list_pred_loc = []
             list_ref_loc = []
             for (case, name) in zip(range(len(self.pred_class)), self.names):
-                #print(self.pred_prob[case], self.pred_prob[case].shape)
+                
                 pred_class_case = np.asarray(self.pred_class[case])
                 ref_class_case = np.asarray(self.ref_class[case])
                 ind_pred = np.where(pred_class_case == lab)
-                #print(ind_pred)
+                
                 pred_tmp = np.where(
                     pred_class_case == lab,
                     np.ones_like(pred_class_case),
@@ -278,7 +274,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
                     pred_prob_tmp = [self.pred_prob[case][i, lab] for i in ind_pred[0]]
                 else:
                     pred_prob_tmp = None
-                #print(len(pred_loc_tmp), len(ref_loc_tmp), lab, case)
+                
                 AS = AssignmentMapping(
                     pred_loc=pred_loc_tmp,
                     ref_loc=ref_loc_tmp,
@@ -590,7 +586,6 @@ class MultiLabelPairwiseMeasures(object):
         
         if pred_proba is None or pred_proba[0] is None:
             self.flag_valid_proba = False
-        #print(self.names, ' is names')
 
     def per_label_dict(self):
         list_bin = []
@@ -608,12 +603,10 @@ class MultiLabelPairwiseMeasures(object):
                     prob_case = np.asarray(self.pred_proba[case])
                 else:
                     prob_case = None
-                #print(pred_case, ' is case ', case)
                 pred_tmp = np.where(
                     pred_case == lab, np.ones_like(pred_case), np.zeros_like(pred_case)
                 )
                 
-                #print(prob_case)
                 if prob_case is not None:
                     pred_proba_tmp = prob_case[...,lab]
                 else:
@@ -623,7 +616,7 @@ class MultiLabelPairwiseMeasures(object):
                 ref_tmp = np.where(
                     ref_case == lab, np.ones_like(ref_case), np.zeros_like(ref_case)
                 )
-                #print(pred_tmp, ref_tmp)
+                
                 if self.per_case:
                     if len(self.measures_binary) > 0:
                         BPM = BinaryPairwiseMeasures(

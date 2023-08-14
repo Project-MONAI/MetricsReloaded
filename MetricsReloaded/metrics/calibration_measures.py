@@ -99,7 +99,6 @@ class CalibrationMeasures(object):
             nbins = 10
         step = 1.0 / nbins
         range_values = np.arange(0, 1.00001, step)
-        print(range_values)
         list_values = []
         numb_samples = self.pred.shape[0]
         class_pred = np.argmax(self.pred, 1)
@@ -130,9 +129,7 @@ class CalibrationMeasures(object):
                 else:
                     list_values_k.append(nsamples * np.abs(prop - np.mean(pred_sel)))
 
-            print(list_values, numb_samples)
             list_values.append(np.sum(np.asarray(list_values_k)) / numb_samples)
-        print(list_values)
         cwece = np.sum(np.asarray(list_values)) / n_classes
         return cwece
 
@@ -148,11 +145,9 @@ class CalibrationMeasures(object):
             nbins = 10
         step = 1.0 / nbins
         range_values = np.arange(0, 1.00001, step)
-        print(range_values)
         list_values = []
         numb_samples = 0
         pred_prob = self.pred[:,1]
-        #print(pred_prob)
         for (l, u) in zip(range_values[:-1], range_values[1:]):
             ref_tmp = np.where(
                 np.logical_and(pred_prob > l, pred_prob <= u),
@@ -173,7 +168,6 @@ class CalibrationMeasures(object):
             else:
                 list_values.append(nsamples * np.abs(prop - np.mean(pred_sel)))
             numb_samples += nsamples
-        #print(list_values, numb_samples)
         return np.sum(np.asarray(list_values)) / numb_samples
 
     def brier_score(self):
@@ -205,14 +199,7 @@ class CalibrationMeasures(object):
         log_pred = np.log(self.pred + eps)
         to_log = self.pred[np.arange(log_pred.shape[0]),self.ref]
         to_sum = log_pred[np.arange(log_pred.shape[0]),self.ref]
-        #print(to_sum, to_log)
         ls =  np.mean(to_sum)
-        # log_1pred = np.log(1 - self.pred + eps)
-        # print(log_pred, log_1pred, self.ref, 1 - self.ref)
-        # overall = self.ref * log_pred + (1 - self.ref) * log_1pred
-        # print(overall)
-        # ls = np.mean(overall)
-        # print(ls)
         return ls
 
     def distance_ij(self,i,j):
@@ -273,8 +260,6 @@ class CalibrationMeasures(object):
                 prob[k] = prob_ref_counts[idx[0]] / numb_samples
 
         prob_expected_max = prob[class_max]
-        #print(prob, prob_ref_counts, prob_expected_max, prob_pred_max)
-        #print(np.square(prob_expected_max - prob_pred_max))
         tce = np.sqrt(np.mean(np.square(prob_expected_max - prob_pred_max)))
         return tce
 
@@ -291,7 +276,6 @@ class CalibrationMeasures(object):
         one_hot_ref = one_hot_encode(self.ref, self.pred.shape[1])
         nclasses = self.pred.shape[1]
         numb_samples = self.pred.shape[0]
-        #print(nclasses, one_hot_ref)
         norm_list = []
         for j in range(numb_samples):
             new_list = []
@@ -302,14 +286,12 @@ class CalibrationMeasures(object):
                     new_list.append(new_dir)
                     ref_tmp = one_hot_ref[i, :]
                     new_add = ref_tmp * new_dir
-                    #print(new_add)
                     new_vect += new_add
             norm = np.sum(np.asarray(new_list))
             final_vect = new_vect / norm
             norm_list.append(final_vect - self.pred[j, :])
 
         full_array = np.vstack(norm_list)
-        #print(full_array.shape)
         ece_kde = np.mean(np.sqrt(np.sum(np.square(full_array), 1)))
 
         return ece_kde

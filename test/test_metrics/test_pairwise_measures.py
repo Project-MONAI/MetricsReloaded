@@ -251,12 +251,8 @@ def test_balanced_accuracy():
     ohr = one_hot_encode(mpm.ref, 4)
     cm = np.matmul(ohp, ohr)
     col_sum = np.sum(cm, 0)
-    print(col_sum, np.diag(cm))
-    print(np.diag(cm) / col_sum)
     numerator = np.sum(np.diag(cm) / col_sum)
-    print(mpm.confusion_matrix())
     ba = mpm.balanced_accuracy()
-    print(ba)
     expected_ba = 0.7071
     assert_allclose(ba, expected_ba, atol=0.001)
 

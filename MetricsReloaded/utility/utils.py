@@ -168,7 +168,6 @@ def guess_input_style(a):
     Given an array a, guess whether it represents a mask, a box or a centre of mass
 
     """
-    print(a.ndim)
     if a.ndim > 1:
         return 'mask'
     else:
@@ -203,7 +202,6 @@ def point_in_mask(point, mask):
     else:
         new_mask[point[0],point[1],point[2]] = 1
     overlap = np.multiply(new_mask, mask)
-    print(point, new_mask, overlap, 'sum_overlap ', np.sum(overlap))
     if np.sum(overlap) > 0:
         return 1
     else:
@@ -429,7 +427,6 @@ def merge_list_df(list_df, on=['label','case']):
                     flag_on = False
             if flag_on:
                 list_fin.append(k)
-            print(flag_on)
     if len(list_fin) == 0:
         return None
     elif len(list_fin) == 1:
