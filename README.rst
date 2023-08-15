@@ -51,8 +51,38 @@ You can alternatively install the package in editable mode:
 
 This is useful if you are developing MetricsReloaded and want to see changes in the code automatically applied to the installed library.
 
+
 Overview
 ========
+
+All functions used in this framework are documented `here <https://metricsreloaded.readthedocs.io/en/latest/?badge=latest>`
+
+The repository is organised in three main folders:
+
+- processes: this allows for the combination of multiple metrics in an evaluation setting and reflects the tasks tackled in the MetricsReloaded framework namely:
+
+  #. Image Level Classification (ILC)
+  #. Semantic Segmentation (SS)
+  #. Object Detection (OD)
+  #. Instance Segmentation (SS)
+
+- metrics: this contains all the individual metrics reported and discussed in the MetricsReloaded guidelines. Those are classified as either:
+
+  #. pairwise_measures - all metrics considering a binary or multiclass input
+  #. prob_pairwise_measures - all metrics relying on multi threshold and/or probabilistic input
+  #. calibration_measures - all metrics related to the evaluation of the calibration of probabilistic outputs
+
+- utility: this contains all ancillary function relevant notably for aggregation of metrics, or preliminary tools required for complext assignments prior to metrics calculation notably in the case of Object Detection and Instance Segmentation. 
+
+Useful links to get started
+===========================
+
+To see examples on how to process different cases of tasks please look into the 
+
+:ref: `example_ss.py`
+
+Pictorial representation
+========================
 
 .. end-description
 
@@ -61,3 +91,6 @@ Overview
     :align: center
 
     Metrics Reloaded fosters the convergence of validation methodology across modalities, application domains and classification scales
+
+
+
