@@ -163,7 +163,7 @@ class ProcessEvaluation(object):
     def check_valid_measures_cat(self):
         flag_valid = True
         if self.category not in ['ImLC','SemS','InS','ObD']:
-            warnings.warn('No appropriate category chosen')
+            warnings.warn('No appropriate category chosen, please choose between ImLC, SemS, InS and ObD')
             return False
         all_measures = self.measures_boundary + self.measures_cal + self.measures_detseg + self.measures_mcc + self.measures_mt + self.measures_overlap + self.measures_pcc
 

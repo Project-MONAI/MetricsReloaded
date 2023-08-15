@@ -34,11 +34,15 @@ Performing the process associated with multiple labels in instance segmentation
 .. autoclass:: MultiLabelLocSegPairwiseMeasure
     :members:
 
+.. _mlod:
+
 Performing the process associated with multiple labels in instance segmentation
 -------------------------------------------------------------------------------
 
 .. autoclass:: MultiLabelLocMeasures
     :members:
+
+.. _multiclass:
 
 Performing the process associated with multiple labels in classification (semantic segmentation or image level classification)
 ------------------------------------------------------------------------------------------------------------------------------
