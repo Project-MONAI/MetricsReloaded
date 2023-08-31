@@ -1,3 +1,5 @@
+# This file is only used to run the tests - do not remove
+
 import pytest
 from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures as PM
 from MetricsReloaded.metrics.pairwise_measures import MultiClassPairwiseMeasures as MPM

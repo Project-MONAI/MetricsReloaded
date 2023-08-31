@@ -12,7 +12,7 @@
 
 """
 Mixed measures processes - :mod:`MetricsReloaded.processes.mixed_measures_processes`
-===================================================================================
+====================================================================================
 
 This module provides classes for performing the evaluation processes of
  :ref:`instance segmentation <instanceseg>`, :ref:`multi label instance segmentation <mlinstanceseg>`, 
@@ -75,6 +75,22 @@ __all__ = [
 
 
 class MixedLocSegPairwiseMeasure(object):
+    """
+    This class is for use in the context of instance segmentation when identification of location, classification of instances and contour segmentation are required
+    This is initialised with the following parameters:
+    
+    :param pred: np array with prediction of class of individual elements
+    :param ref: np array with reference class of individual elements
+    :param list_predimg: list of the prediction images (one per element to consider in the comparison)
+    :param list_refimg: list of reference images (one per element to consider as reference instance in the comparison)
+    :param pred_prob: np array of predicted class probabilities
+    :param measures_overlap: list of choices of measures of overlap
+    :param measures_boundary: list of choices of measures assessing boundary agreement
+    :param measures_mt: list of choices of measures using multiple probability thresholds
+    :param measures_pcc: list of choices of measures of per class counting in terms of classification of instances
+    :param measures_detseg: consideration (list) of metrics combining both segmentation and detection performance
+    :param dict_args: dictionary with relevant arguments for the metrics
+    """
     def __init__(
         self,
         pred,
@@ -153,16 +169,25 @@ class MixedLocSegPairwiseMeasure(object):
         return DQ * SQ
 
     def to_dict_mt(self):
+        """
+        Transform to dictionary the result of the multi threshold metrics
+        """
         dict_output = self.prob_res.to_dict_meas()
         return dict_output
 
     def to_dict_det(self):
+        """
+        Transform to dictionary the results of the detection metrics (includes also panoptic quality metric)
+        """
         dict_output = self.det_res.to_dict_meas()
         if "PQ" in self.measures_detseg:
             dict_output["PQ"] = self.panoptic_quality()
         return dict_output
 
     def to_pd_seg(self):
+        """
+        Transforms the segmentation results to a pandas dataframe
+        """
         list_res = []
         for ps in self.seg_res:
             dict_tmp = ps.to_dict_meas()
@@ -174,6 +199,26 @@ class MultiLabelLocSegPairwiseMeasure(object):
     """
     This class represents the processing for instance segmentation on true positive 
     Characterised by the predicted classes and associated reference classes
+
+    :param pred_class: list for each considered case of classes predicted 
+    :param ref_class:list for each considered case of reference classes
+    :param pred_loc: list for each considered case of the individual image considering an individual predicted element
+    :param ref_loc: list for each considered case of the individual images considering individual reference elements (note that ref_loc and ref_class entities are matching)
+    :param pred_prob:
+    :param list_values: list of possible label values 
+    :param measures_pcc: list of per class counting measures to be derived during the process
+    :param measures_overlap: list of overlap (segmentation) measures to be derived during the process
+    :param measures_boundary: list of boundary measures to be derived during the comparison process
+    :param measures_detseg: list of measures combining detection and segmentation to be derived during the comparison process
+    :param measures_mt: list of multi-threshold measures to be derived during the comparison process
+    :param per_case: flag indicating whether each case should be derived individually or if all cases should be assessed at once
+    :param flag_map: flag indicating whether an image for either predicted TP, reference TP, FP or FN element should be generated
+    :param file: list of files (reference or prediction) that led to each case
+    :param assignment: type of chosen assignment choice among []
+    :param localization: type of localization strategy chosen for the assignment
+    :param thresh:
+    :param flag_fp_in: flag to consider the false positive elements in the assessment
+    :param dict_args: dictionary for additional arguments related to the chosen metrics.
     """
     
     def __init__(
@@ -233,7 +278,14 @@ class MultiLabelLocSegPairwiseMeasure(object):
         if pred_prob is None or pred_prob[0] is None:
             self.flag_valid_prob = False
 
-    def create_map(self, list_maps, file_ref, category):
+    def create_nifti_image(self, list_maps, file_ref, category):
+        """
+        Creates a nifti image of either the true positives, true negatives, false positives or false negatives
+        :param list_maps: list of np.arrays containing an element to add to the final image
+        :param file_ref: reference nifti file to use for saving the final image
+        :param category: category description of the elements being saved (classically TP TN FP FN)
+
+        """
         affine = nib.load(file_ref).affine
         data = nib.load(file_ref).get_fdata()
         final_class = np.zeros_like(data)
@@ -246,6 +298,17 @@ class MultiLabelLocSegPairwiseMeasure(object):
         nib.save(nib_img, name_fin)
 
     def per_label_dict(self):
+        """
+        According to the specifications of metrics to be used and the type of assignment and localization, performs, per label value in 
+        list_values the processing per case (overall prediction associated to overall reference image).
+        This is organised in multiple steps:
+            - identification for each predicted case of the items considered as of the class specified by label considered
+            - identification for each associated case, the items considered as of the class specified by the considered label 
+            - creation of the associated list of individual images of elements selected beforehand both in the prediction images and the reference images (the images are listed in the same order with one element per image)
+            - assigment procedure based on the segmentation images
+            - derivation of metrics either on a case by case basis or grouping all cases together. 
+
+        """
         list_det = []
         list_seg = []
         list_mt = []
@@ -261,17 +324,21 @@ class MultiLabelLocSegPairwiseMeasure(object):
                 ref_class_case = np.asarray(self.ref_class[case])
                 ind_pred = np.where(pred_class_case == lab)
                 
+                # identification of the elements of pred classified according to label lab
                 pred_tmp = np.where(
                     pred_class_case == lab,
                     np.ones_like(pred_class_case),
                     np.zeros_like(pred_class_case),
                 )
+                # identification of the elements of ref_class classificed according to label lab
                 ref_tmp = np.where(
                     ref_class_case == lab,
                     np.ones_like(ref_class_case),
                     np.zeros_like(ref_class_case),
                 )
                 ind_ref = np.where(ref_class_case == lab)
+
+                # Creation of the list of individual element images for pred and ref given the chosen label
                 pred_loc_tmp = [self.pred_loc[case][i] for i in ind_pred[0]]
                 ref_loc_tmp = [self.ref_loc[case][i] for i in ind_ref[0]]
                 if self.flag_valid_prob:
@@ -279,6 +346,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
                 else:
                     pred_prob_tmp = None
                 
+                # Performing the assignment mapping based on the list of locations
                 AS = AssignmentMapping(
                     pred_loc=pred_loc_tmp,
                     ref_loc=ref_loc_tmp,
@@ -309,10 +377,10 @@ class MultiLabelLocSegPairwiseMeasure(object):
                     ref_fn_loc,
                 ) = AS.matching_ref_predseg()
                 if self.flag_map and len(self.file) == len(self.pred_class):
-                    self.create_map(pred_loc_tmp_fin, self.file[case], "TP_Pred")
-                    self.create_map(ref_loc_tmp_fin, self.file[case], "TP_Ref")
-                    self.create_map(pred_fp_loc, self.file[case], "FP")
-                    self.create_map(ref_fn_loc, self.file[case], "FN")
+                    self.create_nifti_image(pred_loc_tmp_fin, self.file[case], "TP_Pred")
+                    self.create_nifti_image(ref_loc_tmp_fin, self.file[case], "TP_Ref")
+                    self.create_nifti_image(pred_fp_loc, self.file[case], "FP")
+                    self.create_nifti_image(ref_fn_loc, self.file[case], "FN")
                 print("assignment done")
                 if self.per_case:
                     # pred_loc_tmp_fin = pred_loc_tmp[list_valid]
@@ -408,12 +476,30 @@ class MultiLabelLocSegPairwiseMeasure(object):
 
 
 class MultiLabelLocMeasures(object):
+    """
+    Class for the processing of multilabel object detection processes
+    :param pred_class: list for each considered case of classes predicted 
+    :param ref_class:list for each considered case of reference classes
+    :param pred_loc: list for each considered case of the individual image considering an individual predicted element
+    :param ref_loc: list for each considered case of the individual images considering individual reference elements (note that ref_loc and ref_class entities are matching)
+    :param pred_prob:
+    :param list_values: list of possible label values 
+    :param measures_pcc: list of per class counting measures to be derived during the process
+    :param measures_mt: list of multi-threshold measures to be derived during the comparison process
+    :param per_case: flag indicating whether each case should be derived individually or if all cases should be assessed at once
+    :param assignment: type of chosen assignment choice among []
+    :param localization: type of localization strategy chosen for the assignment
+    :param thresh:
+    :param flag_fp_in: flag to consider the false positive elements in the assessment
+    :param dict_args: dictionary for additional arguments related to the chosen metrics.
+
+    """
     def __init__(
         self,
-        pred_loc,
-        ref_loc,
         pred_class,
         ref_class,
+        pred_loc,
+        ref_loc,
         pred_prob,
         list_values,
         names=[],
@@ -549,7 +635,25 @@ class MultiLabelLocMeasures(object):
 
 
 class MultiLabelPairwiseMeasures(object):
-    # Semantic segmentation or Image wide classification
+    """
+      Semantic segmentation or Image wide classification with possibility of multiple labels
+      :param pred:
+      :param ref:
+      :param pred_proba:
+      :param list_values:
+      :param names:
+      :param measures_pcc:
+      :param measures_mt:
+      :param measures_mcc:
+      :param measures_overlap:
+      :param measures_boundary:
+      :param measures_calibration:
+      :param connectivity_type:
+      :param per_case:
+      :param pixdim:
+      :param empty:
+      :param dict_args: 
+    """
     def __init__(
         self,
         pred,

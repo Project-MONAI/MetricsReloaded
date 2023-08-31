@@ -79,7 +79,7 @@ Useful links to get started
 
 To see examples on how to process different cases of tasks please look into the 
 
-:ref: `example_ss.py`
+:example: `example_ss.py`
 
 Pictorial representation
 ========================

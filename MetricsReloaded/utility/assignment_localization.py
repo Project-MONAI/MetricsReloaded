@@ -12,7 +12,7 @@
 
 """
 Assignment localization - :mod:`MetricsReloaded.utility.assignment_localization`
-====================================================================
+================================================================================
 
 This module provides classes for performing the :ref:`assignment and localization  <assignloc>`
 required in instance segmentation and object detection tasks .
@@ -290,6 +290,10 @@ class AssignmentMapping(object):
         return matrix_pinb
 
     def pairwise_pointinmask(self):
+        """
+        Creates a matrix of size number of prediction elements x number of reference elements
+        indicating binarily whether the point representing the prediction element is in the reference mask 
+        """
         ref_masks = self.ref_loc
         pred_points = self.pred_loc
         if self.flag_refmod:
