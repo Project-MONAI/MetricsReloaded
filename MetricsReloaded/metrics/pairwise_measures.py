@@ -86,7 +86,6 @@ class MultiClassPairwiseMeasures(object):
     def expected_cost(self):
         cm = self.confusion_matrix()
         priors = np.sum(cm, 0) / np.sum(cm)
-        # print(priors,cm)
         numb_perc = np.sum(cm, 0)
         rmatrix = cm / numb_perc
         prior_matrix = np.tile(priors, [cm.shape[0], 1])
@@ -97,7 +96,6 @@ class MultiClassPairwiseMeasures(object):
             weights = self.dict_args["ec_costs"]
         else:
             weights = priorbased_weights
-        #print(weights, prior_matrix, rmatrix)
         ec = np.sum(prior_matrix * weights * rmatrix)
         return ec
 
@@ -118,9 +116,7 @@ class MultiClassPairwiseMeasures(object):
 
     def normalised_expected_cost(self):
         naive_cost = self.best_naive_ec()
-        # print(naive_cost)
         ec = self.expected_cost()
-        #print(ec, naive_cost)
         return ec / naive_cost
 
     def matthews_correlation_coefficient(self):
@@ -150,7 +146,7 @@ class MultiClassPairwiseMeasures(object):
             cov_pred += np.cov(one_hot_pred[:, f], one_hot_pred[:, f])[0, 1]
             cov_ref += np.cov(one_hot_ref[:, f], one_hot_ref[:, f])[0, 1]
             cov_pr += np.cov(one_hot_pred[:, f], one_hot_ref[:, f])[0, 1]
-        #print(cov_pred, cov_ref, cov_pr)
+        
         numerator = cov_pr
         denominator = np.sqrt(cov_pred * cov_ref)
         return numerator / denominator
@@ -205,7 +201,6 @@ class MultiClassPairwiseMeasures(object):
         one_hot_ref = one_hot_encode(self.ref, len(self.list_values))
         pred_numb = np.sum(one_hot_pred, 0)
         ref_numb = np.sum(one_hot_ref, 0)
-        #print(pred_numb.shape, ref_numb.shape)
         return (
             np.matmul(np.reshape(pred_numb, [-1, 1]), np.reshape(ref_numb, [1, -1]))
             / np.shape(one_hot_pred)[0]
@@ -213,10 +208,12 @@ class MultiClassPairwiseMeasures(object):
 
     def weighted_cohens_kappa(self):
         """
+
         Derivation of weighted cohen's kappa. The weight matrix is set to 1-ID(len(list_values))
         - cost of 1 for each error type if no weight provided
 
         :return: weighted_cohens_kappa
+
         """
         cm = self.confusion_matrix()
         exp = self.expectation_matrix()
@@ -228,7 +225,6 @@ class MultiClassPairwiseMeasures(object):
             )
         numerator = np.sum(weights * cm)
         denominator = np.sum(weights * exp)
-        #print(numerator, denominator, cm, exp)
         return 1 - numerator / denominator
 
     def to_dict_meas(self, fmt="{:.4f}"):
@@ -236,9 +232,8 @@ class MultiClassPairwiseMeasures(object):
         result_dict = {}
         for key in self.measures:
             result = self.measures_dict[key][0]()
-            #result_dict[key] = fmt.format(result)
             result_dict[key] = result
-        return result_dict  # trim the last comma
+        return result_dict  
 
 
 class BinaryPairwiseMeasures(object):
@@ -535,10 +530,8 @@ class BinaryPairwiseMeasures(object):
         prior_background = (self.tn() + self.fp()) / (np.size(self.ref))
         prior_foreground = (self.tp() + self.fn()) / np.size(self.ref)
         alpha = c_fp * prior_background / (c_fn * prior_foreground)
-        #print(prior_background, prior_foreground, alpha)
         r_fp = self.fp() / self.n_neg_ref()
         r_fn = self.fn() / self.n_pos_ref()
-        #print(r_fn, r_fp)
         if alpha >= 1:
             ecn = alpha * r_fp + r_fn
         else:
@@ -679,6 +672,7 @@ class BinaryPairwiseMeasures(object):
             DSC = \dfrac{2TP}{2TP+FP+FN}
         
         This is also F:math:`{\\beta}` for :math:`{\\beta}`=1
+
         """
 
         numerator = 2 * self.tp()
@@ -717,7 +711,6 @@ class BinaryPairwiseMeasures(object):
         denominator = (
             np.square(beta) * self.positive_predictive_values() + self.recall()
         )
-        #print(numerator, denominator, self.fn(), self.tp(), self.fp())
         if np.isnan(denominator):
             if self.fp() + self.fn() > 0:
                 return 0
@@ -837,14 +830,13 @@ class BinaryPairwiseMeasures(object):
         :return: Euclidean distance between centre of mass when reference and prediction not empty
         -1 otherwise
         """
-        #print("pred sum ", self.n_pos_pred(), "ref_sum ", self.n_pos_ref())
+        
         if self.flag_empty_pred or self.flag_empty_ref:
             return -1
         else:
             com_ref = compute_center_of_mass(self.ref)
             com_pred = compute_center_of_mass(self.pred)
 
-            #print(com_ref, com_pred)
             if self.pixdim is not None:
                 com_dist = np.sqrt(
                     np.dot(
@@ -919,7 +911,6 @@ class BinaryPairwiseMeasures(object):
         skeleton_ref, skeleton_pred = self.skeleton_versions()
         numerator = np.sum(skeleton_pred * self.ref)
         denominator = np.sum(skeleton_pred)
-        #print("top prec ", numerator, denominator)
         return numerator / denominator
 
     def topology_sensitivity(self):
@@ -937,7 +928,6 @@ class BinaryPairwiseMeasures(object):
         skeleton_ref, skeleton_pred = self.skeleton_versions()
         numerator = np.sum(skeleton_ref * self.pred)
         denominator = np.sum(skeleton_ref)
-        #print("top sens ", numerator, denominator, skeleton_ref, skeleton_pred)
         return numerator / denominator
 
     def centreline_dsc(self):
@@ -1004,11 +994,8 @@ Pattern Recognition. 15334–15342.
                 np.zeros_like(border_pred),
             )
         )
-        #print(intersect, union)
         return intersect / union
-        # return np.sum(border_ref * border_pred) / (
-        #     np.sum(border_ref) + np.sum(border_pred)
-        # )
+
 
     @CacheFunctionOutput
     def border_distance(self):
@@ -1084,6 +1071,7 @@ Pattern Recognition. 15334–15342.
             ref_border,
             pred_border,
         ) = self.border_distance()
+        print(ref_border_dist)
         average_distance = (np.sum(ref_border_dist) + np.sum(pred_border_dist)) / (
             np.sum(pred_border + ref_border)
         )
@@ -1091,29 +1079,16 @@ Pattern Recognition. 15334–15342.
             np.sum(ref_border_dist) / np.sum(pred_border)
             + np.sum(pred_border_dist) / np.sum(ref_border)
         )
-        # print(
-        #     np.sum(ref_border_dist) / np.sum(pred_border),
-        #     np.sum(pred_border_dist) / np.sum(ref_border),
-        #     np.sum(pred_border),
-        #     np.sum(ref_border),
-        #     np.sum(pred_border_dist),
-        #     np.sum(ref_border_dist),
-        # )
+
         hausdorff_distance = np.max([np.max(ref_border_dist), np.max(pred_border_dist)])
+       
         hausdorff_distance_perc = np.max(
             [
-                np.percentile(ref_border_dist[self.ref + self.pred > 0], q=perc),
-                np.percentile(pred_border_dist[self.ref + self.pred > 0], q=perc),
+                np.percentile(ref_border_dist[pred_border > 0], q=perc),
+                np.percentile(pred_border_dist[ref_border > 0], q=perc),
             ]
         )
-        # print(
-        #     ref_border_dist[self.ref + self.pred > 0],
-        #     pred_border_dist[self.ref + self.pred > 0],
-        # )
-        # print(
-        #     len(ref_border_dist[self.ref + self.pred > 0]),
-        #     len(pred_border_dist[self.ref + self.pred > 0]),
-        # )
+
 
         return hausdorff_distance, average_distance, hausdorff_distance_perc, masd
 
@@ -1175,8 +1150,7 @@ Pattern Recognition. 15334–15342.
                 result = self.measures_dict[key][0]()
             else:
                 result = self.measures_dict[key][0](self.measures_dict[key][2])
-            #result_dict[key] = fmt.format(result)
             result_dict[key] = result
-        return result_dict  # trim the last comma
+        return result_dict  
 
     

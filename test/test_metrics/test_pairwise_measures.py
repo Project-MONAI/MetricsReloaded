@@ -490,9 +490,9 @@ def test_hd():
     bpm = PM(f20_pred, f20_ref, dict_args={"hd_perc": 95})
     hausdorff_distance = bpm.measured_hausdorff_distance()
     hausdorff_distance_perc = bpm.measured_hausdorff_distance_perc()
-
+    print(hausdorff_distance_perc)
     expected_hausdorff_distance = 11.31
-    expected_hausdorff_distance_perc = 6.22
+    expected_hausdorff_distance_perc = 6.79
     assert_allclose(hausdorff_distance, expected_hausdorff_distance, atol=0.01)
     assert_allclose(
         hausdorff_distance_perc, expected_hausdorff_distance_perc, atol=0.01
