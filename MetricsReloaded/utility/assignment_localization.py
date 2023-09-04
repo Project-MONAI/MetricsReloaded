@@ -76,6 +76,14 @@ class AssignmentMapping(object):
     - greedy_matching: based on best matching
     - greedy_performance: based on probability score
     flag_fp_in indicates whether or not to consider the double detection of reference objects as false positives or not 
+    :param pred_loc:
+    :param ref_loc:
+    :param pred_prob:
+    :param localization:
+    :param assignment:
+    :param pixdim:
+    :param flag_fp_in:
+    
     """
 
     def __init__(
@@ -86,6 +94,7 @@ class AssignmentMapping(object):
         localization="box_iou",
         thresh=0.5,
         assignment="greedy_matching",
+        pixdim=[],
         flag_fp_in=True
     ):
 
@@ -96,6 +105,32 @@ class AssignmentMapping(object):
         self.assignment = assignment
         self.thresh = thresh
         self.flag_fp_in = flag_fp_in
+        self.pixdim = pixdim
+        all_input = []
+        if self.pixdim == []:
+            if len(pred_loc) > 0:
+                if pred_loc[0].size > 0:
+                    all_input = pred_loc[0]
+
+            elif len(ref_loc)>0:
+                if ref_loc[0].size > 0:
+                    all_input = ref_loc[0]
+
+            dim = 0
+            print(all_input)
+            if all_input.shape[0] > 0:
+                input = guess_input_style(all_input)
+                if input == 'mask':
+                    dim = all_input.ndim
+                elif input == 'box':
+                    print(all_input)
+                    dim = int(np.size(all_input)/2)
+                else:
+                    dim = np.size(all_input)
+            print(input, dim)
+            if dim > 0:
+                self.pixdim = np.ones([dim])
+            
         flag_usable, flag_predmod, flag_refmod = self.check_input_localization()
         # self.pred_class = pred_class
         
@@ -268,7 +303,7 @@ class AssignmentMapping(object):
             ref_coms = self.ref_loc_mod
         if self.flag_predmod:
             pred_coms = self.pred_loc_mod
-        matrix_cdist = cdist(pred_coms, ref_coms)
+        matrix_cdist = cdist(pred_coms*self.pixdim, ref_coms*self.pixdim)
         return matrix_cdist
 
     
@@ -357,7 +392,7 @@ class AssignmentMapping(object):
         matrix_com = np.zeros([self.pred_loc.shape[0], self.ref_loc.shape[0]])
         for p in range(self.pred_loc.shape[0]):
             for r in range(self.ref_loc.shape[0]):
-                PM = BinaryPairwiseMeasures(self.pred_loc[p, ...], self.ref_loc[r, ...])
+                PM = BinaryPairwiseMeasures(self.pred_loc[p, ...], self.ref_loc[r, ...],pixdim=self.pixdim)
                 matrix_com[p, r] = PM.com_dist()
         return matrix_com
 

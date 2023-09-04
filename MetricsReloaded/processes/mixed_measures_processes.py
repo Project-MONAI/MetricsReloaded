@@ -104,7 +104,7 @@ class MixedLocSegPairwiseMeasure(object):
         measures_pcc=[],
         measures_detseg=[],
         connectivity=1,
-        pixdim=[1, 1, 1],
+        pixdim=[],
         empty=False,
         dict_args={},
     ):
@@ -239,7 +239,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
         flag_map=True,
         file=[],
         connectivity=1,
-        pixdim=[1, 1, 1],
+        pixdim=[],
         empty=False,
         assignment="Greedy_IoU",
         localization="iou",
@@ -270,6 +270,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
         self.flag_map = flag_map
         self.names = names
         self.flag_fp_in = flag_fp_in
+        self.pixdim = pixdim
         if len(self.names) == 0:
             self.names = self.file
         if len(self.names) < len(self.ref_loc):
@@ -341,6 +342,13 @@ class MultiLabelLocSegPairwiseMeasure(object):
                 # Creation of the list of individual element images for pred and ref given the chosen label
                 pred_loc_tmp = [self.pred_loc[case][i] for i in ind_pred[0]]
                 ref_loc_tmp = [self.ref_loc[case][i] for i in ind_ref[0]]
+                print(self.pixdim)
+                if self.pixdim == []:
+                    if len(pred_loc_tmp) > 0:
+                        self.pixdim = np.ones([pred_loc_tmp[0].ndim])
+                    elif len(ref_loc_tmp)>0:
+                        self.pixdim = np.ones([ref_loc_tmp[0].ndim])
+
                 if self.flag_valid_prob:
                     pred_prob_tmp = [self.pred_prob[case][i, lab] for i in ind_pred[0]]
                 else:
@@ -354,7 +362,8 @@ class MultiLabelLocSegPairwiseMeasure(object):
                     assignment=self.assignment,
                     localization=self.localization,
                     thresh=self.thresh,
-                    flag_fp_in=self.flag_fp_in
+                    flag_fp_in=self.flag_fp_in,
+                    pixdim=self.pixdim
                 )
 
                 pred_tmp_fin = np.asarray(AS.df_matching["pred"])
@@ -399,6 +408,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
                         measures_overlap=self.measures_overlap,
                         measures_mt=self.measures_mt,
                         dict_args=self.dict_args,
+                        pixdim=self.pixdim
                     )
                     if len(self.measures_boundary) + len(self.measures_overlap)  > 0:
                         seg_res = MLSPM.to_pd_seg()
@@ -422,8 +432,12 @@ class MultiLabelLocSegPairwiseMeasure(object):
                 else:
                     for p in pred_loc_tmp_fin:
                         list_pred_loc.append(p)
+                        if self.pixdim == [] and p.shape[0] > 0:
+                            self.pixdim = np.ones([p.ndim])
                     for r in ref_loc_tmp_fin:
                         list_ref_loc.append(r)
+                        if self.pixdim == [] and r.shape[0] >0:
+                            self.pixdim = np.ones([r.ndim])
                     for p in pred_tmp_fin:
                         list_pred.append(p)
                     for r in ref_tmp_fin:
@@ -438,6 +452,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
                 overall_pred = np.asarray(list_pred)
                 overall_ref = np.asarray(list_ref)
                 overall_prob = np.asarray(list_prob)
+                
                 MLSPM = MixedLocSegPairwiseMeasure(
                     pred=overall_pred,
                     ref=overall_ref,
@@ -450,6 +465,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
                     measures_overlap=self.measures_overlap,
                     measures_mt=self.measures_mt,
                     dict_args=self.dict_args,
+                    pixdim=self.pixdim
                 )
                 if len(self.measures_boundary) + len(self.measures_overlap) > 0 :
                     res_seg = MLSPM.to_pd_seg()
@@ -510,6 +526,7 @@ class MultiLabelLocMeasures(object):
         localization="iou",
         thresh=0.5,
         flag_fp_in=True,
+        pixdim=[],
         dict_args={},
     ):
         self.pred_loc = pred_loc
@@ -526,6 +543,7 @@ class MultiLabelLocMeasures(object):
         self.thresh = thresh
         self.dict_args = {}
         self.names = names
+        self.pixdim = pixdim
         self.flag_fp_in = flag_fp_in
         if len(self.names) < len(self.ref):
             self.names = range(len(self.ref))
@@ -564,7 +582,8 @@ class MultiLabelLocMeasures(object):
                     assignment=self.assignment,
                     localization=self.localization,
                     thresh=self.thresh,
-                    flag_fp_in=self.flag_fp_in
+                    flag_fp_in=self.flag_fp_in,
+                    pixdim=self.pixdim
                 )
                 df_matching = AS.df_matching
                 pred_tmp_fin = np.asarray(df_matching["pred"])
@@ -669,7 +688,7 @@ class MultiLabelPairwiseMeasures(object):
         measures_calibration=[],
         connectivity_type=1,
         per_case=False,
-        pixdim=[1, 1, 1],
+        pixdim=[],
         empty=False,
         dict_args={},
     ):
@@ -683,9 +702,16 @@ class MultiLabelPairwiseMeasures(object):
         self.measures_mt = measures_mt
         self.measures_calibration = measures_calibration
         self.connectivity_type = connectivity_type
+        ndim = 0
+        self.pixdim = pixdim
         if len(self.pred)>0:
             ndim = np.asarray(self.pred[0]).ndim
-        self.pixdim = pixdim[:ndim]
+        if self.pixdim == [] and ndim>0:
+            self.pixdim = np.ones([ndim])
+        elif ndim>0:
+            self.pixdim = pixdim[:ndim]
+        else:
+            self.pixdim = pixdim
         self.dict_args = dict_args
         self.per_case = per_case
         self.names = names

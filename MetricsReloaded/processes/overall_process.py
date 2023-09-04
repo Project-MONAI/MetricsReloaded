@@ -121,6 +121,7 @@ class ProcessEvaluation(object):
         measures_cal=[],
         localization='mask_iou',
         assignment='greedy_matching',
+        pixdim=[],
         flag_map=False,
         file=[],
         thresh_ass=0.5,
@@ -146,6 +147,7 @@ class ProcessEvaluation(object):
         self.flag_fp_in = flag_fp_in
         self.flag_ignore_missing = ignore_missing
         self.flag_valid = self.check_valid_measures_cat()
+        self.pixdim = pixdim
         if self.flag_valid:
             self.process_data()
             if 'ref_missing' in self.data.keys():
@@ -202,6 +204,7 @@ class ProcessEvaluation(object):
                 list_values=data["list_values"],
                 per_case=self.case,
                 flag_fp_in=self.flag_fp_in,
+                pixdim=self.pixdim
             )
             df_resseg, df_resdet, df_resmt = MLLS.per_label_dict()
         elif self.category == "ObD":
@@ -219,6 +222,8 @@ class ProcessEvaluation(object):
                 measures_mt=self.measures_mt,
                 per_case=self.case,
                 flag_fp_in=self.flag_fp_in,
+                pixdim=self.pixdim
+                
             )
             df_resdet, df_resmt = MLDT.per_label_dict()
             df_resseg = None
@@ -240,13 +245,14 @@ class ProcessEvaluation(object):
                 list_values=data["list_values"],
                 names=list_names,
                 per_case=self.case,
+                pixdim=self.pixdim
             )
             df_bin, df_mt = MLPM.per_label_dict()
             df_mcc, df_cal = MLPM.multi_label_res()
-            print(df_bin, 'BIN')
-            print(df_mt, 'MT')
-            print(df_mcc, 'MCC'),
-            print(df_cal, 'CAL')
+            # print(df_bin, 'BIN')
+            # print(df_mt, 'MT')
+            # print(df_mcc, 'MCC'),
+            # print(df_cal, 'CAL')
             if self.category == "ImLC":
                 df_resdet = df_bin
                 df_resseg = None
@@ -325,7 +331,7 @@ class ProcessEvaluation(object):
 
     def label_aggregation(self, option='average',dict_args={}):
         if len(self.data['list_values']) == 1:
-            print('DET', self.resdet,'CAL',self.rescal, 'SEG',self.resseg,'MT', self.resmt,'MCC', self.resmcc)
+            # print('DET', self.resdet,'CAL',self.rescal, 'SEG',self.resseg,'MT', self.resmt,'MCC', self.resmcc)
             df_grouped_all = merge_list_df([self.resdet, self.resseg, self.resmt,self.resmcc, self.rescal])
             return df_grouped_all
         df_all_labels = merge_list_df([self.resdet, self.resseg, self.resmt], on=['label','case'])
@@ -346,9 +352,9 @@ class ProcessEvaluation(object):
         df_grouped_lab.columns = ['_'.join(col).rstrip('_') for col in df_grouped_lab.columns.values
 ]
         
-        print(df_grouped_lab, " grouped lab ")                                             
+        # print(df_grouped_lab, " grouped lab ")                                             
         df_grouped_all = merge_list_df([df_grouped_lab.reset_index(), self.resmcc, self.rescal], on=['case'])
-        print(df_grouped_all, 'grouped all')
+        # print(df_grouped_all, 'grouped all')
         return df_grouped_all
 
     def get_stats_res(self):
