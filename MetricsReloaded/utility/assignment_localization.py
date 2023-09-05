@@ -107,7 +107,7 @@ class AssignmentMapping(object):
         self.flag_fp_in = flag_fp_in
         self.pixdim = pixdim
         all_input = []
-        if self.pixdim == []:
+        if len(self.pixdim) == 0:
             if len(pred_loc) > 0:
                 if pred_loc[0].size > 0:
                     all_input = pred_loc[0]

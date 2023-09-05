@@ -343,7 +343,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
                 pred_loc_tmp = [self.pred_loc[case][i] for i in ind_pred[0]]
                 ref_loc_tmp = [self.ref_loc[case][i] for i in ind_ref[0]]
                 print(self.pixdim)
-                if self.pixdim == []:
+                if len(self.pixdim) == 0:
                     if len(pred_loc_tmp) > 0:
                         self.pixdim = np.ones([pred_loc_tmp[0].ndim])
                     elif len(ref_loc_tmp)>0:
@@ -432,11 +432,11 @@ class MultiLabelLocSegPairwiseMeasure(object):
                 else:
                     for p in pred_loc_tmp_fin:
                         list_pred_loc.append(p)
-                        if self.pixdim == [] and p.shape[0] > 0:
+                        if len(self.pixdim) == 0 and p.shape[0] > 0:
                             self.pixdim = np.ones([p.ndim])
                     for r in ref_loc_tmp_fin:
                         list_ref_loc.append(r)
-                        if self.pixdim == [] and r.shape[0] >0:
+                        if len(self.pixdim) == 0 and r.shape[0] >0:
                             self.pixdim = np.ones([r.ndim])
                     for p in pred_tmp_fin:
                         list_pred.append(p)
@@ -706,7 +706,7 @@ class MultiLabelPairwiseMeasures(object):
         self.pixdim = pixdim
         if len(self.pred)>0:
             ndim = np.asarray(self.pred[0]).ndim
-        if self.pixdim == [] and ndim>0:
+        if len(self.pixdim) == 0 and ndim>0:
             self.pixdim = np.ones([ndim])
         elif ndim>0:
             self.pixdim = pixdim[:ndim]
