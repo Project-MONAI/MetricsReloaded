@@ -18,11 +18,165 @@ This module provides class to perform the :ref:`overall evaluation process  <pro
 
 .. _processeval:
 
-Performing the process associated with instance segmentation
-------------------------------------------------------------
-
 .. autoclass:: ProcessEvaluation
     :members:
+
+The different categories of task considered are:
+
+* ImLC - Image Level Classification
+* SemS - Semantic Segmentation
+* ObD - Object detection
+* InS - Instance segmentation
+
+For each of these tasks only certain metrics are available and suitable. Error messages will be given and the processing interrupted if the chosen
+task and the chosen evaluation measures are not compatible. 
+Evaluation measures are classified into the following categories:
+
+* Per class counting measures - measures_pcc
+* Multi class counting measures - measures_mcc
+* Overlap measures - measures_overlap
+* Boundary measures - measures_boundary
+* Multi threshold measures - measures_mt
+* Calibration measures - measures_cal
+* Combined detection and segmentation metrics - measures_detseg
+
+The available measures per task are:
+
+* ImLC:
+
+  * multi threshold measures:
+
+    * auroc - Area under the Receiver Operator Curve
+    * ap - Average Precision
+    * sens@spec - Sensitivity at Specificity
+    * spec@sens - Specificity at Sensitivity
+    * ppv@sens - Positive Predictive value at sensitivity
+
+  * per class counting measures:
+
+    * fbeta - FBeta score
+    * lr+ - positive likelihood ratio
+    * accuracy
+    * ba - balance accuracy
+    * ec - expected cost
+    * nb - net benefit
+    * numb_ref - number in reference
+    * numb_pred - number in prediction
+    * numb_tp - number of true positives
+    * numb_fp - number of false positives
+    * numb_fn - number of false negatives
+    * cohens_kappa
+
+  * multi class counting measures:
+
+    * mcc - matthews correlation coefficient
+    * wck - weighted cohen's kappa
+    * ec - expected cost
+    
+  * calibration measures:
+
+    * ls - logarithmic score
+    * bs - Brier Score
+    * cwece - Class-wise expectation calibration error
+    * nll - Negative log-likelihood
+    * rbs - Root Brier Score
+    * ece_kde - Expectation Calibration Error with Kernel density estimation
+    * kce - Kernel Calibration error
+    * ece - Expectation Calibration Error
+
+* Object Detection - ObD:
+
+  * per class counting measures:
+
+    * fbeta - FBeta score
+    * numb_pred - number of predicted elements
+    * numb_tp - number of true positives
+    * numb_fp - number of false positives
+    * numb_fn - number of false negatives
+    * numb_ref - number of reference elements
+    * sensitivity - sensitivity
+
+  * multi-threshold measures:
+
+    * sens@spec - sensitivity at specificity
+    * spec@sens - specificity at sensitivity
+    * sens@ppv - sensitivity at positive predictive value
+    * ppv@sens - positive predictive value at sensitivity
+    * sens@fppi - sensitivity at false positive per image
+    * fppi@sens - false positive per image at sensitivity
+    * ap - average precision
+    * froc - free receiver operator curve
+
+* Semantic segmentation - SemS:
+
+  * per class measures of overlap: 
+  
+    * dsc - dice similarity coefficient
+    * fbeta - FBeta score
+    * cldice - centreline dice
+    * iou - intersection over union
+    
+  * measures of boundary quality: 
+
+    * assd - average symmetric surface distance
+    * masd - mean average surface distance
+    * hd - hausdorff distance
+    * hd_perc - percentile of hausdorff distance
+    * nsd - normalised surface dice
+    * boundary_iou - boundary intersection over union
+    
+  * per class counting :
+
+    * numb_ref - number of reference elements
+    * numb_pred - number of predicted elements
+    * numb_tp - number of true positives
+    * numb_fp - number of false positives
+    * numb_fn - number of false negatives
+
+* Instance segmentation - InS:
+
+  * combined measures of detection and segmentation
+
+    * pq - panoptic quality
+
+  * per class counting measures:
+
+    * fbeta - FBeta score
+    * numb_ref - number of reference instances
+    * numb_pred - number of prediction instances
+    * numb_tp - number of true positives
+    * numb_fp - number of false positives
+    * numb_fn - number of false negatives
+
+  * multi-threshold measures:
+
+    * sens@spec - sensitivity at specificity
+    * spec@sens - specificity at sensitivity
+    * sens@ppv - sensitivity at positive predictive value
+    * ppv@sens - positive predictive value at sensitivity
+    * fppi@sens - false positive per image at sensitivity
+    * sens@fppi - sensitivity at false positive per image
+    * ap - average precision
+    * froc - free receiver operator curve
+
+  * measures of overlap:
+
+    * dsc - dice similarity coefficient
+    * fbeta - fbeta score
+    * cldice - centreline dice similarity coefficient
+    * iou - intersection over union
+
+  * measures of boundary quality:
+
+    * hd - hausdorff distance
+    * boundary_iou - boundary intersection over union
+    * masd - mean average surface distance
+    * assd - average symmetric surface distance
+    * nsd - normalised surface dice
+    * hd_perc - percentile of hausdorff distance
+                  
+ 
+
 
 """
 
@@ -43,7 +197,7 @@ dict_valid={
     'ppv@sens','fbeta','accuracy','ba',
     'ec','nb','mcc',
     'wck','lr+','bs','cwece',
-    'nll','rbs','ece_kde','kce','ece',"numb_ref",
+    'nll','rbs','ece_kde','kce','ece',"numb_ref",'ls',
                     "numb_pred",
                     "numb_tp",
                     "numb_fp",
@@ -106,6 +260,25 @@ WORSE = {
 class ProcessEvaluation(object):
     """
     Performs the evaluation of the data stored in a pickled file according to all the measures, categories and choices of processing
+
+    :param data: dictionary containing all the data to be used for the comparison; possible keys include "pred_loc", "ref_loc", "pred_prob", 
+    :param category: task to be considered choice among ImLC, ObD, SemS, InS
+    :param measures_pcc: list of per class counting measures (these need to be adequate for the chosen task category)
+    :param measures_mcc: list of multi class counting measures
+    :param measures_boundary: list of measures to assess boundary quality
+    :param measures_overlap: list of measures to assess overlap quality
+    :param measures_mt: list of multi-threshold measures
+    :param measures_detseg: list of measures assessing jointly detection and segmentation performance
+    :param measures_cal: list of calibration measures (only available for image level classification class)
+    :param localization: choice for localization strategy (used in Instance segmentation and Object detection tasks)
+    :param assignment: choice for the assignment strategy (used in Instance segmentation and Object detection tasks)
+    :param pixdim: pixel dimensions as list
+    :param flag_map: indication whether nifti images indicating true positive elements for the reference, the prediction and errors should be created (done only for instance segmentation)
+    :param file: name of files
+    :param thresh_ass: threshold chosen for the assignment (default 0.5)
+    :param case: indication of the handling of cases separately (True) or jointly (False)
+    :param flag_fp_in: indicates that false positive should be accounted for 
+    :param ignore_missing: indicates whether the missing predictions should be considered in the overall assessment (True) or not (False)
     """
 
     def __init__(
@@ -163,6 +336,11 @@ class ProcessEvaluation(object):
                 self.get_stats_res()
 
     def check_valid_measures_cat(self):
+        """
+        Function checking whether the category and the combination of measures suggested are suitable for continuing the process
+
+        :return: flag_valid
+        """
         flag_valid = True
         if self.category not in ['ImLC','SemS','InS','ObD']:
             warnings.warn('No appropriate category chosen, please choose between ImLC, SemS, InS and ObD')
@@ -178,6 +356,43 @@ class ProcessEvaluation(object):
 
 
     def process_data(self):
+        """
+        Performs the processing of the data according to the details given in the setting up of the process
+        Contributes to the attribution of one dataframe per type of measures :
+
+        * resdet - detection results
+        * resseg - segmentation results
+        * resmt - multi-threshold results
+        * resmcc - multi class counting results
+        * rescal - calibration results
+
+        All these dataframes are initialised as None and replaced according to the chosen task. The tasks should yield the following outputs:
+        
+        * ImLC:
+
+          * resdet
+          * rescal
+          * resmt
+          * resmcc
+
+        * SemS:
+
+          * resseg
+
+        * ObD:
+
+          * resdet
+          * resmt
+          * resmcc
+
+        * InS:
+        
+          * resdet
+          * resseg
+          * resmt
+          * resmcc
+        
+        """
         data = self.data
         df_resdet = None
         df_resseg = None
