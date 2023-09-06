@@ -92,5 +92,8 @@ Pictorial representation
 
     Metrics Reloaded fosters the convergence of validation methodology across modalities, application domains and classification scales
 
+Support
+========================
+For any questions or remarks, please contact metrics-reloaded-package(at)dkfz-heidelberg.de.
 
 
