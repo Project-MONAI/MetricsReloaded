@@ -895,7 +895,16 @@ class BinaryPairwiseMeasures(object):
 
         :return: rel_vol_diff
         """
-        return ((self.n_pos_pred() - self.n_pos_ref()) / self.n_pos_ref()) * 100
+        if self.flag_empty_ref and self.flag_empty_pred:
+            # Both reference and prediction are empty --> model learned correctly --> setting 0 representing no over-
+            # or under-segmentation
+            return 0
+        elif self.flag_empty_ref and not self.flag_empty_pred:
+            # Reference is empty, prediction is not empty --> model did not learn correctly --> setting positive value
+            # representing overestimation
+            return 100
+        else:
+            return ((self.n_pos_pred() - self.n_pos_ref()) / self.n_pos_ref()) * 100
 
     @CacheFunctionOutput
     def skeleton_versions(self):
