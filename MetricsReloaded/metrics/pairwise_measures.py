@@ -889,7 +889,7 @@ class BinaryPairwiseMeasures(object):
 
     def rel_vol_diff(self):
         """
-        This function calculates the relative volume difference (RVE) in % between the prediction and the reference.
+        This function calculates the relative volume error (RVE) in % between the prediction and the reference.
         If the prediction is smaller than the reference, the relative volume difference is negative.
         If the prediction is larger than the reference, the relative volume difference is positive.
 
