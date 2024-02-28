@@ -1083,7 +1083,7 @@ Pattern Recognition. 15334–15342.
             ref_border,
             pred_border,
         ) = self.border_distance()
-        print(ref_border_dist)
+        #print(ref_border_dist)
         average_distance = (np.sum(ref_border_dist) + np.sum(pred_border_dist)) / (
             np.sum(pred_border + ref_border)
         )
