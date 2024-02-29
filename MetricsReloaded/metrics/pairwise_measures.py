@@ -273,7 +273,7 @@ class BinaryPairwiseMeasures(object):
             "masd": (self.measured_masd, "MASD"),
             "nsd": (self.normalised_surface_distance, "NSD"),
             "vol_diff": (self.vol_diff, "VolDiff"),
-            "rel_vol_diff": (self.rel_vol_diff, "RelVolDiff"),
+            "rel_vol_error": (self.rel_vol_error, "RelVolError"),
         }
 
         self.pred = pred
@@ -887,13 +887,13 @@ class BinaryPairwiseMeasures(object):
         """
         return np.abs(self.n_pos_ref() - self.n_pos_pred()) / self.n_pos_ref()
 
-    def rel_vol_diff(self):
+    def rel_vol_error(self):
         """
         This function calculates the relative volume error (RVE) in % between the prediction and the reference.
         If the prediction is smaller than the reference, the relative volume difference is negative.
         If the prediction is larger than the reference, the relative volume difference is positive.
 
-        :return: rel_vol_diff
+        :return: rel_vol_error
         """
         if self.flag_empty_ref and self.flag_empty_pred:
             # Both reference and prediction are empty --> model learned correctly --> setting 0 representing no over-
