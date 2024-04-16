@@ -4,27 +4,9 @@ Metrics Reloaded
 
 .. start-description
 
-A Python implementaiton of `Metrics Reloaded <https://openreview.net/forum?id=24kBqy8rcB_>`__ - A new recommendation framework for biomedical image analysis validation.
+A Python implementation of `Metrics Reloaded <https://openreview.net/forum?id=24kBqy8rcB_>`__ - A new recommendation framework for biomedical image analysis validation.
 
-.. start-badges
-
-|docs|
-|testing|
-|codecov|
-
-.. |docs| image:: https://readthedocs.org/projects/metricsreloaded/badge/?style=flat
-    :target: https://MetricsReloaded.readthedocs.io/en/latest/?badge=latest
-    :alt: Documentation Status
-
-.. |testing| image:: https://github.com/csudre/MetricsReloaded/actions/workflows/python-app.yml/badge.svg
-    :target: https://github.com/csudre/MetricsReloaded/actions
-    :alt: Testing Status
-
-.. |codecov| image:: https://codecov.io/gh/csudre/MetricsReloaded/branch/main/graph/badge.svg
-    :target: https://codecov.io/gh/csudre/MetricsReloaded
-    :alt: Coverage Status
-
-.. end-badges
+This is a fork of the `Project-MONAI/MetricsReloaded <https://github.com/Project-MONAI/MetricsReloaded>`__ repo.
 
 Installation
 ============
@@ -38,7 +20,7 @@ Create and activate a new `Conda <https://docs.conda.io/en/latest/miniconda.html
 
 Clone the repository: ::
 
-    git clone https://github.com/csudre/MetricsReloaded.git
+    git clone https://github.com/ivadomed/MetricsReloaded
     cd MetricsReloaded
 
 Install the package:
