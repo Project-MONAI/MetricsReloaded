@@ -272,6 +272,7 @@ class BinaryPairwiseMeasures(object):
             "hd_perc": (self.measured_hausdorff_distance_perc, "HDPerc"),
             "masd": (self.measured_masd, "MASD"),
             "nsd": (self.normalised_surface_distance, "NSD"),
+            "vol_diff": (self.vol_diff, "VolDiff"),
         }
 
         self.pred = pred
