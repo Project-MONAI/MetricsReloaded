@@ -273,6 +273,7 @@ class BinaryPairwiseMeasures(object):
             "masd": (self.measured_masd, "MASD"),
             "nsd": (self.normalised_surface_distance, "NSD"),
             "vol_diff": (self.vol_diff, "VolDiff"),
+            "rel_vol_error": (self.rel_vol_error, "RelVolError"),
         }
 
         self.pred = pred
@@ -886,6 +887,25 @@ class BinaryPairwiseMeasures(object):
         """
         return np.abs(self.n_pos_ref() - self.n_pos_pred()) / self.n_pos_ref()
 
+    def rel_vol_error(self):
+        """
+        This function calculates the relative volume error (RVE) in % between the prediction and the reference.
+        If the prediction is smaller than the reference, the relative volume difference is negative.
+        If the prediction is larger than the reference, the relative volume difference is positive.
+
+        :return: rel_vol_error
+        """
+        if self.flag_empty_ref and self.flag_empty_pred:
+            # Both reference and prediction are empty --> model learned correctly --> setting 0 representing no over-
+            # or under-segmentation
+            return 0
+        elif self.flag_empty_ref and not self.flag_empty_pred:
+            # Reference is empty, prediction is not empty --> model did not learn correctly --> setting positive value
+            # representing overestimation
+            return 100
+        else:
+            return ((self.n_pos_pred() - self.n_pos_ref()) / self.n_pos_ref()) * 100
+
     @CacheFunctionOutput
     def skeleton_versions(self):
         """
@@ -1072,7 +1092,7 @@ Pattern Recognition. 15334–15342.
             ref_border,
             pred_border,
         ) = self.border_distance()
-        print(ref_border_dist)
+        #print(ref_border_dist)
         average_distance = (np.sum(ref_border_dist) + np.sum(pred_border_dist)) / (
             np.sum(pred_border + ref_border)
         )
