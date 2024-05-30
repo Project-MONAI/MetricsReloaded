@@ -274,6 +274,10 @@ class BinaryPairwiseMeasures(object):
             "hd_perc": (self.measured_hausdorff_distance_perc, "HDPerc"),
             "masd": (self.measured_masd, "MASD"),
             "nsd": (self.normalised_surface_distance, "NSD"),
+            # instance-specific measures
+            "lesion_ppv": (self.lesion_ppv, "LesionWisePPV"),
+            "lesion_sensitivity": (self.lesion_sensitivity, "LesionWiseSensitivity"),
+            "lesion_f1_score": (self.lesion_f1_score, "LesionWiseF1Score"),
             # other measures
             "vol_diff": (self.vol_diff, "VolDiff"),
             "rel_vol_error": (self.rel_vol_error, "RelVolError"),
@@ -1167,6 +1171,127 @@ class BinaryPairwiseMeasures(object):
         """
         return self.measured_distance()[2]
 
+    def lesion_wise_tp_fp_fn(self, truth, prediction):
+        """
+        Computes the true positives, false positives, and false negatives two masks. Masks are considered true positives
+        if at least one voxel overlaps between the truth and the prediction.
+        Adapted from: https://github.com/npnl/atlas2_grand_challenge/blob/main/isles/scoring.py#L341
+
+        Parameters
+        ----------
+        truth : array-like, bool
+            3D array. If not boolean, will be converted.
+        prediction : array-like, bool
+            3D array with a shape matching 'truth'. If not boolean, will be converted.
+        empty_value : scalar, float
+            Optional. Value to which to default if there are no labels. Default: 1.0.
+
+        Returns
+        -------
+        tp (int): 3D connected-component from the ground-truth image that overlaps at least on one voxel with the prediction image.
+        fp (int): 3D connected-component from the prediction image that has no voxel overlapping with the ground-truth image.
+        fn (int): 3d connected-component from the ground-truth image that has no voxel overlapping with the prediction image.
+
+        Notes
+        -----
+        This function computes lesion-wise score by defining true positive lesions (tp), false positive lesions (fp) and
+        false negative lesions (fn) using 3D connected-component-analysis.
+
+        tp: 3D connected-component from the ground-truth image that overlaps at least on one voxel with the prediction image.
+        fp: 3D connected-component from the prediction image that has no voxel overlapping with the ground-truth image.
+        fn: 3d connected-component from the ground-truth image that has no voxel overlapping with the prediction image.
+        """
+        tp, fp, fn = 0, 0, 0
+
+        # For each true lesion, check if there is at least one overlapping voxel. This determines true positives and
+        # false negatives (unpredicted lesions)
+        labeled_ground_truth, num_lesions = ndimage.label(truth.astype(bool))
+        for idx_lesion in range(1, num_lesions+1):
+            lesion = labeled_ground_truth == idx_lesion
+            lesion_pred_sum = lesion + prediction
+            if(np.max(lesion_pred_sum) > 1):
+                tp += 1
+            else:
+                fn += 1
+
+        # For each predicted lesion, check if there is at least one overlapping voxel in the ground truth.
+        labaled_prediction, num_pred_lesions = ndimage.label(prediction.astype(bool))
+        for idx_lesion in range(1, num_pred_lesions+1):
+            lesion = labaled_prediction == idx_lesion
+            lesion_pred_sum = lesion + truth
+            if(np.max(lesion_pred_sum) <= 1):  # No overlap
+                fp += 1
+
+        return tp, fp, fn
+
+    def lesion_f1_score(self):
+        """
+        Computes the lesion-wise F1-score between two masks by defining true positive lesions (tp), false positive lesions (fp)
+        and false negative lesions (fn) using 3D connected-component-analysis.
+
+        Masks are considered true positives if at least one voxel overlaps between the truth and the prediction.
+
+        Returns
+        -------
+        f1_score : float
+            Lesion-wise F1-score as float.
+            Max score = 1
+            Min score = 0
+            If both images are empty (tp + fp + fn =0) = empty_value
+        """
+        empty_value = 1.0   # Value to which to default if there are no labels. Default: 1.0.
+        tp, fp, fn = self.lesion_wise_tp_fp_fn(self.ref, self.pred)
+        f1_score = empty_value
+
+        # Compute f1_score
+        denom = tp + (fp + fn)/2
+        if(denom != 0):
+            f1_score = tp / denom
+        return f1_score
+
+    def lesion_ppv(self):
+        """
+        Computes the lesion-wise positive predictive value (PPV) between two masks
+        Returns
+        -------
+        ppv (float): Lesion-wise positive predictive value as float.
+            Max score = 1
+            Min score = 0
+            If both images are empty (tp + fp + fn =0) = empty_value
+        """
+        empty_value = 1.0
+
+        tp, fp, fn = self.lesion_wise_tp_fp_fn(self.ref, self.pred)
+        ppv = empty_value
+
+        # Compute ppv
+        denom = tp + fp
+        if(denom != 0):
+            ppv = tp / denom
+        return ppv
+
+    def lesion_sensitivity(self):
+        """
+        Computes the lesion-wise sensitivity between two masks
+        Returns
+        -------
+        sensitivity (float): Lesion-wise sensitivity as float.
+            Max score = 1
+            Min score = 0
+            If both images are empty (tp + fp + fn =0) = empty_value
+        """
+        empty_value = 1.0
+
+        tp, fp, fn = self.lesion_wise_tp_fp_fn(self.ref, self.pred)
+        sensitivity = empty_value
+
+        # Compute sensitivity
+        denom = tp + fn
+        if(denom != 0):
+            sensitivity = tp / denom
+        return sensitivity
+
+    # NOTE: it's best to keep this function at the end as it does not explicitly compute any metric
     def to_dict_meas(self, fmt="{:.4f}"):
         result_dict = {}
         for key in self.measures:
@@ -1175,6 +1300,4 @@ class BinaryPairwiseMeasures(object):
             else:
                 result = self.measures_dict[key][0](self.measures_dict[key][2])
             result_dict[key] = result
-        return result_dict  
-
-    
+        return result_dict
