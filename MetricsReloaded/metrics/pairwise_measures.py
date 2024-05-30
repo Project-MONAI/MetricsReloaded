@@ -146,7 +146,7 @@ class MultiClassPairwiseMeasures(object):
             cov_pred += np.cov(one_hot_pred[:, f], one_hot_pred[:, f])[0, 1]
             cov_ref += np.cov(one_hot_ref[:, f], one_hot_ref[:, f])[0, 1]
             cov_pr += np.cov(one_hot_pred[:, f], one_hot_ref[:, f])[0, 1]
-        
+
         numerator = cov_pr
         denominator = np.sqrt(cov_pred * cov_ref)
         return numerator / denominator
@@ -233,7 +233,7 @@ class MultiClassPairwiseMeasures(object):
         for key in self.measures:
             result = self.measures_dict[key][0]()
             result_dict[key] = result
-        return result_dict  
+        return result_dict
 
 
 class BinaryPairwiseMeasures(object):
@@ -260,18 +260,21 @@ class BinaryPairwiseMeasures(object):
             "ba": (self.balanced_accuracy, "BalAcc"),
             "cohens_kappa": (self.cohens_kappa, "CohensKappa"),
             "lr+": (self.positive_likelihood_ratio, "LR+"),
+            "youden_ind": (self.youden_index, "YoudenInd"),
+            "mcc": (self.matthews_correlation_coefficient, "MCC"),
+            # overlap-based measures
             "iou": (self.intersection_over_union, "IoU"),
             "fbeta": (self.fbeta, "FBeta"),
             "dsc":(self.dsc, "DSC"),
-            "youden_ind": (self.youden_index, "YoudenInd"),
-            "mcc": (self.matthews_correlation_coefficient, "MCC"),
-            "cldice": (self.centreline_dsc, "CentreLineDSC"),
-            "assd": (self.measured_average_distance, "ASSD"),
             "boundary_iou": (self.boundary_iou, "BoundaryIoU"),
+            "cldice": (self.centreline_dsc, "CentreLineDSC"),
+            # distance-based measures
+            "assd": (self.measured_average_distance, "ASSD"),
             "hd": (self.measured_hausdorff_distance, "HD"),
             "hd_perc": (self.measured_hausdorff_distance_perc, "HDPerc"),
             "masd": (self.measured_masd, "MASD"),
             "nsd": (self.normalised_surface_distance, "NSD"),
+            # other measures
             "vol_diff": (self.vol_diff, "VolDiff"),
             "rel_vol_error": (self.rel_vol_error, "RelVolError"),
         }
@@ -672,7 +675,7 @@ class BinaryPairwiseMeasures(object):
         ..math::
 
             DSC = \dfrac{2TP}{2TP+FP+FN}
-        
+
         This is also F:math:`{\\beta}` for :math:`{\\beta}`=1
 
         """
@@ -832,7 +835,7 @@ class BinaryPairwiseMeasures(object):
         :return: Euclidean distance between centre of mass when reference and prediction not empty
         -1 otherwise
         """
-        
+
         if self.flag_empty_pred or self.flag_empty_ref:
             return -1
         else:
@@ -976,8 +979,8 @@ class BinaryPairwiseMeasures(object):
         This functions determines the boundary iou
 
         Bowen Cheng, Ross Girshick, Piotr Dollár, Alexander C Berg, and Alexander Kirillov. 2021. Boundary IoU: Improving
-Object-Centric Image Segmentation Evaluation. In Proceedings of the IEEE/CVF Conference on Computer Vision and
-Pattern Recognition. 15334–15342.
+        Object-Centric Image Segmentation Evaluation. In Proceedings of the IEEE/CVF Conference on Computer Vision and
+        Pattern Recognition. 15334–15342.
 
         .. math::
 
@@ -1102,7 +1105,7 @@ Pattern Recognition. 15334–15342.
         )
 
         hausdorff_distance = np.max([np.max(ref_border_dist), np.max(pred_border_dist)])
-       
+
         hausdorff_distance_perc = np.max(
             [
                 np.percentile(ref_border_dist[pred_border > 0], q=perc),
@@ -1129,14 +1132,14 @@ Pattern Recognition. 15334–15342.
     def measured_masd(self):
         """
         This function returns only the mean average surface distance defined as
-        
+
         Miroslav Beneš and Barbara Zitová. 2015. Performance evaluation of image segmentation algorithms on microscopic
         image data. Journal of microscopy 257, 1 (2015), 65–85.
 
         .. math::
 
             MASD(A,B) = \dfrac{1}{2}\left(\dfrac{\sum_{a\in A}d(a,B)}{|A|} + \dfrac{\sum_{b\inB}d(b,A)}{|B|})
-        
+
         :return: masd
         """
         return self.measured_distance()[3]
@@ -1159,7 +1162,7 @@ Pattern Recognition. 15334–15342.
 
         Daniel P Huttenlocher, Gregory A. Klanderman, and William J Rucklidge. 1993. Comparing images using the Hausdorff
         distance. IEEE Transactions on pattern analysis and machine intelligence 15, 9 (1993), 850–863.
-        
+
         :return: hausdorff_distance_perc
         """
         return self.measured_distance()[2]
