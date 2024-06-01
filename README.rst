@@ -6,7 +6,9 @@ Metrics Reloaded
 
 A Python implementation of `Metrics Reloaded <https://openreview.net/forum?id=24kBqy8rcB_>`__ - A new recommendation framework for biomedical image analysis validation.
 
-This is a fork of the `Project-MONAI/MetricsReloaded <https://github.com/Project-MONAI/MetricsReloaded>`__ repo.
+ℹ️ This is a fork of the `Project-MONAI/MetricsReloaded <https://github.com/Project-MONAI/MetricsReloaded>`__ repo.
+
+ℹ️ You can use the `compute_metrics_reloaded.py wrapper script <https://github.com/ivadomed/utilities/blob/main/compute_metrics/compute_metrics_reloaded.py>`__ to compute metrics using the MetricsReloaded package. For the installation and usage of the script, see `our quick start guide <https://github.com/ivadomed/utilities/blob/main/quick_start_guides/MetricsReloaded_quick_start_guide.md>`__.
 
 Installation
 ============
