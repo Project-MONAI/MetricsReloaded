@@ -1240,14 +1240,24 @@ class BinaryPairwiseMeasures(object):
             If both images are empty (tp + fp + fn =0) = empty_value
         """
         empty_value = 1.0   # Value to which to default if there are no labels. Default: 1.0.
-        tp, fp, fn = self.lesion_wise_tp_fp_fn(self.ref, self.pred)
-        f1_score = empty_value
 
-        # Compute f1_score
-        denom = tp + (fp + fn)/2
-        if(denom != 0):
-            f1_score = tp / denom
-        return f1_score
+        if self.flag_empty_ref and self.flag_empty_pred:
+            # Both reference and prediction are empty --> model learned correctly
+            return 1.0
+        elif not self.flag_empty_ref and self.flag_empty_pred:
+            # Reference is not empty, prediction is empty --> model did not learn correctly (it's false negative)
+            return 0.0
+        # if the predction is not empty and ref is empty, it's false positive
+        # if both are not empty, it's true positive
+        else:
+            tp, fp, fn = self.lesion_wise_tp_fp_fn(self.ref, self.pred)
+            f1_score = empty_value
+
+            # Compute f1_score
+            denom = tp + (fp + fn)/2
+            if(denom != 0):
+                f1_score = tp / denom
+            return f1_score
 
     def lesion_ppv(self):
         """
@@ -1259,16 +1269,24 @@ class BinaryPairwiseMeasures(object):
             Min score = 0
             If both images are empty (tp + fp + fn =0) = empty_value
         """
-        empty_value = 1.0
+        if self.flag_empty_ref and self.flag_empty_pred:
+            # Both reference and prediction are empty --> model learned correctly
+            return 1.0
+        elif not self.flag_empty_ref and self.flag_empty_pred:
+            # Reference is not empty, prediction is empty --> model did not learn correctly (it's false negative)
+            return 0.0
+        # if the predction is not empty and ref is empty, it's false positive
+        # if both are not empty, it's true positive
+        else:
+            tp, fp, _ = self.lesion_wise_tp_fp_fn(self.ref, self.pred)
+            # ppv = 1.0
 
-        tp, fp, fn = self.lesion_wise_tp_fp_fn(self.ref, self.pred)
-        ppv = empty_value
-
-        # Compute ppv
-        denom = tp + fp
-        if(denom != 0):
-            ppv = tp / denom
-        return ppv
+            # Compute ppv
+            denom = tp + fp
+            # denom should ideally not be zero inside this else as it should be caught by the empty checks above
+            if(denom != 0):
+                ppv = tp / denom
+            return ppv
 
     def lesion_sensitivity(self):
         """
@@ -1280,16 +1298,23 @@ class BinaryPairwiseMeasures(object):
             Min score = 0
             If both images are empty (tp + fp + fn =0) = empty_value
         """
-        empty_value = 1.0
+        empty_value = 1.0   # Value to which to default if there are no labels. Default: 1.0.
 
-        tp, fp, fn = self.lesion_wise_tp_fp_fn(self.ref, self.pred)
-        sensitivity = empty_value
+        if self.flag_empty_ref and self.flag_empty_pred:
+            # Both reference and prediction are empty --> model learned correctly
+            return 1.0
+        # if the predction is not empty and ref is empty, it's false positive
+        # if both are not empty, it's true positive
+        else:
 
-        # Compute sensitivity
-        denom = tp + fn
-        if(denom != 0):
-            sensitivity = tp / denom
-        return sensitivity
+            tp, _, fn = self.lesion_wise_tp_fp_fn(self.ref, self.pred)
+            sensitivity = empty_value
+
+            # Compute sensitivity
+            denom = tp + fn
+            if(denom != 0):
+                sensitivity = tp / denom
+            return sensitivity
 
     # NOTE: it's best to keep this function at the end as it does not explicitly compute any metric
     def to_dict_meas(self, fmt="{:.4f}"):
