@@ -275,7 +275,9 @@ class BinaryPairwiseMeasures(object):
             "hd_perc": (self.measured_hausdorff_distance_perc, "HDPerc"),
             "masd": (self.measured_masd, "MASD"),
             "nsd": (self.normalised_surface_distance, "NSD"),
-            # instance-specific measures
+            # lesion-specific measures
+            "ref_count": (self.ref_lesions_count, "RefLesionsCount"),
+            "pred_count": (self.pred_lesions_count, "PredLesionsCount"),
             "lesion_ppv": (self.lesion_ppv, "LesionWisePPV"),
             "lesion_sensitivity": (self.lesion_sensitivity, "LesionWiseSensitivity"),
             "lesion_f1_score": (self.lesion_f1_score, "LesionWiseF1Score"),
@@ -1317,6 +1319,22 @@ class BinaryPairwiseMeasures(object):
             if(denom != 0):
                 sensitivity = tp / denom
             return sensitivity
+
+    def ref_lesions_count(self):
+        """
+        Returns the number of lesions in the reference mask
+        """
+        ref_lesion, num_ref_lesions = ndimage.label(self.ref)
+
+        return num_ref_lesions
+
+    def pred_lesions_count(self):
+        """
+        Returns the number of lesions in the prediction mask
+        """
+        pred_lesion, num_pred_lesions = ndimage.label(self.pred)
+
+        return num_pred_lesions
 
     def lesion_count_weighted_by_assignment(self):
         """
