@@ -53,8 +53,11 @@ METRICS_TO_NAME = {
     'vol_diff': 'Volume difference',
     'rel_vol_error': 'Relative volume error (RVE)',
     'lesion_ppv': 'Lesion wise positive predictive value (PPV)',
-    'lesion_sensitivity': 'Lesion wise sensitivity',
-    'lesion_f1_score': 'Lesion wise F1 score',
+    'lesion_sensitivity': 'LesionWiseSensitivity',
+    'lesion_f1_score': 'LesionWiseF1Score',
+    'ref_count': 'RefLesionsCount',
+    'pred_count': 'PredLesionsCount',
+    'lcwa': 'LesionCountWeightedByAssignment'
 }
 
 
@@ -246,9 +249,9 @@ def main():
     df_mean = (df.drop(columns=['reference', 'prediction', 'EmptyRef', 'EmptyPred']).groupby('label').
                agg(['mean', 'std']).reset_index())
 
-    # Rename columns
-    df.rename(columns={metric: METRICS_TO_NAME[metric] for metric in METRICS_TO_NAME}, inplace=True)
-    df_mean.rename(columns={metric: METRICS_TO_NAME[metric] for metric in METRICS_TO_NAME}, inplace=True)
+    # # Rename columns
+    # df.rename(columns={metric: METRICS_TO_NAME[metric] for metric in METRICS_TO_NAME}, inplace=True)
+    # df_mean.rename(columns={metric: METRICS_TO_NAME[metric] for metric in METRICS_TO_NAME}, inplace=True)
 
     # format output up to 3 decimal places
     df = df.round(3)
