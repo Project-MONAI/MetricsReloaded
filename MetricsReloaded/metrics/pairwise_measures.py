@@ -38,7 +38,8 @@ Calculating multiclass pairwise measures
 from __future__ import absolute_import, print_function
 import warnings
 import numpy as np
-from scipy import ndimage
+from scipy import ndimage, optimize
+from sklearn.metrics import precision_score
 from functools import partial
 from skimage.morphology import skeletonize
 from MetricsReloaded.utility.utils import (
@@ -278,6 +279,7 @@ class BinaryPairwiseMeasures(object):
             "lesion_ppv": (self.lesion_ppv, "LesionWisePPV"),
             "lesion_sensitivity": (self.lesion_sensitivity, "LesionWiseSensitivity"),
             "lesion_f1_score": (self.lesion_f1_score, "LesionWiseF1Score"),
+            "lcwa": (self.lesion_count_weighted_by_assignment, "LesionCountWeightedByAssignment"),
             # other measures
             "vol_diff": (self.vol_diff, "VolDiff"),
             "rel_vol_error": (self.rel_vol_error, "RelVolError"),
@@ -1315,6 +1317,59 @@ class BinaryPairwiseMeasures(object):
             if(denom != 0):
                 sensitivity = tp / denom
             return sensitivity
+
+    def lesion_count_weighted_by_assignment(self):
+        """
+        Performs lesion matching between the predicted lesions and the true lesions. A weighted bipartite graph between
+        the predicted and true lesions is constructed, using precision as the edge weights. The returned value is the
+        mean precision across predictions normalized by the number of lesions in the ground truth. Values close to 1
+        indicate that the right number of lesions have been identified and that they overlap. Lower values indicate either
+        the wrong number of predicted lesions or that they do not sufficiently overlap with the ground truth.
+
+        Taken from: https://github.com/npnl/atlas2_grand_challenge/blob/main/isles/scoring.py#L126
+
+        Returns
+        -------
+        float : Lesion Count by Weighted Assignment (LCWA) score
+        """
+        # reshape to add batch dimension
+        prediction = np.reshape(self.pred, (1, *self.pred.shape))
+        truth = np.reshape(self.ref, (1, *self.ref.shape))
+
+        pred_shape = prediction.shape
+        truth_shape = truth.shape
+
+        # "Lesion Count by Weighted Assignment"
+        lcwa = []
+        for idx_sample in range(truth_shape[0]):
+            # Identify unique regions
+            pred_lesion, num_pred_lesions = ndimage.label(prediction[idx_sample, ...])
+            truth_lesion, num_truth_lesions = ndimage.label(truth[idx_sample, ...])
+
+            # reshape for use with sklearn precision
+            pred_reshape = np.reshape(prediction[idx_sample, ...], (np.prod(pred_shape[1:])))
+            truth_reshape = np.reshape(truth[idx_sample, ...], (np.prod(truth_shape[1:])))
+
+            # pre-allocate cost matrix
+            cost_matrix = np.zeros((num_pred_lesions, num_truth_lesions))
+
+            # compute cost matrix
+            for idx_pred in range(num_pred_lesions):
+                pred_lesion = pred_reshape == idx_pred
+
+                for idx_truth in range(num_truth_lesions):
+                    truth_lesion = truth_reshape == idx_truth
+
+                    # use precision scores as edge weights in the bipartite graph
+                    cost_matrix[idx_pred, idx_truth] = precision_score(truth_lesion, pred_lesion)
+
+            # compute the optimal assignment
+            row_ind, col_ind = optimize.linear_sum_assignment(cost_matrix=cost_matrix, maximize=True)
+            total_precision = cost_matrix[row_ind, col_ind].sum()
+            lcwa.append(total_precision / num_truth_lesions)
+
+        return lcwa[0]
+
 
     # NOTE: it's best to keep this function at the end as it does not explicitly compute any metric
     def to_dict_meas(self, fmt="{:.4f}"):
