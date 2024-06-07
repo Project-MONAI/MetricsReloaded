@@ -8,7 +8,7 @@ A Python implementation of `Metrics Reloaded <https://openreview.net/forum?id=24
 
 ℹ️ This is a fork of the `Project-MONAI/MetricsReloaded <https://github.com/Project-MONAI/MetricsReloaded>`__ repo. In this fork, we have added some additional metrics, such as `relative volume error (RVE) <https://github.com/ivadomed/MetricsReloaded/blob/713892a053e23a40a8bd88aa72a261409d536ba8/MetricsReloaded/metrics/pairwise_measures.py#L897>`__, `lesion-wise F1 Score <https://github.com/ivadomed/MetricsReloaded/blob/713892a053e23a40a8bd88aa72a261409d536ba8/MetricsReloaded/metrics/pairwise_measures.py#L1227>`__, `lesion-wise Sensitivity <https://github.com/ivadomed/MetricsReloaded/blob/713892a053e23a40a8bd88aa72a261409d536ba8/MetricsReloaded/metrics/pairwise_measures.py#L1273>`__, and `lesion-wise positive predictive value (PPV) <https://github.com/ivadomed/MetricsReloaded/blob/713892a053e23a40a8bd88aa72a261409d536ba8/MetricsReloaded/metrics/pairwise_measures.py#L1252>`__.
 
-ℹ️ You can use the `compute_metrics_reloaded.py wrapper script <https://github.com/ivadomed/utilities/blob/main/compute_metrics/compute_metrics_reloaded.py>`__ to compute metrics using the MetricsReloaded package. For the installation and usage of the script, see `our quick start guide <https://github.com/ivadomed/utilities/blob/main/quick_start_guides/MetricsReloaded_quick_start_guide.md>`__.
+ℹ️ You can use the `compute_metrics_reloaded.py wrapper script <https://github.com/ivadomed/utilities/blob/main/compute_metrics/compute_metrics_reloaded.py>`__ to compute metrics using the MetricsReloaded package. For the installation and usage of the script, see `our quick start guide <./MetricsReloaded_quick_start_guide.md>`__.
 
 Installation
 ============
