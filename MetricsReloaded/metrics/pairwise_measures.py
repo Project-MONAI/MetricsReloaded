@@ -1344,7 +1344,9 @@ class BinaryPairwiseMeasures(object):
         indicate that the right number of lesions have been identified and that they overlap. Lower values indicate either
         the wrong number of predicted lesions or that they do not sufficiently overlap with the ground truth.
 
-        Taken from: https://github.com/npnl/atlas2_grand_challenge/blob/main/isles/scoring.py#L126
+        Adapted from: https://github.com/npnl/atlas2_grand_challenge/blob/main/isles/scoring.py#L126
+        NOTE: the original implementation had a bug which was iterating through the 0-1 mask itself but NOT the
+        labeled mask obtained after using `ndimage.label`. This has been fixed in this implementation.
 
         Returns
         -------
@@ -1354,12 +1356,9 @@ class BinaryPairwiseMeasures(object):
         prediction = np.reshape(self.pred, (1, *self.pred.shape))
         truth = np.reshape(self.ref, (1, *self.ref.shape))
 
-        pred_shape = prediction.shape
-        truth_shape = truth.shape
-
         # "Lesion Count by Weighted Assignment"
         lcwa = []
-        for idx_sample in range(truth_shape[0]):
+        for idx_sample in range(truth.shape[0]):
             # Identify unique regions
             pred_lesion, num_pred_lesions = ndimage.label(prediction[idx_sample, ...])
             truth_lesion, num_truth_lesions = ndimage.label(truth[idx_sample, ...])
