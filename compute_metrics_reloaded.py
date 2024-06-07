@@ -78,8 +78,7 @@ def get_parser():
                                  'lesion_ppv', 'lesion_sensitivity', 'lesion_f1_score',
                                  'ref_count', 'pred_count', 'lcwa'],
                         help='List of metrics to compute. For details, '
-                             'see: https://metricsreloaded.readthedocs.io/en/latest/reference/metrics/metrics.html. '
-                             'Default: dsc, fbeta, nsd, vol_diff, rel_vol_error')
+                             'see: https://metricsreloaded.readthedocs.io/en/latest/reference/metrics/metrics.html.')
     parser.add_argument('-output', type=str, default='metrics.csv', required=False,
                         help='Path to the output CSV file to save the metrics. Default: metrics.csv')
 
