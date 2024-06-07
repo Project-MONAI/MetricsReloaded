@@ -16,7 +16,8 @@ import nibabel as nib
 from compute_metrics_reloaded import compute_metrics_single_subject
 import tempfile
 
-METRICS = ['dsc', 'fbeta', 'nsd', 'vol_diff', 'rel_vol_error', 'lesion_ppv', 'lesion_sensitivity', 'lesion_f1_score']
+METRICS = ['dsc', 'fbeta', 'nsd', 'vol_diff', 'rel_vol_error', 'lesion_ppv', 'lesion_sensitivity', 'lesion_f1_score',
+           'ref_count', 'pred_count']
 
 
 class TestComputeMetricsReloaded(unittest.TestCase):
@@ -65,7 +66,9 @@ class TestComputeMetricsReloaded(unittest.TestCase):
                                   'vol_diff': np.nan,
                                   'lesion_ppv': 1.0,
                                   'lesion_sensitivity': 1.0,
-                                  'lesion_f1_score': 1.0}}
+                                  'lesion_f1_score': 1.0,
+                                  'ref_count': 0,
+                                  'pred_count': 0}}
 
         # Create empty reference
         self.create_dummy_nii(self.ref_file, np.zeros((10, 10, 10)))
@@ -90,7 +93,9 @@ class TestComputeMetricsReloaded(unittest.TestCase):
                                   'vol_diff': np.inf,
                                   'lesion_ppv': 0.0,
                                   'lesion_sensitivity': 1.0,
-                                  'lesion_f1_score': 0.0}}
+                                  'lesion_f1_score': 0.0,
+                                  'ref_count': 0,
+                                  'pred_count': 1}}
 
         # Create empty reference
         self.create_dummy_nii(self.ref_file, np.zeros((10, 10, 10)))
@@ -117,7 +122,9 @@ class TestComputeMetricsReloaded(unittest.TestCase):
                                   'vol_diff': 1.0,
                                   'lesion_ppv': 0.0,
                                   'lesion_sensitivity': 0.0,
-                                  'lesion_f1_score': 0.0}}
+                                  'lesion_f1_score': 0.0,
+                                  'ref_count': 1,
+                                  'pred_count': 0}}
 
         # Create non-empty reference
         ref = np.zeros((10, 10, 10))
@@ -144,7 +151,9 @@ class TestComputeMetricsReloaded(unittest.TestCase):
                                   'vol_diff': 3.0,
                                   'lesion_ppv': 1.0,
                                   'lesion_sensitivity': 1.0,
-                                  'lesion_f1_score': 1.0}}
+                                  'lesion_f1_score': 1.0,
+                                  'ref_count': 1,
+                                  'pred_count': 1}}
 
         # Create non-empty reference
         ref = np.zeros((10, 10, 10))
@@ -174,7 +183,9 @@ class TestComputeMetricsReloaded(unittest.TestCase):
                                   'EmptyPred': False,
                                   'lesion_ppv': 1.0,
                                   'lesion_sensitivity': 1.0,
-                                  'lesion_f1_score': 1.0},
+                                  'lesion_f1_score': 1.0,
+                                  'ref_count': 1,
+                                  'pred_count': 1},
                             2.0: {'dsc': 0.26666666666666666,
                                   'fbeta': 0.26666667461395266,
                                   'nsd': 0.5373134328358209,
@@ -184,7 +195,9 @@ class TestComputeMetricsReloaded(unittest.TestCase):
                                   'EmptyPred': False,
                                   'lesion_ppv': 1.0,
                                   'lesion_sensitivity': 1.0,
-                                  'lesion_f1_score': 1.0}}
+                                  'lesion_f1_score': 1.0,
+                                  'ref_count': 1,
+                                  'pred_count': 1}}
 
         # Create non-empty reference
         ref = np.zeros((10, 10, 10))
@@ -215,7 +228,9 @@ class TestComputeMetricsReloaded(unittest.TestCase):
                                   'vol_diff': 0.0,
                                   'lesion_ppv': 1.0,
                                   'lesion_sensitivity': 1.0,
-                                  'lesion_f1_score': 1.0}}
+                                  'lesion_f1_score': 1.0,
+                                  'ref_count': 1,
+                                  'pred_count': 1}}
 
         # Create non-empty reference
         ref = np.zeros((10, 10, 10))
