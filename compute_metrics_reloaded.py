@@ -156,7 +156,8 @@ def compute_metrics_single_subject(prediction, reference, metrics):
     # append entry into the output_list to store the metrics for the current subject
     metrics_dict = {'reference': reference, 'prediction': prediction}
 
-    # loop over all unique labels
+    # loop over all unique labels, e.g., voxels with values 1, 2, ...
+    # by doing this, we can compute metrics for each label separately, e.g., separately for spinal cord and lesions
     for label in unique_labels:
         # create binary masks for the current label
         print(f'\tLabel {label}')
