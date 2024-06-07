@@ -168,6 +168,119 @@ class TestComputeMetricsReloaded(unittest.TestCase):
         # Assert metrics
         self.assert_metrics(metrics_dict, expected_metrics)
 
+    def test_non_empty_ref_and_pred_multi_lesion(self):
+        """
+        Non-empty reference (2 lesions) and non-empty prediction (2 lesions)
+        Multi-lesion (i.e., there are multiple regions (lesions) with voxel values 1)
+        Lesion #1: complete overlap; Lesion #2: partial overlap
+        """
+
+        expected_metrics = {1.0: {'EmptyPred': False,
+                                  'EmptyRef': False,
+                                  'dsc': 0.8571428571428571,
+                                  'fbeta': 0.8571428571428571,
+                                  'nsd': 1.0,
+                                  'rel_vol_error': -25.0,
+                                  'vol_diff': 0.25,
+                                  'lesion_ppv': 1.0,
+                                  'lesion_sensitivity': 1.0,
+                                  'lesion_f1_score': 1.0,
+                                  'ref_count': 2,
+                                  'pred_count': 2}}
+
+        # Create non-empty reference
+        ref = np.zeros((10, 10, 10))
+        # Lesion #1
+        ref[1:3, 3:6] = 1
+        # Lesion #2
+        ref[7:9, 2:5] = 1
+        self.create_dummy_nii(self.ref_file, ref)
+        # Create non-empty prediction
+        pred = np.zeros((10, 10, 10))
+        # Lesion #1 -- complete overlap
+        pred[1:3, 3:6] = 1
+        # Lesion #2 -- partial overlap
+        pred[7:8, 2:5] = 1
+        self.create_dummy_nii(self.pred_file, pred)
+        # Compute metrics
+        metrics_dict = compute_metrics_single_subject(self.pred_file.name, self.ref_file.name, self.metrics)
+        # Assert metrics
+        self.assert_metrics(metrics_dict, expected_metrics)
+
+    def test_non_empty_ref_and_pred_multi_lesion_one_lesion_not_predicted(self):
+        """
+        Non-empty reference (2 lesions) and non-empty prediction (1 lesion)
+        Multi-lesion (i.e., there are multiple regions (lesions) with voxel values 1)
+        Lesion #1: complete overlap; Lesion #2: only in reference
+        """
+
+        expected_metrics = {1.0: {'EmptyPred': False,
+                                  'EmptyRef': False,
+                                  'dsc': 0.6666666666666666,
+                                  'fbeta': 0.6666666666666666,
+                                  'nsd': 0.6666666666666666,
+                                  'rel_vol_error': -50.0,
+                                  'vol_diff': 0.5,
+                                  'lesion_ppv': 1.0,
+                                  'lesion_sensitivity': 0.5,
+                                  'lesion_f1_score': 0.6666666666666666,
+                                  'ref_count': 2,
+                                  'pred_count': 1}}
+
+        # Create non-empty reference
+        ref = np.zeros((10, 10, 10))
+        # Lesion #1
+        ref[1:3, 3:6] = 1
+        # Lesion #2
+        ref[7:9, 2:5] = 1
+        self.create_dummy_nii(self.ref_file, ref)
+        # Create non-empty prediction
+        pred = np.zeros((10, 10, 10))
+        # Lesion #1 -- complete overlap
+        pred[1:3, 3:6] = 1
+        # Note: there is no Lesion #2 in prediction
+        self.create_dummy_nii(self.pred_file, pred)
+        # Compute metrics
+        metrics_dict = compute_metrics_single_subject(self.pred_file.name, self.ref_file.name, self.metrics)
+        # Assert metrics
+        self.assert_metrics(metrics_dict, expected_metrics)
+
+    def test_non_empty_ref_and_pred_multi_lesion_no_lesion_predicted(self):
+        """
+        Non-empty reference (2 lesions) and empty prediction (0 lesions)
+        Multi-lesion (i.e., there are multiple regions (lesions) with voxel values 1)
+        Lesion #1: only in reference; Lesion #2: only in reference
+        """
+
+        expected_metrics = {1.0: {'EmptyPred': False,
+                                  'EmptyRef': True,
+                                  'dsc': 0.0,
+                                  'fbeta': 0,
+                                  'nsd': 0,
+                                  'rel_vol_error': -100.0,
+                                  'vol_diff': 1.0,
+                                  'lesion_ppv': 0.0,
+                                  'lesion_sensitivity': 0.0,
+                                  'lesion_f1_score': 0.0,
+                                  'ref_count': 2,
+                                  'pred_count': 0}}
+
+        # Create non-empty reference
+        ref = np.zeros((10, 10, 10))
+        # Lesion #1
+        ref[1:3, 3:6] = 1
+        # Lesion #2
+        ref[7:9, 2:5] = 1
+        self.create_dummy_nii(self.ref_file, ref)
+        # Create non-empty prediction
+        pred = np.zeros((10, 10, 10))
+        # Note: there is no lesion in prediction
+        self.create_dummy_nii(self.pred_file, pred)
+        # Compute metrics
+        metrics_dict = compute_metrics_single_subject(self.pred_file.name, self.ref_file.name, self.metrics)
+        # Assert metrics
+        self.assert_metrics(metrics_dict, expected_metrics)
+
     def test_non_empty_ref_and_pred_multi_class(self):
         """
         Non-empty reference and non-empty prediction with partial overlap
