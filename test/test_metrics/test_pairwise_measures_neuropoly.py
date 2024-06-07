@@ -3,7 +3,7 @@
 # Tests for the `compute_metrics_reloaded.py` script
 #
 # RUN BY:
-#   python -m unittest tests/test_pairwise_measures_neuropoly.py
+#   python -m unittest test/test_metrics/test_pairwise_measures_neuropoly.py
 #
 # Authors: NeuroPoly team
 #
