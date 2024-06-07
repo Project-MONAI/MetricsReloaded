@@ -45,14 +45,15 @@ import pandas as pd
 from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures as BPM
 
 
+# This dictionary is used to rename the metric columns in the output CSV file
 METRICS_TO_NAME = {
-    'dsc': 'Dice similarity coefficient (DSC)',
-    'hd': 'Hausdorff distance (HD95)',
-    'fbeta': 'F1 score',
-    'nsd': 'Normalized surface distance (NSD)',
-    'vol_diff': 'Volume difference',
-    'rel_vol_error': 'Relative volume error (RVE)',
-    'lesion_ppv': 'Lesion wise positive predictive value (PPV)',
+    'dsc': 'DiceSimilarityCoefficient',
+    'hd': 'HausdorffDistance',
+    'fbeta': 'F1score',
+    'nsd': 'NormalizedSurfaceDistance',
+    'vol_diff': 'VolumeDifference',
+    'rel_vol_error': 'RelativeVolumeError',
+    'lesion_ppv': 'LesionWisePositivePredictiveValue',
     'lesion_sensitivity': 'LesionWiseSensitivity',
     'lesion_f1_score': 'LesionWiseF1Score',
     'ref_count': 'RefLesionsCount',
