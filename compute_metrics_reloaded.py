@@ -75,7 +75,7 @@ def get_parser():
                              'nifti image of reference (ground truth).')
     parser.add_argument('-metrics', nargs='+', required=False,
                         default=['dsc', 'fbeta', 'nsd', 'vol_diff', 'rel_vol_error',
-                                 'lesion_ppv', 'lesion_sensitivity', 'lesion_f1_score'
+                                 'lesion_ppv', 'lesion_sensitivity', 'lesion_f1_score',
                                  'ref_count', 'pred_count', 'lcwa'],
                         help='List of metrics to compute. For details, '
                              'see: https://metricsreloaded.readthedocs.io/en/latest/reference/metrics/metrics.html. '
