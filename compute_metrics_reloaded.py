@@ -45,16 +45,20 @@ import pandas as pd
 from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures as BPM
 
 
+# This dictionary is used to rename the metric columns in the output CSV file
 METRICS_TO_NAME = {
-    'dsc': 'Dice similarity coefficient (DSC)',
-    'hd': 'Hausdorff distance (HD95)',
-    'fbeta': 'F1 score',
-    'nsd': 'Normalized surface distance (NSD)',
-    'vol_diff': 'Volume difference',
-    'rel_vol_error': 'Relative volume error (RVE)',
-    'lesion_ppv': 'Lesion wise positive predictive value (PPV)',
-    'lesion_sensitivity': 'Lesion wise sensitivity',
-    'lesion_f1_score': 'Lesion wise F1 score',
+    'dsc': 'DiceSimilarityCoefficient',
+    'hd': 'HausdorffDistance95',
+    'fbeta': 'F1score',
+    'nsd': 'NormalizedSurfaceDistance',
+    'vol_diff': 'VolumeDifference',
+    'rel_vol_error': 'RelativeVolumeError',
+    'lesion_ppv': 'LesionWisePositivePredictiveValue',
+    'lesion_sensitivity': 'LesionWiseSensitivity',
+    'lesion_f1_score': 'LesionWiseF1Score',
+    'ref_count': 'RefLesionsCount',
+    'pred_count': 'PredLesionsCount',
+    'lcwa': 'LesionCountWeightedByAssignment'
 }
 
 
@@ -69,11 +73,12 @@ def get_parser():
     parser.add_argument('-reference', required=True, type=str,
                         help='Path to the folder with nifti images of reference (ground truth) or path to a single '
                              'nifti image of reference (ground truth).')
-    parser.add_argument('-metrics', nargs='+', default=['dsc', 'fbeta', 'nsd', 'vol_diff', 'rel_vol_error'],
-                        required=False,
+    parser.add_argument('-metrics', nargs='+', required=False,
+                        default=['dsc', 'fbeta', 'nsd', 'vol_diff', 'rel_vol_error',
+                                 'lesion_ppv', 'lesion_sensitivity', 'lesion_f1_score',
+                                 'ref_count', 'pred_count', 'lcwa'],
                         help='List of metrics to compute. For details, '
-                             'see: https://metricsreloaded.readthedocs.io/en/latest/reference/metrics/metrics.html. '
-                             'Default: dsc, fbeta, nsd, vol_diff, rel_vol_error')
+                             'see: https://metricsreloaded.readthedocs.io/en/latest/reference/metrics/metrics.html.')
     parser.add_argument('-output', type=str, default='metrics.csv', required=False,
                         help='Path to the output CSV file to save the metrics. Default: metrics.csv')
 
@@ -150,7 +155,8 @@ def compute_metrics_single_subject(prediction, reference, metrics):
     # append entry into the output_list to store the metrics for the current subject
     metrics_dict = {'reference': reference, 'prediction': prediction}
 
-    # loop over all unique labels
+    # loop over all unique labels, e.g., voxels with values 1, 2, ...
+    # by doing this, we can compute metrics for each label separately, e.g., separately for spinal cord and lesions
     for label in unique_labels:
         # create binary masks for the current label
         print(f'\tLabel {label}')

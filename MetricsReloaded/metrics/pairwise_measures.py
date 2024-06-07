@@ -38,7 +38,8 @@ Calculating multiclass pairwise measures
 from __future__ import absolute_import, print_function
 import warnings
 import numpy as np
-from scipy import ndimage
+from scipy import ndimage, optimize
+from sklearn.metrics import precision_score
 from functools import partial
 from skimage.morphology import skeletonize
 from MetricsReloaded.utility.utils import (
@@ -274,10 +275,13 @@ class BinaryPairwiseMeasures(object):
             "hd_perc": (self.measured_hausdorff_distance_perc, "HDPerc"),
             "masd": (self.measured_masd, "MASD"),
             "nsd": (self.normalised_surface_distance, "NSD"),
-            # instance-specific measures
+            # lesion-specific measures
+            "ref_count": (self.ref_lesions_count, "RefLesionsCount"),
+            "pred_count": (self.pred_lesions_count, "PredLesionsCount"),
             "lesion_ppv": (self.lesion_ppv, "LesionWisePPV"),
             "lesion_sensitivity": (self.lesion_sensitivity, "LesionWiseSensitivity"),
             "lesion_f1_score": (self.lesion_f1_score, "LesionWiseF1Score"),
+            "lcwa": (self.lesion_count_weighted_by_assignment, "LesionCountWeightedByAssignment"),
             # other measures
             "vol_diff": (self.vol_diff, "VolDiff"),
             "rel_vol_error": (self.rel_vol_error, "RelVolError"),
@@ -1315,6 +1319,72 @@ class BinaryPairwiseMeasures(object):
             if(denom != 0):
                 sensitivity = tp / denom
             return sensitivity
+
+    def ref_lesions_count(self):
+        """
+        Returns the number of lesions in the reference mask
+        """
+        ref_lesion, num_ref_lesions = ndimage.label(self.ref)
+
+        return num_ref_lesions
+
+    def pred_lesions_count(self):
+        """
+        Returns the number of lesions in the prediction mask
+        """
+        pred_lesion, num_pred_lesions = ndimage.label(self.pred)
+
+        return num_pred_lesions
+
+    def lesion_count_weighted_by_assignment(self):
+        """
+        Performs lesion matching between the predicted lesions and the true lesions. A weighted bipartite graph between
+        the predicted and true lesions is constructed, using precision as the edge weights. The returned value is the
+        mean precision across predictions normalized by the number of lesions in the ground truth. Values close to 1
+        indicate that the right number of lesions have been identified and that they overlap. Lower values indicate either
+        the wrong number of predicted lesions or that they do not sufficiently overlap with the ground truth.
+
+        Adapted from: https://github.com/npnl/atlas2_grand_challenge/blob/main/isles/scoring.py#L126
+        NOTE: the original implementation had a bug which was iterating through the 0-1 mask itself but NOT the
+        labeled mask obtained after using `ndimage.label`. This has been fixed in this implementation.
+
+        Returns
+        -------
+        float : Lesion Count by Weighted Assignment (LCWA) score
+        """
+        # reshape to add batch dimension
+        prediction = np.reshape(self.pred, (1, *self.pred.shape))
+        truth = np.reshape(self.ref, (1, *self.ref.shape))
+
+        # "Lesion Count by Weighted Assignment"
+        lcwa = []
+        for idx_sample in range(truth.shape[0]):
+            # Identify unique regions
+            pred_lesion, num_pred_lesions = ndimage.label(prediction[idx_sample, ...])
+            truth_lesion, num_truth_lesions = ndimage.label(truth[idx_sample, ...])
+
+            # pre-allocate cost matrix
+            cost_matrix = np.zeros((num_pred_lesions, num_truth_lesions))
+
+            # compute cost matrix
+            # NOTE: 0 is the background class so we start from 1
+            for idx_pred in range(1, num_pred_lesions+1):
+                pred = (pred_lesion == idx_pred).reshape(-1)
+
+                for idx_truth in range(1, num_truth_lesions+1):
+                    truth = (truth_lesion == idx_truth).reshape(-1)
+
+                    # compute precision scores to use as edge weights in the bipartite graph
+                    # NOTE: sklearn's precision requires 1D arrays as input
+                    cost_matrix[idx_pred-1, idx_truth-1] = precision_score(y_true=truth, y_pred=pred)
+
+            # compute the optimal assignment
+            row_ind, col_ind = optimize.linear_sum_assignment(cost_matrix=cost_matrix, maximize=True)
+            total_precision = cost_matrix[row_ind, col_ind].sum()
+            lcwa.append(total_precision / num_truth_lesions)
+
+        return lcwa[0]
+
 
     # NOTE: it's best to keep this function at the end as it does not explicitly compute any metric
     def to_dict_meas(self, fmt="{:.4f}"):
