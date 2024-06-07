@@ -48,7 +48,7 @@ from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures as 
 # This dictionary is used to rename the metric columns in the output CSV file
 METRICS_TO_NAME = {
     'dsc': 'DiceSimilarityCoefficient',
-    'hd': 'HausdorffDistance',
+    'hd': 'HausdorffDistance95',
     'fbeta': 'F1score',
     'nsd': 'NormalizedSurfaceDistance',
     'vol_diff': 'VolumeDifference',
