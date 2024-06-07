@@ -1364,22 +1364,20 @@ class BinaryPairwiseMeasures(object):
             pred_lesion, num_pred_lesions = ndimage.label(prediction[idx_sample, ...])
             truth_lesion, num_truth_lesions = ndimage.label(truth[idx_sample, ...])
 
-            # reshape for use with sklearn precision
-            pred_reshape = np.reshape(prediction[idx_sample, ...], (np.prod(pred_shape[1:])))
-            truth_reshape = np.reshape(truth[idx_sample, ...], (np.prod(truth_shape[1:])))
-
             # pre-allocate cost matrix
             cost_matrix = np.zeros((num_pred_lesions, num_truth_lesions))
 
             # compute cost matrix
-            for idx_pred in range(num_pred_lesions):
-                pred_lesion = pred_reshape == idx_pred
+            # NOTE: 0 is the background class so we start from 1
+            for idx_pred in range(1, num_pred_lesions+1):
+                pred = (pred_lesion == idx_pred).reshape(-1)
 
-                for idx_truth in range(num_truth_lesions):
-                    truth_lesion = truth_reshape == idx_truth
+                for idx_truth in range(1, num_truth_lesions+1):
+                    truth = (truth_lesion == idx_truth).reshape(-1)
 
-                    # use precision scores as edge weights in the bipartite graph
-                    cost_matrix[idx_pred, idx_truth] = precision_score(truth_lesion, pred_lesion)
+                    # compute precision scores to use as edge weights in the bipartite graph
+                    # NOTE: sklearn's precision requires 1D arrays as input
+                    cost_matrix[idx_pred-1, idx_truth-1] = precision_score(y_true=truth, y_pred=pred)
 
             # compute the optimal assignment
             row_ind, col_ind = optimize.linear_sum_assignment(cost_matrix=cost_matrix, maximize=True)
