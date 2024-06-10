@@ -175,7 +175,6 @@ def compute_metrics_single_subject(prediction, reference, metrics):
     # Special case when both the reference and prediction images are empty
     else:
         label = 1
-        print(f'\tLabel {label} -- both the reference and prediction are empty')
         bpm = BPM(prediction_data, reference_data, measures=metrics)
         dict_seg = bpm.to_dict_meas()
 
