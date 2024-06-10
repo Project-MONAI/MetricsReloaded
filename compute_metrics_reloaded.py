@@ -134,9 +134,7 @@ def compute_metrics_single_subject(prediction, reference, metrics):
     :param metrics: list of metrics to compute
     """
     # load nifti images
-    print(f'Processing...')
-    print(f'\tPrediction: {os.path.basename(prediction)}')
-    print(f'\tReference: {os.path.basename(reference)}')
+    print(f'Processing:\n\tPrediction: {os.path.basename(prediction)}\n\tReference: {os.path.basename(reference)}')
     prediction_data = load_nifti_image(prediction)
     reference_data = load_nifti_image(reference)
 
@@ -163,7 +161,6 @@ def compute_metrics_single_subject(prediction, reference, metrics):
     # by doing this, we can compute metrics for each label separately, e.g., separately for spinal cord and lesions
     for label in unique_labels:
         # create binary masks for the current label
-        print(f'\tLabel {label}')
         prediction_data_label = np.array(prediction_data == label, dtype=float)
         reference_data_label = np.array(reference_data == label, dtype=float)
 
