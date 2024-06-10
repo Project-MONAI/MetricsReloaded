@@ -252,6 +252,11 @@ def main():
     df_mean = (df.drop(columns=['reference', 'prediction', 'EmptyRef', 'EmptyPred']).groupby('label').
                agg(['mean', 'std']).reset_index())
 
+    # Convert multi-index to flat index
+    df_mean.columns = ['_'.join(col).strip() for col in df_mean.columns.values]
+    # Rename column `label_` back to `label`
+    df_mean.rename(columns={'label_': 'label'}, inplace=True)
+
     # Rename columns
     df.rename(columns={metric: METRICS_TO_NAME[metric] for metric in METRICS_TO_NAME}, inplace=True)
     df_mean.rename(columns={metric: METRICS_TO_NAME[metric] for metric in METRICS_TO_NAME}, inplace=True)
