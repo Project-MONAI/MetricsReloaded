@@ -134,7 +134,7 @@ def compute_metrics_single_subject(prediction, reference, metrics):
     :param metrics: list of metrics to compute
     """
     # load nifti images
-    print(f'Processing:\n\tPrediction: {os.path.basename(prediction)}\n\tReference: {os.path.basename(reference)}')
+    print(f'\nProcessing:\n\tPrediction: {os.path.basename(prediction)}\n\tReference: {os.path.basename(reference)}')
     prediction_data = load_nifti_image(prediction)
     reference_data = load_nifti_image(reference)
 
