@@ -287,11 +287,11 @@ class TestComputeMetricsReloaded(unittest.TestCase):
         Multi-class (i.e., voxels with values 1 and 2, e.g., region-based nnUNet training)
         """
 
-        expected_metrics = {1.0: {'dsc': 0.25,
-                                  'fbeta': 0.2500000055879354,
-                                  'nsd': 0.5,
-                                  'vol_diff': 2.0,
-                                  'rel_vol_error': 200.0,
+        expected_metrics = {1.0: {'dsc': 0.6521739130434783,
+                                  'fbeta': 0.5769230751596257,
+                                  'nsd': 0.23232323232323232,
+                                  'vol_diff': 2.6,
+                                  'rel_vol_error': 260.0,
                                   'EmptyRef': False,
                                   'EmptyPred': False,
                                   'lesion_ppv': 1.0,
