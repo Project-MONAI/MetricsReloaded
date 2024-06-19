@@ -255,6 +255,12 @@ def main():
     # Convert JSON data to pandas DataFrame
     df = build_output_dataframe(output_list)
 
+    # create a separate dataframe for columns where EmptyRef and EmptyPred is True
+    df_empty_masks = df[(df['EmptyRef'] == True) & (df['EmptyPred'] == True)]
+
+    # keep only the rows where either pred or ref is non-empty or both are non-empty
+    df = df[(df['EmptyRef'] == False) | (df['EmptyPred'] == False)]
+
     # Compute mean and standard deviation of metrics across all subjects
     df_mean = (df.drop(columns=['reference', 'prediction', 'EmptyRef', 'EmptyPred']).groupby('label').
                agg(['mean', 'std']).reset_index())
