@@ -157,6 +157,11 @@ def compute_metrics_single_subject(prediction, reference, metrics):
     # append entry into the output_list to store the metrics for the current subject
     metrics_dict = {'reference': reference, 'prediction': prediction}
 
+    # NOTE: this is hacky fix to try to speed up metrics computation, tread very carefully
+    if len(unique_labels) == 2:
+        # compute metrics only for lesions
+        unique_labels = unique_labels[1:]
+
     # loop over all unique labels, e.g., voxels with values 1, 2, ...
     # by doing this, we can compute metrics for each label separately, e.g., separately for spinal cord and lesions
     for label in unique_labels:
@@ -172,17 +177,17 @@ def compute_metrics_single_subject(prediction, reference, metrics):
         # add the metrics to the output dictionary
         metrics_dict[label] = dict_seg
 
-    # Special case when both the reference and prediction images are empty
-    else:
-        label = 1
-        bpm = BPM(prediction_data, reference_data, measures=metrics)
-        dict_seg = bpm.to_dict_meas()
+    # # Special case when both the reference and prediction images are empty
+    # else:
+    #     label = 1
+    #     bpm = BPM(prediction_data, reference_data, measures=metrics)
+    #     dict_seg = bpm.to_dict_meas()
 
-        # Store info whether the reference or prediction is empty
-        dict_seg['EmptyRef'] = bpm.flag_empty_ref
-        dict_seg['EmptyPred'] = bpm.flag_empty_pred
-        # add the metrics to the output dictionary
-        metrics_dict[label] = dict_seg
+    #     # Store info whether the reference or prediction is empty
+    #     dict_seg['EmptyRef'] = bpm.flag_empty_ref
+    #     dict_seg['EmptyPred'] = bpm.flag_empty_pred
+    #     # add the metrics to the output dictionary
+    #     metrics_dict[label] = dict_seg
 
     return metrics_dict
 
