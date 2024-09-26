@@ -429,6 +429,8 @@ class BinaryPairwiseMeasures(object):
 
             YI = Specificity + Sensitivity - 1
 
+        Youden, W.J, Index for rating diagnostic tests - 1950 Cancer 3 - 32,35
+
         :return: Youden index
         """
         return self.specificity() + self.sensitivity() - 1
@@ -440,6 +442,8 @@ class BinaryPairwiseMeasures(object):
         .. math::
 
             Sens = \dfrac{TP}{\sharp Ref}
+
+        Yerushalmy J., Statistical Problems in assessing Methods of Medical Diagnosis with Special reference to X-Ray Techniques, 1947, Public Health Reports, pp1432-1449
 
         This measure is not defined for empty reference. Will raise a warning and return a nan value
 
@@ -457,6 +461,8 @@ class BinaryPairwiseMeasures(object):
         .. math::
 
             Spec = \dfrac{TN}{\sharp {1-Ref}}
+
+        Yerushalmy J., Statistical Problems in assessing Methods of Medical Diagnosis with Special reference to X-Ray Techniques, 1947, Public Health Reports, pp1432-1449
 
         This measure is not defined when there is no reference negative. This will
         raise a warning and return a nan
@@ -503,6 +509,8 @@ class BinaryPairwiseMeasures(object):
 
             FPR = \dfrac{FP}{\sharp \bar{Ref}}
 
+        Burke D, Brundage J, Redfield R., Measurement of the False positive rate in a screening Program for Human Immunodeficiency Virus Infections - 1988 - The New England Journal of Medicine 319 (15) 961-964
+
         :return: false positive rate
         """
         return self.fp() / self.n_neg_ref()
@@ -541,6 +549,8 @@ class BinaryPairwiseMeasures(object):
     def matthews_correlation_coefficient(self):
         """
         Calculates and returns the MCC for the binary case
+
+        Matthews, B.W. Comparison of the predicted and observed secondary structure of T4 phage lysozyme. Biochimica et Biophysica Acta - Protein Structure - 1975 405 442-451
 
         .. math::
 
@@ -585,6 +595,8 @@ class BinaryPairwiseMeasures(object):
         where
 
         :math:`p_e = ` expected chance matching and :math:`p_o = `observed accuracy
+
+        Cohen, J. A coefficient of agreement for nominal scales - Educational and Psychological Measurement (1960) 20 37-46
 
         :return: CK
         """
@@ -633,6 +645,8 @@ class BinaryPairwiseMeasures(object):
 
         Not defined when no positives in the prediction - returns nan if both
         reference and prediction empty. Returns 0 if only prediction empty
+
+        Fletcher, R.H and Fletcher S.W (2005) - Clinical Epidemiology, the essentials p45
 
         :return: PPV
         """
@@ -755,6 +769,8 @@ class BinaryPairwiseMeasures(object):
         This function calculates the negative predictive value ratio between
         the number of true negatives and the total number of negative elements
 
+        Fletcher, R.H and Fletcher S.W (2005) - Clinical Epidemiology, the essentials p45
+
         :return: NPV
         """
         if self.tn() + self.fn() == 0:
@@ -791,6 +807,10 @@ class BinaryPairwiseMeasures(object):
         """
         This function returns the average number of false positives per
          image, assuming that the cases are collated on the last axis of the array
+
+        Bram Van Ginneken, Samuel G Armato III, Bartjan de Hoop, Saskia van Amelsvoort-van de Vorst, Thomas Duindam, Meindert Niemeijer, Keelin Murphy, Arnold Schilham, Alessandra Retico, Maria Evelina Fantacci, et al. Comparing and combining algorithms for computer-aided detection of pulmonary nodules in computed tomography scans: the anode09 study. Medical image analysis, 14(6):707–722, 2010.
+        Andriy I Bandos, Howard E Rockette, Tao Song, and David Gur. Area under the free-response roc curve (froc) and a related summary index. Biometrics, 65(1):247–256, 2009.
+        
         """
         sum_per_image = np.sum(
             np.reshape(self.__fp_map(), -1, self.ref.shape[-1]), axis=0
@@ -801,6 +821,8 @@ class BinaryPairwiseMeasures(object):
         """
         This function calculates the ratio of the intersection of prediction and
         reference over reference.
+
+        Pavel Matula, Martin Maška, Dmitry V Sorokin, Petr Matula, Carlos Ortiz-de Solórzano, and Michal Kozubek. Cell tracking accuracy measurement based on comparison of acyclic oriented graphs. PloS one, 10(12):e0144959, 2015.
 
         :return: IoR
         """
@@ -814,6 +836,8 @@ class BinaryPairwiseMeasures(object):
         This function calculates the intersection of prediction and
         reference over union - This is also the definition of
         jaccard coefficient
+
+        Murphy, A.H. The Finley Affair: a signal event in the history of forecast verification - Weather and Forecasting (1996) 11
 
         :return: IoU
         """
@@ -1094,12 +1118,15 @@ Pattern Recognition. 15334–15342.
 
     def measured_average_distance(self):
         """
-        This function returns only the average distance when calculating the
+        This function returns only the average symmetric surface distance when calculating the
         distances between prediction and reference
 
         .. math::
 
             ASSD(A,B) = \dfrac{\sum_{a\inA}d(a,B) + \sum_{b\inB}d(b,A)}{|A|+ |B|}
+
+        Heimann, T., et al. (2009), Comparison and evaluation of methods for liver segmentation from CT datasets. IEEE Trans Med Imaging. 28(8): p. 1251-65.
+        Varduhi Yeghiazaryan and Irina Voiculescu. An overview of current evaluation methods used in medical image segmentation. Department of Computer Science, University of Oxford, 2015.
 
         :return: assd
         """
