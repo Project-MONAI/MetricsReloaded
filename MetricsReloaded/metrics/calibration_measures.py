@@ -29,6 +29,7 @@ Calculating calibration measures
 
 
 import numpy as np
+import math
 from scipy.special import gamma
 
 # from metrics.pairwise_measures import CacheFunctionOutput
@@ -235,7 +236,7 @@ class CalibrationMeasures(object):
                 vect_j = one_hot_ref[j,:] - self.pred[j,:]
                 value_ij = np.matmul(vect_i, np.matmul(kernel,vect_j.T))
                 sum_tot += value_ij
-        multiplicative_factor = np.math.factorial(numb_samples)/ (2 * np.math.factorial(numb_samples-2))
+        multiplicative_factor = math.factorial(numb_samples)/ (2 * np.math.factorial(numb_samples-2))
         kce = 1/multiplicative_factor * sum_tot
         return kce
 
