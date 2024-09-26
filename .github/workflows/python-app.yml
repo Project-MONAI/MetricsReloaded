@@ -51,7 +51,7 @@ jobs:
     # Run the unit tests using the coverage program and create the XML output file
     - name: Test with pytest
       run: |
-        pytest --cov --cov-config=.coveragerc --cov-report=xml -vv
+        python -m pytest --cov --cov-config=.coveragerc --cov-report=xml -vv
 
     # Using Codecov's action, upload the coverage report for the triggering commit/PR
     - name: Upload coverage
