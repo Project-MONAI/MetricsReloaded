@@ -1,5 +1,4 @@
 numpy
-math
 scipy
 scikit-learn
 scikit-image
