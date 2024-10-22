@@ -148,9 +148,11 @@ class MorphologyOps(object):
 
 def intersection_boxes(box1, box2):
     """
-    Intersection between two boxes given the corners
+    Intersection area/volume between two boxes given their extreme corners
 
-    :return: intersection 
+    :param: box1 - first box to consider for intersection
+    :param: box2 - second box to consider for intersection
+    :return: intersection -value of the intersected volume / area  as number of pixels / voxels
     """
     min_values = np.minimum(box1, box2)
     max_values = np.maximum(box1, box2)
@@ -167,6 +169,9 @@ def guess_input_style(a):
     """
     Given an array a, guess whether it represents a mask, a box or a centre of mass
 
+    :param: a - input array to check
+    :return: string from either mask, box or com
+
     """
     if a.ndim > 1:
         return 'mask'
@@ -177,6 +182,12 @@ def guess_input_style(a):
             return 'com'
 
 def com_from_box(box):
+    """
+    Identifies the centre of mass of a box from its extreme coordinates
+
+    :param: box: box identified as a vector of size 2xndim with first the ndim minimum values and then the ndim maximum values
+    :return: Centre of mass of the box as a vector of size ndim
+    """
     min_corner = box[:box.shape[0]//2]
     max_corner = box[box.shape[0]//2:]
     aggregate = np.vstack([min_corner,max_corner])
@@ -184,6 +195,13 @@ def com_from_box(box):
     return com
 
 def point_in_box(point, box):
+    """
+    Indicates whether a point is contained in an axis-aligned box specified by min and maximum corners
+
+    :param: point: coordinates of the point to assess
+    :param: box: vector of size 2 x ndim (2 or 3), the first ndim values corresponding to the minimum corner and the last ndim to the maximum corner
+    :return: 1 if the point is in the box 0 otherwise
+    """
     min_corner = box[:box.shape[0]//2]
     max_corner = box[box.shape[0]//2:]
     diff_min = point - min_corner
@@ -196,6 +214,13 @@ def point_in_box(point, box):
         return 1
 
 def point_in_mask(point, mask):
+    """
+    Indicates whether a point (given by coordinates 2D or 3D) is in a mask
+
+    :param: point - coordinates of the point to check (list or np-array)
+    :param: mask - nd array for a segmentation mask
+    :return: 1 if the point is in the mask, 0 otherwise
+    """
     new_mask = np.zeros_like(mask)
     if new_mask.ndim == 2:
         new_mask[point[0],point[1]] = 1
@@ -262,10 +287,19 @@ def median_heuristic(matrix_proba):
 def compute_skeleton(img):
     """
     Computes skeleton using skimage.morphology.skeletonize
+
+    :param: img - array with the binary mask of the element to skeletonise
+    :return: nd array with the mask of the skeleton of the element considered in img
     """
     return skeletonize(img)
 
 def compute_box(img):
+    """
+    Computes the coordinates of the bounding box based on a mask (in img)
+
+    :param: img: mask of the element for which to compute bounding box
+    :return: indices of the bottom left and top right corners of the bounding box axis aligned.
+    """
     indices = np.asarray(np.where(img>0)).T
     min_corner = np.min(indices,0)
     max_corner = np.max(indices, 0)
@@ -278,6 +312,7 @@ def compute_center_of_mass(img):
     Computes center of mass using scipy.ndimage
 
     :param: img as multidimensional array
+    :return: Returns the centre
     """
     return ndimage.center_of_mass(img)
 
@@ -291,7 +326,13 @@ def distance_transform_edt(img, sampling=None):
 
 def max_x_at_y_more(x, y, cut_off):
     """Gets max of elements in x where elements 
-    in y are geq to a cut off value
+    in y are geq to a cut off value - used in the metrics based on probability thresholds
+
+    :param: x: array of values
+    :param: y: array of values similar length to x
+    :param: cutoff - value at which to consider the cut-offon y
+    :param
+    :return: return the maximum of x for all corresponding values of y greater than or equal to the cut-off 
     """
     x = np.asarray(x)
     y = np.asarray(y)    
@@ -301,6 +342,12 @@ def max_x_at_y_more(x, y, cut_off):
 def max_x_at_y_less(x, y, cut_off):
     """Gets max of elements in x where elements 
     in y are leq to a cut off value
+
+    :param: x: array of values
+    :param: y: array of values similar length to x
+    :param: cutoff - value at which to consider the cut-offon y
+    :param
+    :return: return the maximum of x for all corresponding values of y less than the cut-off 
     """
     x = np.asarray(x)
     y = np.asarray(y)    
@@ -311,8 +358,11 @@ def min_x_at_y_less(x, y, cut_off):
     """Gets min of elements in x where elements 
     in y are leq to a cut off value
 
-    :param:
-    :return: minimum of x such as y is <= cutoff
+    :param: x: array of values
+    :param: y: array of values similar length to x
+    :param: cutoff - value at which to consider the cut-offon y
+    :param
+    :return: return the maximum of x for all corresponding values of y less than the cut-off 
     """
     x = np.asarray(x)
     y = np.asarray(y)    
@@ -323,7 +373,9 @@ def min_x_at_y_more(x,y,cut_off):
     """Gets min of elements in x where elements in 
     y are greater than cutoff value
     
-    :param: x, y, cutoff
+    :param: x, vector of values
+    :param: y, vector of values same size of x
+    :param: cutoff cutoff value for y
     :return: min of x where y >= cut_off
     """
     x = np.asarray(x)
@@ -333,6 +385,10 @@ def min_x_at_y_more(x,y,cut_off):
 
 def one_hot_encode(img, n_classes):
     """One-hot encodes categorical image
+
+    :param: img: labelled nd-array to encode
+    :param: n_classes: number of classes to consider when encoding - this is specified to avoid "forgetting one class"
+    :return: one hot encoded version of the input labelled image given the number of classes specified
     """
     return np.eye(n_classes)[img]
 
@@ -354,6 +410,14 @@ def to_string_count(measures_count, counting_dict, fmt="{:.4f}"):
 
 
 def to_string_dist(measures_dist, distance_dict, fmt="{:.4f}"):
+    """
+    Transform to a comma separated string the content of results from the dictionary with all the distance based metrics
+
+    :param: measures_dist: list of distance metrics
+    :param: distance_dict: dictionary with the results of the distance metrics
+    :param: fmt: format in which the outputs should be written (default 4 decimal points)
+    :return: complete comma-separated string of results in the order of keys specifid by measures_dist
+    """
     result_str = ""
     # list_space = ['com_ref', 'com_pred', 'list_labels']
     for key in measures_dist:
@@ -371,6 +435,14 @@ def to_string_dist(measures_dist, distance_dict, fmt="{:.4f}"):
 
 
 def to_string_mt(measures_mthresh, multi_thresholds_dict, fmt="{:.4f}"):
+    """
+    Transform to a comma separated string the content of results from the dictionary with all the multi-threshold metric
+
+    :param: measures_mthresh: list of multi threshold metrics
+    :param: multi_thresholds_dict: dictionary with the results of the multi-threshold metrics
+    :param: fmt: format in which the outputs should be written (default 4 decimal points)
+    :return: complete comma-separated string of results in the order of keys specifid by measures_mthresh
+    """
     result_str = ""
     # list_space = ['com_ref', 'com_pred', 'list_labels']
     for key in measures_mthresh:
@@ -403,6 +475,13 @@ def to_dict_meas_(measures, measures_dict, fmt="{:.4f}"):
     return result_dict  # trim the last comma
 
 def combine_df(df1,df2):
+    """
+    Perform the concatenation of two dataframes - is used in the overall process when combining dataframe from existing and missing/failed prediction
+
+    :param: df1 First dataframe to concatenate
+    :param: df2 Second dataframe to concatenate
+    :return: concatenated dataframe of df1 and df2
+    """
     if df1 is None or df1.shape[0]==0:
         print('Nothing in first')
         if df2 is None:
@@ -418,6 +497,14 @@ def combine_df(df1,df2):
         return pd.concat([df1, df2])
 
 def merge_list_df(list_df, on=['label','case']):
+    """
+    Performs the merging of different dataframes of results given the label and cases values
+
+    :param: list_df: list of dataframes to merge together
+    :param: on list of columns on which to perform the merging operation
+    :return: df_fin: final merged dataframe
+    """
+
     list_fin = []
     for k in list_df:
         if k is not None and k.shape[0] > 0:
