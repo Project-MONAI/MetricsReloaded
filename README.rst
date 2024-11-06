@@ -51,6 +51,10 @@ You can alternatively install the package in editable mode:
 
 This is useful if you are developing MetricsReloaded and want to see changes in the code automatically applied to the installed library.
 
+For the tutorials, you will also need to install matplotlib into your environment for visualization: ::
+
+    pip install matplotlib
+
 
 Overview
 ========
