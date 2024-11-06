@@ -67,10 +67,58 @@ def test_area_box():
     assert area_box(np.asarray(box)) == 6
 
 
-# def test_compute_box():
-# def test_compute_center_of_mass():
-# def test_box_ior():
-# def test_box_iou():
-# def test_union_boxes():
-# def 
-# point_in_box, point_in_mask, area_box, compute_box, compute_center_of_mass, compute_skeleton, combine_df, distance_transform_edt, one_hot_encode, median_heuristic, box_ior, box_iou, union_boxes, max_x_at_y_less, min_x_at_y_less, skeletonize, trapezoidal_integration
+def test_compute_box():
+    mask = np.zeros([10,10])
+    mask[2:5,3:8] = 1
+    mask[4:6,4:5] = 1
+    box1 = [2,3,5,7]
+    assert_array_equal(compute_box(mask),np.asarray(box1))
+
+def test_compute_center_of_mass():
+    mask = np.zeros([10,10])
+    mask[2:5,3:8] = 1
+    mask[4:6,4:5] = 1
+    assert_array_equal(compute_center_of_mass(mask),np.asarray([3.125,	4.9375]))
+
+def test_box_ior():
+    box1 = [3,5,5,7]
+    box2 = [3,4,4,6]
+    assert box_ior(np.asarray(box1),np.asarray(box2)) == 4.0/6.0
+
+def test_box_iou():
+    box1 = [3,5,5,7]
+    box2 = [3,4,4,6]
+    assert box_iou(np.asarray(box1),np.asarray(box2)) == 4.0/11.0
+
+def test_union_boxes():
+    box1 = [3,5,5,7]
+    box2 = [3,4,4,6]
+    assert union_boxes(np.asarray(box1),np.asarray(box2)) == 11
+
+def test_point_in_box():
+    box1 = [3,5,5,7]
+    point1 = [4,7]
+    point2 = [2,3]
+    assert point_in_box(np.asarray(point1), np.asarray(box1)) == 1
+    assert point_in_box(np.asarray(point2),np.asarray(box1)) == 0
+
+def test_point_in_mask():
+    mask = np.zeros([10,10])
+    mask[2:5,4:8] = 1
+    mask[4:6,4:5] = 1
+    point1 = [4,7]
+    point2 = [2,3]
+    assert point_in_mask(point1,mask) == 1
+    assert point_in_mask(point2, mask) == 0
+
+def test_max_x_at_y_less():
+    x = [1, 2, 1, 3, 4, 0, 1, 4, 5]
+    y = [1, 2, 3, 4, 5, 6, 7 ,8, 9]
+    assert max_x_at_y_less(np.asarray(x), np.asarray(y),6) == 4
+
+
+def test_min_x_at_y_less():
+    x = [1, 2, 1, 3, 4, 0, 1, 4, 5]
+    y = [1, 2, 3, 4, 5, 6, 7 ,8, 9]
+    assert min_x_at_y_less(np.asarray(x), np.asarray(y),6) == 0
+ #compute_skeleton, combine_df, distance_transform_edt, one_hot_encode, median_heuristic, max_x_at_y_less, min_x_at_y_less, skeletonize, trapezoidal_integration
