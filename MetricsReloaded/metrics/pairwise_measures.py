@@ -1259,7 +1259,8 @@ Pattern Recognition. 15334–15342.
 
         :return: hausdorff_distance
         """
-        return self.measured_distance()[0]
+        hausdorff_distance = self.measured_distance()[0]
+        return hausdorff_distance
 
     def measured_hausdorff_distance_perc(self):
         """
@@ -1270,7 +1271,8 @@ Pattern Recognition. 15334–15342.
         
         :return: hausdorff_distance_perc
         """
-        return self.measured_distance()[2]
+        hausdorff_distance_perc = self.measured_distance()[2]
+        return hausdorff_distance_perc
 
     def to_dict_meas(self, fmt="{:.4f}"):
         result_dict = {}
