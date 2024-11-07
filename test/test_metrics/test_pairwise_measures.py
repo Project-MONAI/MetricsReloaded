@@ -5,8 +5,9 @@ from MetricsReloaded.processes.mixed_measures_processes import (
     MultiLabelLocSegPairwiseMeasure as MLIS,
 )
 import numpy as np
+
 from MetricsReloaded.utility.utils import one_hot_encode
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_equal
 from sklearn.metrics import cohen_kappa_score as cks
 from sklearn.metrics import matthews_corrcoef as mcc
 
@@ -279,6 +280,21 @@ def test_matthews_correlation_coefficient():
 
     assert_allclose(value_test, expected_mcc, atol=0.001)
     assert_allclose(value_test2, expected_mcc, atol=0.001)
+
+def test_confusion_matrix():
+    """
+    Taking Figure SN3.39 as inspiration
+    """
+
+    mask_ref = np.zeros([5,6])
+    mask_ref[0:5,0:4] = 1
+    mask_pred = np.zeros([5,6])
+    mask_pred[1:4,1:6]=1
+    mpm = MPM(np.reshape(mask_pred,[-1]),np.reshape(mask_ref,[-1]),[0,1])
+    cm_test = mpm.confusion_matrix()
+    cm = np.asarray([[4,11],[6,9]])
+    print(cm_test)
+    assert_array_equal(cm_test,cm)
 
 
 def test_ec3():

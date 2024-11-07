@@ -120,12 +120,12 @@ def test_kernel_calibration_error():
     expected_median_heuristic = 0.90
     value_median = median_heuristic(pred)
     assert_allclose(value_median, expected_median_heuristic, atol = 0.01)
-    kernel_01 = np.exp(-np.sqrt(0.78)/value_median) * np.ones([3,3])
-    kernel_02 = np.exp(-np.sqrt(0.86)/value_median) * np.ones([3,3])
-    kernel_03 = np.exp(-np.sqrt(0.02)/value_median) * np.ones([3,3])
-    kernel_12 = np.exp(-np.sqrt(1.26)/value_median) * np.ones([3,3])
-    kernel_13 = np.exp(-np.sqrt(0.86)/value_median) * np.ones([3,3])
-    kernel_23 = np.exp(-np.sqrt(1.14)/value_median) * np.ones([3,3])
+    kernel_01 = np.exp(-np.sqrt(0.78)/value_median) * np.eye(3)
+    kernel_02 = np.exp(-np.sqrt(0.86)/value_median) * np.eye(3)
+    kernel_03 = np.exp(-np.sqrt(0.02)/value_median) * np.eye(3)
+    kernel_12 = np.exp(-np.sqrt(1.26)/value_median) * np.eye(3)
+    kernel_13 = np.exp(-np.sqrt(0.86)/value_median) * np.eye(3)
+    kernel_23 = np.exp(-np.sqrt(1.14)/value_median) * np.eye(3)
 
     vect_0 = np.asarray([-0.1, 0.4, -0.3])
     vect_1 = np.asarray([0.2, -0.1, -0.1])

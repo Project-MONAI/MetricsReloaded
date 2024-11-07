@@ -197,6 +197,7 @@ class MultiClassPairwiseMeasures(object):
         Determination of the expectation matrix to be used for CK derivation
 
         :return: expectation_matrix
+
         """
         one_hot_pred = one_hot_encode(self.pred, len(self.list_values))
         one_hot_ref = one_hot_encode(self.ref, len(self.list_values))
@@ -225,7 +226,7 @@ class MultiClassPairwiseMeasures(object):
         numerator = np.sum(weights * cm)
         denominator = np.sum(weights * exp)
         weighted_cohens_kappa = 1 - numerator / denominator
-        return 1 - numerator / denominator
+        return weighted_cohens_kappa
 
     def to_dict_meas(self, fmt="{:.4f}"):
         """Given the selected metrics provides a dictionary with relevant metrics"""
@@ -272,6 +273,7 @@ class BinaryPairwiseMeasures(object):
             "hd_perc": (self.measured_hausdorff_distance_perc, "HDPerc"),
             "masd": (self.measured_masd, "MASD"),
             "nsd": (self.normalised_surface_distance, "NSD"),
+            "avdr": (self.absolute_volume_difference_ratio, "AVDR")
         }
 
         self.pred = pred
@@ -481,7 +483,7 @@ class BinaryPairwiseMeasures(object):
 
         .. math::
 
-            Sens = \dfrac{TP}{\sharp Ref}
+            Sens = \dfrac{TP}{|Ref|}
 
         Yerushalmy J., Statistical Problems in assessing Methods of Medical Diagnosis with Special reference to X-Ray Techniques, 1947, Public Health Reports, pp1432-1449
 
@@ -501,7 +503,7 @@ class BinaryPairwiseMeasures(object):
 
         .. math::
 
-            Spec = \dfrac{TN}{\sharp {1-Ref}}
+            Spec = \dfrac{TN}{|1-Ref|}
 
         Yerushalmy J., Statistical Problems in assessing Methods of Medical Diagnosis with Special reference to X-Ray Techniques, 1947, Public Health Reports, pp1432-1449
 
@@ -551,7 +553,7 @@ class BinaryPairwiseMeasures(object):
 
         .. math::
 
-            FPR = \dfrac{FP}{\sharp \bar{Ref}}
+            FPR = \dfrac{FP}{|1-Ref|}
 
         Burke D, Brundage J, Redfield R., Measurement of the False positive rate in a screening Program for Human Immunodeficiency Virus Infections - 1988 - The New England Journal of Medicine 319 (15) 961-964
 
@@ -638,13 +640,12 @@ class BinaryPairwiseMeasures(object):
 
             CK = \dfrac{p_o - p_e}{1-p_e}
 
-        where
-
-        :math:`p_e = ` expected chance matching and :math:`p_o = `observed accuracy
+        where :math: `p_e = ` expected chance matching and :math: `p_o = `observed accuracy
 
         Cohen, J. A coefficient of agreement for nominal scales - Educational and Psychological Measurement (1960) 20 37-46
 
         :return: cohens_kappa
+
         """
         p_e = self.expected_matching_ck()
         p_o = self.accuracy()
@@ -743,10 +744,12 @@ class BinaryPairwiseMeasures(object):
         ..math::
 
             DSC = \dfrac{2TP}{2TP+FP+FN}
+
         
         This is also F:math:`{\\beta}` for :math:`{\\beta}`=1
 
         :return: dsc
+
         """
 
         numerator = 2 * self.tp()
@@ -880,9 +883,10 @@ class BinaryPairwiseMeasures(object):
 
         .. math::
 
-            IoR = \dfrac{\vert \text{Pred} \bigcap \text{Ref} \vert}{\vert Ref \vert}
+            IoR = \dfrac{| \text{Pred} \cap \text{Ref} |}{| Ref |}
 
         :return: IoR
+
         """
         if self.flag_empty_ref:
             warnings.warn("IoR not defined - Empty reference")
@@ -900,9 +904,10 @@ class BinaryPairwiseMeasures(object):
 
         .. math::
 
-            IoU = \dfrac{\vert Pred \bigcap Ref\vert}{\vert Pred \bigcup Ref \vert}
+            IoU = \dfrac{|Pred \cap Ref|}{| Pred \cup Ref |}
 
         :return: IoU
+
         """
         if self.flag_empty_pred and self.flag_empty_ref:
             warnings.warn("IoU not defined - Both reference and prediction are empty")
@@ -915,8 +920,10 @@ class BinaryPairwiseMeasures(object):
         This function calculates the euclidean distance between the centres
         of mass of the reference and prediction.
 
+        
         :return: Euclidean distance between centre of mass when reference and prediction not empty
         -1 otherwise
+
         """
         
         if self.flag_empty_pred or self.flag_empty_ref:
@@ -981,9 +988,10 @@ class BinaryPairwiseMeasures(object):
 
         .. math::
 
-            AVDR = \dfrac{\vert Pred - Ref\vert}{\vert Ref \vert} 
+            AVDR = \dfrac{| Pred - Ref|}{| Ref |} 
 
         :return: avdr
+
         """
         if self.n_pos_ref() == 0:
             warnings.warn('Empty reference - absolute volume difference ratio not defined')
@@ -1082,6 +1090,7 @@ Pattern Recognition. 15334–15342.
 
         where :math:A_d are the pixels of A within a distance d of the boundary
         :return: boundary_iou
+
         """
         if "boundary_dist" in self.dict_args.keys():
             distance = self.dict_args["boundary_dist"]
@@ -1180,6 +1189,7 @@ Pattern Recognition. 15334–15342.
 
         :return: hausdorff distance and average symmetric distance, hausdorff distance at perc
         and masd
+
         """
         if "hd_perc" in self.dict_args.keys():
             perc = self.dict_args["hd_perc"]
@@ -1223,7 +1233,7 @@ Pattern Recognition. 15334–15342.
 
         .. math::
 
-            ASSD(A,B) = \dfrac{\sum_{a\inA}d(a,B) + \sum_{b\inB}d(b,A)}{|A|+ |B|}
+            ASSD(A,B) = \dfrac{\sum_{a\in A}d(a,B) + \sum_{b\in B}d(b,A)}{|A|+ |B|}
 
         Heimann, T., et al. (2009), Comparison and evaluation of methods for liver segmentation from CT datasets. IEEE Trans Med Imaging. 28(8): p. 1251-65.
         Varduhi Yeghiazaryan and Irina Voiculescu. An overview of current evaluation methods used in medical image segmentation. Department of Computer Science, University of Oxford, 2015.
@@ -1242,9 +1252,11 @@ Pattern Recognition. 15334–15342.
 
         .. math::
 
-            MASD(A,B) = \dfrac{1}{2}\left(\dfrac{\sum_{a\in A}d(a,B)}{|A|} + \dfrac{\sum_{b\inB}d(b,A)}{|B|})
+            MASD(A,B) = \dfrac{1}{2}(\dfrac{\sum_{a\in A}d(a,B)}{|A|} + \dfrac{\sum_{b\in B}d(b,A)}{|B|})
         
+            
         :return: masd
+
         """
         masd = self.measured_distance()[3]
         return masd
