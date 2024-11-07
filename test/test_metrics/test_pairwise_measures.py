@@ -263,7 +263,7 @@ def test_voldiff():
     ref[2:4, 2:4] = 1
     pred[3:5, 3:5] = 1
     bpm = PM(pred, ref)
-    value_test = bpm.vol_diff()
+    value_test = bpm.absolute_volume_difference_ratio()
     expected_vdiff = 0
     assert_allclose(value_test, expected_vdiff)
 
