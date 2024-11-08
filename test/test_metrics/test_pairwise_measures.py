@@ -38,6 +38,13 @@ pred210_2[4:10,4:10]=1
 ppm210_1 = PM(pred210_1, ref210)
 ppm210_2 = PM(pred210_2, ref210)
 
+#Data for figure 2.12 p53
+ref212 = np.zeros([22, 22])
+ref212[2:21, 2:21] = 1
+pred212 = np.zeros([22, 22])
+pred212[3:21, 2:21] = 1
+ppm212_1 = PM(pred212, ref212)
+ppm212_2 = PM(pred212,ref212,dict_args={'boundary_dist':2})
 
 ### Small size of structures relative to pixel/voxel size (DSC)
 ## Larger structure
@@ -69,6 +76,45 @@ f27_ref1 = np.concatenate([np.ones([70]), np.zeros([1])])
 f27_pred1 = np.concatenate([np.ones([40]), np.zeros([30]), np.ones([1])])
 f27_ref2 = f27_pred1
 f27_pred2 = f27_ref1
+
+# Figure ClDice p 53 S2.14
+ref214 = np.zeros([24,24])
+ref214[1:10,7:12]=1
+ref214[10:12,3:19]=1
+ref214[12:15,3:5]=1
+ref214[12:15,15:19]=1
+ref214[14:20,15:17]=1
+ref214[14:15,1:5]=1
+ref214[14:17,2:3]=1
+ref214[14:19,4:5]=1
+ref214[17:18,4:8]=1
+ref214[14:15,15:24]=1
+ref214[12:15,22:23]=1
+ref214[14:17,21:22]=1
+ref214[17:20,5:6]=1
+ref214[17:22,12:13]=1
+ref214[19:20,12:17]=1
+ref214[18:19,15:20]=1
+ref214[17,19]=1
+
+pred214_1 = np.zeros([24,24])
+pred214_1[1:10,7:12]=1
+pred214_1[10:12,3:15]=1
+
+pred214_2 = np.copy(ref214)
+pred214_2[10:14,3:4] = 0
+pred214_2[10:11,3:9] = 0
+pred214_2[10:11,10:19] = 0
+pred214_2[1:11,7:9] = 0
+pred214_2[1:11,10:12]=0
+pred214_2[10:14,18:19]=0
+pred214_2[12:14,15:17]=0
+pred214_2[14:19,15:16]=0
+
+ppm214_1 = PM(pred214_1, ref214)
+ppm214_2 = PM(pred214_2, ref214)
+
+
 
 # panoptic quality
 pq_pred1 = np.zeros([21, 21])
@@ -790,16 +836,32 @@ def test_hd():
 
 
 def test_boundary_iou():
-    f21_ref = np.zeros([22, 22])
-    f21_ref[2:21, 2:21] = 1
-    f21_pred = np.zeros([22, 22])
-    f21_pred[3:21, 2:21] = 1
-    bpm = PM(f21_pred, f21_ref)
-    value_test = bpm.boundary_iou()
-    expected_biou = 0.6
-    assert_allclose(value_test, expected_biou, atol=0.1)
-    assert np.round(value_test, 1) == 0.6
+    """
+    Taking as inspiration figure S 2.12
+    """
+    
+    value_test1 = ppm212_1.boundary_iou()
+    expected_biou_1 = 0.6
+    expected_biou_2 = 0.8
+    value_test2 = ppm212_2.boundary_iou()
+    assert_allclose(value_test1, expected_biou_1, atol=0.1)
+    assert_allclose(value_test2, expected_biou_2, atol=0.1)
+    
+def test_cldsc_s214():
+    value_test1 = ppm214_1.centreline_dsc()
+    value_test2 = ppm214_2.centreline_dsc()
+    expected_cldsc1 = 0.475
+    expected_cldsc2 = 0.78
+    assert_allclose(value_test1, expected_cldsc1, atol=0.01)
+    assert_allclose(value_test2, expected_cldsc2, atol=0.01)
 
+def test_dsc_s214():
+    value_test1 = ppm214_1.dsc()
+    value_test2 = ppm214_2.dsc()
+    expected_dsc1 = 0.666
+    expected_dsc2 = 0.685
+    assert_allclose(value_test1, expected_dsc1, atol=0.01)
+    assert_allclose(value_test2, expected_dsc2, atol=0.01)
 
 def test_cldsc():
     pm1 = PM(pred_clDice_small1, ref_clDice_small)
