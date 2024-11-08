@@ -308,27 +308,35 @@ def test_ec3():
 
 
 def test_netbenefit():
+    """
+    Taking as reference figure SN 2.11 p 51 of Pitfalls paper
+    """
     ref = np.concatenate([np.ones([30]), np.zeros([75])])
     pred = np.ones([105])
-    pred2 = np.concatenate(
-        [np.ones([22]), np.zeros([8]), np.ones([50]), np.zeros([25])]
-    )
+    # pred2 = np.concatenate(
+    #     [np.ones([22]), np.zeros([8]), np.ones([50]), np.zeros([25])]
+    # )
+    pred2 = np.concatenate([np.ones([20]),np.zeros([10]),np.ones([60]),np.zeros([15])])
     ppm = PM(pred, ref, dict_args={"exchange_rate": 1.0 / 9.0})
     value_test = ppm.net_benefit_treated()
     ppm2 = PM(pred2, ref, dict_args={"exchange_rate": 1.0 / 9.0})
     value_test2 = ppm2.net_benefit_treated()
-    ppm3 = PM(pred, ref)
+    ppm3 = PM(pred2, ref)
     value_test3 = ppm3.net_benefit_treated()
+    ppm4 = PM(pred,ref)
+    value_test4 = ppm4.net_benefit_treated()
     print(value_test, value_test2)
     expected_netbenefit1 = 0.206
-    expected_netbenefit2 = 0.157
-    expected_netbenefit3 = -0.429
+    expected_netbenefit2 = 0.127
+    expected_netbenefit3 = -0.381
+    expected_netbenefit4 = -0.429
     assert_allclose(value_test, expected_netbenefit1, atol=0.001)
     assert_allclose(value_test2, expected_netbenefit2, atol=0.001)
     assert_allclose(value_test3, expected_netbenefit3, atol=0.001)
-
+    assert_allclose(value_test4, expected_netbenefit4, atol=0.001)
 
 def test_cohenskappa2():
+
     bpm = PM(f38_pred, f38_ref)
     value_test = bpm.cohens_kappa()
     print("CK f38 ", value_test, cks(f38_pred, f38_ref))
