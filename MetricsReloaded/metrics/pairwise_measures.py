@@ -813,7 +813,7 @@ class BinaryPairwiseMeasures(object):
 
         .. math::
 
-            NB = \dfrac{TP}{N} - \dfrac{FP}{N} * ER
+            NB = \dfrac{TP}{TP+TN+FP+FN} - \dfrac{FP}{TP+TN+FP+FN} * ER
 
         where ER relates to the exchange rate. For instance if a suitable exchange rate is to find
         1 positive case among 10 tested (1TP for 9 FP), the exchange rate would be 1/9

@@ -306,24 +306,38 @@ def test_ec3():
     expected_ec = 0.25
     assert_allclose(value_test, expected_ec, atol=0.01)
 
+def test_accuracy():
+    """
+    Taking as reference figure SN 2.11 p51 of Pitfalls paper
+    """
+    ref1 = np.concatenate([np.ones([30]), np.zeros([75])])
+    pred1 = np.ones([105])
+    ref2 = np.concatenate([np.ones([35]),np.zeros([70])])
+    pred2 = np.concatenate([np.ones([20]),np.zeros([15]),np.ones([60]),np.zeros([10])])
+    expected_accuracy1 = 0.286
+    expected_accuracy2 = 0.286
+    ppm1 = PM(pred1, ref1)
+    ppm2 = PM(pred2, ref2)
+    value_test1 = ppm1.accuracy()
+    value_test2 = ppm2.accuracy()
+    assert_allclose(value_test1, expected_accuracy1,atol=0.001)
+    assert_allclose(value_test2, expected_accuracy2,atol=0.001)
 
 def test_netbenefit():
     """
     Taking as reference figure SN 2.11 p 51 of Pitfalls paper
     """
-    ref = np.concatenate([np.ones([30]), np.zeros([75])])
-    pred = np.ones([105])
-    # pred2 = np.concatenate(
-    #     [np.ones([22]), np.zeros([8]), np.ones([50]), np.zeros([25])]
-    # )
-    pred2 = np.concatenate([np.ones([20]),np.zeros([10]),np.ones([60]),np.zeros([15])])
-    ppm = PM(pred, ref, dict_args={"exchange_rate": 1.0 / 9.0})
+    ref1 = np.concatenate([np.ones([30]), np.zeros([75])])
+    pred1 = np.ones([105])
+    ref2 = np.concatenate([np.ones([35]),np.zeros([70])])
+    pred2 = np.concatenate([np.ones([20]),np.zeros([15]),np.ones([60]),np.zeros([10])])
+    ppm = PM(pred1, ref1, dict_args={"exchange_rate": 1.0 / 9.0})
     value_test = ppm.net_benefit_treated()
-    ppm2 = PM(pred2, ref, dict_args={"exchange_rate": 1.0 / 9.0})
+    ppm2 = PM(pred2, ref2, dict_args={"exchange_rate": 1.0 / 9.0})
     value_test2 = ppm2.net_benefit_treated()
-    ppm3 = PM(pred2, ref)
+    ppm3 = PM(pred2, ref2)
     value_test3 = ppm3.net_benefit_treated()
-    ppm4 = PM(pred,ref)
+    ppm4 = PM(pred1,ref1)
     value_test4 = ppm4.net_benefit_treated()
     print(value_test, value_test2)
     expected_netbenefit1 = 0.206
