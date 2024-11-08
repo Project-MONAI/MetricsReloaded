@@ -1170,6 +1170,7 @@ Pattern Recognition. 15334–15342.
         if "nsd" in self.dict_args.keys():
             tau = self.dict_args["nsd"]
         else:
+            warnings.warn('No value set up for NSD tolerance - default to 1')
             tau = 1
         dist_ref, dist_pred, border_ref, border_pred = self.border_distance()
         reg_ref = np.where(
@@ -1178,8 +1179,11 @@ Pattern Recognition. 15334–15342.
         reg_pred = np.where(
             dist_pred <= tau, np.ones_like(dist_pred), np.zeros_like(dist_pred)
         )
+        # print(np.sum(border_pred),np.sum(reg_ref),np.sum(border_ref),np.sum(reg_pred))
+        # print(np.sum(border_pred*reg_ref),np.sum(border_ref*reg_pred))
         numerator = np.sum(border_pred * reg_ref) + np.sum(border_ref * reg_pred)
         denominator = np.sum(border_ref) + np.sum(border_pred)
+        # print(numerator, denominator, tau)
         return numerator / denominator
 
     def measured_distance(self):

@@ -751,7 +751,25 @@ def test_masd_s210():
     assert_allclose(masd_1,expected_masd1,atol=0.01)
     assert_allclose(masd_2,expected_masd2,atol=0.01)
 
+def test_assd_s210():
+    assd_1 = ppm210_1.measured_average_distance()
+    assd_2 = ppm210_2.measured_average_distance()
+    expected_assd1 = 1.10
+    expected_assd2 = 1.05
+    assert_allclose(assd_1, expected_assd1,atol=0.01)
+    assert_allclose(assd_2, expected_assd2,atol=0.01)
 
+def test_nsd_s210():
+    """
+    Using Figure 2.10 as illustrative example
+    """
+    nsd_1 = ppm210_1.normalised_surface_distance()
+    nsd_2 = ppm210_2.normalised_surface_distance()
+    expected_nsd1 = 0.75
+    expected_nsd2 = 0.875
+    print(nsd_1,nsd_2)
+    assert_allclose(nsd_1,expected_nsd1,atol=0.01)
+    assert_allclose(nsd_2,expected_nsd2,atol=0.01)
 
 def test_hd():
     f20_ref = np.zeros([14, 14])
