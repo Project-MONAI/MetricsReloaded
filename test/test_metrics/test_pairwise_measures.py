@@ -13,13 +13,31 @@ from sklearn.metrics import matthews_corrcoef as mcc
 
 from MetricsReloaded.metrics.prob_pairwise_measures import ProbabilityPairwiseMeasures
 
-#Data for figure SN 2.9 of Pitfalls p
+#Data for figure SN 2.9 of Pitfalls p49
 pred29_1 = np.concatenate([np.ones([45]),np.zeros([5]),np.ones([10]),np.zeros([40])])
 ref29_1 = np.concatenate([np.ones([50]),np.zeros([50])])
 pred29_2 = np.concatenate([np.ones([81]),np.zeros([9]),np.ones([2]),np.zeros([8])])
 ref29_2 = np.concatenate([np.ones([90]),np.zeros([10])])
 ppm29_1 = PM(pred29_1, ref29_1)
 ppm29_2 = PM(pred29_2, ref29_2)
+
+#Data for figure SN 2.17 of pitfalls p59
+pred217_1 = np.concatenate([np.ones([6]), np.zeros([94])])
+pred217_2 = np.zeros([100])
+ref217 = np.concatenate([np.ones([3]),np.zeros([97])])
+ppm217_1 = PM(pred217_1, ref217)
+ppm217_2 = PM(pred217_2, ref217)
+
+#Data for figure SN 2.10 of pitfalls p50
+ref210 = np.zeros([14,14])
+ref210[5:9,5:9] = 1
+pred210_1 = np.zeros([14,14])
+pred210_1[6:8,6:8] = 1
+pred210_2 = np.zeros([14,14])
+pred210_2[4:10,4:10]=1
+ppm210_1 = PM(pred210_1, ref210)
+ppm210_2 = PM(pred210_2, ref210)
+
 
 ### Small size of structures relative to pixel/voxel size (DSC)
 ## Larger structure
@@ -252,6 +270,102 @@ f59_pred1[7:9, 8:10] = 1
 f59_pred2 = np.zeros([15, 15])
 f59_pred2[4:8, 5:9] = 1
 
+def test_fn_map():
+    """
+    Using SN2.10 as basis of illustration for FP TP FN TN calculation
+    """
+    fn1 = ppm210_1.fn()
+    fn2 = ppm210_2.fn()
+    expected_fn1 = 12
+    expected_fn2 = 0
+    # fn_map_1 = ppm210_1.__fn_map()
+    # expected_fn_map1 = np.zeros([14,14])
+    # expected_fn_map1[5:6,5:9] = 1
+    # expected_fn_map1[8:9,5:9] = 1 
+    # expected_fn_map1[5:9,5:6] = 1
+    # expected_fn_map1[5:9,8:9] = 1
+    # fn_map_2 = ppm210_2.__fn_map()
+    # expected_fn_map2 = np.zeros([14,14])
+    # assert_array_equal(fn_map_1, expected_fn_map1)
+    # assert_array_equal(fn_map_2, expected_fn_map2)
+    assert fn1 == 12
+    assert fn2 == 0 
+
+def test_fp():
+    """
+    Using SN2.10 as illustrative example for calculation of TP TN FP FN
+
+    """
+    fp1 = ppm210_1.fp()
+    fp2 = ppm210_2.fp()
+    expected_fp1 = 0
+    expected_fp2 = 20
+    assert fp1 == expected_fp1
+    assert fp2 == expected_fp2
+
+def test_tp():
+    """
+    Using SN2.10 as illustrative example p50 pitfalls
+    """
+
+    tp1 = ppm210_1.tp()
+    tp2 = ppm210_2.tp()
+    expected_tp1 = 4
+    expected_tp2 = 16
+    assert tp1 == expected_tp1
+    assert tp2 == expected_tp2
+
+def test_tn():
+    """
+    Using SN2.10 as illustrative example p50 Pitfalls paper
+    """
+
+    tn1 = ppm210_1.tn()
+    tn2 = ppm210_2.tn()
+    expected_tn1 = 180
+    expected_tn2 = 160
+    assert tn1 == expected_tn1
+    assert tn2 == expected_tn2
+
+def test_n_pos_ref():
+    expected_n_pos_ref = 16
+    n_pos_ref = ppm210_1.n_pos_ref()
+    assert expected_n_pos_ref == n_pos_ref
+
+def test_n_union():
+    expected_n_union1 = 16
+    expected_n_union2 = 36
+    n_union1 = ppm210_1.n_union()
+    n_union2 = ppm210_2.n_union()
+    assert expected_n_union1 == n_union1
+    assert expected_n_union2 == n_union2
+
+def test_n_intersection():
+    expected_n_intersection1 = 4
+    expected_n_intersection2 = 16
+    n_intersection1 = ppm210_1.n_intersection()
+    n_intersection2 = ppm210_2.n_intersection()
+    assert expected_n_intersection1 == n_intersection1
+    assert expected_n_intersection2 == n_intersection2
+
+def test_n_neg_ref():
+    expected_n_neg_ref = 180
+    n_neg_ref = ppm210_1.n_neg_ref()
+    assert expected_n_neg_ref == n_neg_ref
+
+def test_n_pos_pred():
+    expected_n_pos_pred1 = 4
+    expected_n_pos_pred2 = 36
+    n_pos_pred1 = ppm210_1.n_pos_pred()
+    n_pos_pred2 = ppm210_2.n_pos_pred()
+    assert expected_n_pos_pred2 == n_pos_pred2
+    assert expected_n_pos_pred1 == n_pos_pred1
+
+def test_n_neg_pred():
+    expected_n_neg_pred1 = 192
+    expected_n_neg_pred2 = 160
+    n_neg_pred1 = ppm210_1.n_neg_pred()
+    n_neg_pred2 = ppm210_2.n_neg_pred()
 
 def test_balanced_accuracy():
     list_values = [0, 1, 2, 3]
@@ -275,6 +389,18 @@ def test_voldiff():
     value_test = bpm.absolute_volume_difference_ratio()
     expected_vdiff = 0
     assert_allclose(value_test, expected_vdiff)
+
+def test_specificity():
+    """
+    Using figure 2.17 p59 as example test
+    """
+    value_test1 = ppm217_1.specificity()
+    value_test2 = ppm217_2.specificity()
+    expected_spec1 = 0.97
+    expected_spec2 = 1.00
+    assert_allclose(value_test1, expected_spec1, atol=0.01)
+    assert_allclose(value_test2, expected_spec2, atol=0.01)
+
 
 def test_matthews_correlation_coefficient_29():
     """
@@ -545,6 +671,29 @@ def test_fbeta():
     assert_allclose(value_test, expected_fbeta, atol=0.001)
     assert_allclose(value_test2, expected_fbeta, atol=0.001)
 
+def test_sensitivity():
+    """
+    Using figure 2.17 p59 as example for test
+    """
+
+    value_test1 = ppm217_1.sensitivity()
+    value_test2 = ppm217_2.sensitivity()
+    expected_sens1 = 1.00
+    expected_sens2 = 0.00
+    assert_allclose(value_test1, expected_sens1, atol=0.01)
+    assert_allclose(value_test2, expected_sens2, atol=0.01)
+
+def test_recall():
+    """
+    Using figure 2.17 p59 as example for test
+    """
+
+    value_test1 = ppm217_1.recall()
+    value_test2 = ppm217_2.recall()
+    expected_rec1 = 1.00
+    expected_rec2 = 0.00
+    assert_allclose(value_test1, expected_rec1, atol=0.01)
+    assert_allclose(value_test2, expected_rec2, atol=0.01)
 
 def test_sens():
     pm = PM(f27_pred1, f27_ref1)
@@ -579,6 +728,30 @@ def test_positive_likelihood_ratio():
     expected_plr2 = 4.50
     assert_allclose(value_test1, expected_plr1, atol=0.01)
     assert_allclose(value_test2, expected_plr2, atol=0.01)
+
+def test_hausdorff_distances_s210():
+    """
+    Using Figure 2.10 as illustrative example
+    """
+    hausdorff_1 = ppm210_1.measured_hausdorff_distance()
+    hausdorff_2 = ppm210_2.measured_hausdorff_distance()
+    expected_hd1 = 1.41
+    expected_hd2 = 1.41
+    assert_allclose(hausdorff_1,expected_hd1,atol=0.01)
+    assert_allclose(hausdorff_2,expected_hd2,atol=0.01)
+
+def test_masd_s210():
+    """
+    Using Figure 2.10 as illustrative example
+    """
+    masd_1 = ppm210_1.measured_masd()
+    masd_2 = ppm210_2.measured_masd()
+    expected_masd1 = 1.07
+    expected_masd2 = 1.04
+    assert_allclose(masd_1,expected_masd1,atol=0.01)
+    assert_allclose(masd_2,expected_masd2,atol=0.01)
+
+
 
 def test_hd():
     f20_ref = np.zeros([14, 14])
