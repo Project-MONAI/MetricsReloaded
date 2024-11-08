@@ -18,6 +18,8 @@ pred29_1 = np.concatenate([np.ones([45]),np.zeros([5]),np.ones([10]),np.zeros([4
 ref29_1 = np.concatenate([np.ones([50]),np.zeros([50])])
 pred29_2 = np.concatenate([np.ones([81]),np.zeros([9]),np.ones([2]),np.zeros([8])])
 ref29_2 = np.concatenate([np.ones([90]),np.zeros([10])])
+ppm29_1 = PM(pred29_1, ref29_1)
+ppm29_2 = PM(pred29_2, ref29_2)
 
 ### Small size of structures relative to pixel/voxel size (DSC)
 ## Larger structure
@@ -274,6 +276,17 @@ def test_voldiff():
     expected_vdiff = 0
     assert_allclose(value_test, expected_vdiff)
 
+def test_matthews_correlation_coefficient_29():
+    """
+    Taking SN 3.9 as figure illustration for MCC p49 Pitfalls
+    """
+    expected_mcc1 = 0.70
+    expected_mcc2 = 0.56
+    value_test1 = ppm29_1.matthews_correlation_coefficient()
+    value_test2 = ppm29_2.matthews_correlation_coefficient()
+    assert_allclose(value_test1, expected_mcc1, atol=0.01)
+    assert_allclose(value_test2, expected_mcc2, atol=0.02)
+
 
 def test_matthews_correlation_coefficient():
     bpm = PM(f38_pred, f38_ref)
@@ -365,15 +378,16 @@ def test_cohenskappa2():
 
 
 def test_negative_predictive_value():
-    f17_ref = np.concatenate([np.ones([50]), np.zeros([50])])
-    f17_pred = np.concatenate(
-        [np.ones([45]), np.zeros([5]), np.ones([10]), np.zeros(40)]
-    )
-    bpm = PM(f17_pred, f17_ref)
-    value_test = bpm.negative_predictive_values()
-    expected_npv = 0.889
-    assert_allclose(value_test, expected_npv, atol=0.001)
-    print("NPV", value_test)
+    """
+    Taking figure SN 2.9 as inspiration p49 Pitfalls
+    """
+    value_test1 = ppm29_1.negative_predictive_values()
+    value_test2 = ppm29_2.negative_predictive_values()
+    expected_npv1 = 0.889
+    expected_npv2 = 0.47
+    assert_allclose(value_test1, expected_npv1, atol=0.001)
+    assert_allclose(value_test2, expected_npv2, atol=0.01)
+    
 
 
 def test_expectedcost():
@@ -384,12 +398,27 @@ def test_expectedcost():
     assert_allclose(value_test, expected_ec, atol=0.01)
 
 
-def test_expectedcost2():
-    mpm = MPM(f27_pred, f27_ref, [0, 1])
-    value_test = mpm.normalised_expected_cost()
-    print("ECn", value_test)
+def test_normalised_expectedcost2():
+    """
+    TAking SN 3.9 as reference p49 pitfalls
+    """
+    value_test1 = ppm29_1.normalised_expected_cost()
+    value_test2 = ppm29_2.normalised_expected_cost()
     expected_ec = 0.30
-    assert_allclose(value_test, expected_ec, atol=0.01)
+    
+    assert_allclose(value_test2, expected_ec, atol=0.01)
+    assert_allclose(value_test1, expected_ec, atol=0.01)
+    
+def test_cohenskappa():
+    """
+    Taking SN 2.9 p49 Pitfalls as reference
+    """
+    value_test1 = ppm29_1.cohens_kappa()
+    value_test2 = ppm29_2.cohens_kappa()
+    expected_ck1 = 0.70
+    expected_ck2 = 0.53
+    assert_allclose(value_test1, expected_ck1, atol=0.01)
+    assert_allclose(value_test2, expected_ck2, atol=0.01)
 
 
 def test_cohenskappa3():
@@ -401,20 +430,27 @@ def test_cohenskappa3():
 
 
 def test_balanced_accuracy2():
-    bpm = PM(f38_pred, f38_ref)
-    value_test = bpm.balanced_accuracy()
-    print("BA f38 ", value_test)
-    expected_ba = 0.87
-    assert_allclose(value_test, expected_ba, atol=0.01)
+    """
+    Taking Figure SN 2.39 as inspiration p49 pitfalls
+    """
+    expected_ba1 = 0.85
+    expected_ba2 = 0.85
+    value_test1 = ppm29_1.balanced_accuracy()
+    value_test2 = ppm29_2.balanced_accuracy()
+    assert_allclose(value_test1, expected_ba1, atol=0.01)
+    assert_allclose(value_test2, expected_ba2, atol=0.01)
 
 
 def test_youden_index2():
-    bpm = PM(f38_pred, f38_ref)
-    value_test = bpm.youden_index()
-    print("J f38 ", value_test)
-    expected_yi = 0.75
-    assert_allclose(value_test, expected_yi, atol=0.01)
-
+    """
+    Taking as inspiration figure SN2.9 p49 Pitfalls
+    """
+    expected_yi1 = 0.70
+    expected_yi2 = 0.70
+    value_test1 = ppm29_1.youden_index()
+    value_test2 = ppm29_2.youden_index()
+    assert_allclose(value_test1, expected_yi1, atol=0.01)
+    assert_allclose(value_test2, expected_yi2, atol=0.01)
 
 def test_mcc():
     list_values = [0, 1, 2, 3]
@@ -425,6 +461,9 @@ def test_mcc():
 
 
 def test_distance_empty():
+    """
+    Testing that output is 0 when reference and prediction empty for calculation of distance
+    """
     pred = np.zeros([14, 14])
     ref = np.zeros([14, 14])
     bpm = PM(pred, ref)
@@ -432,6 +471,16 @@ def test_distance_empty():
     expected_dist = (0, 0, 0, 0)
     assert_allclose(value_test, expected_dist)
 
+def test_fbeta():
+    """
+    Taking inspiration from SN 2.9 - p49 Pitfalls
+    """
+    expected_f11 = 0.86
+    expected_f12 = 0.94
+    value_test1 = ppm29_1.fbeta()
+    value_test2 = ppm29_2.fbeta()
+    assert_allclose(value_test1, expected_f11, atol=0.01)
+    assert_allclose(value_test2, expected_f12, atol=0.01)
 
 def test_dsc_fbeta():
     bpm = PM(p_pred, p_ref)
@@ -509,34 +558,27 @@ def test_ppv():
     """
     Taking as inspiration figure SN2.9 p49 Pitfalls
     """
-    # print(f27_pred1, f27_ref1)
-    # pm = PM(f27_pred1, f27_ref1)
-    # value_test = pm.positive_predictive_values()
-    # print("PPV ", value_test)
-    # expected_ppv = 0.975
-
-    ppm1 = PM(pred29_1, ref29_1)
-    ppm2 = PM(pred29_2, ref29_2)
-    value_test1 = ppm1.positive_predictive_values()
-    value_test2 = ppm2.positive_predictive_values()
+    
+    value_test1 = ppm29_1.positive_predictive_values()
+    value_test2 = ppm29_2.positive_predictive_values()
     expected_ppv1 = 0.82
     expected_ppv2 = 0.98
-
-
     assert_allclose(value_test1, expected_ppv1, atol=0.01)
     assert_allclose(value_test2, expected_ppv2, atol=0.01)
 
 
 def test_positive_likelihood_ratio():
-    f17_ref = np.concatenate([np.ones([50]), np.zeros([50])])
-    f17_pred = np.concatenate(
-        [np.ones([45]), np.zeros([5]), np.ones([10]), np.zeros(40)]
-    )
-    bpm = PM(f17_pred, f17_ref)
-    value_test = bpm.positive_likelihood_ratio()
-    expected_plr = 4.5
-    assert_allclose(value_test, expected_plr, atol=0.01)
-
+    """
+    Taking as inspiration figure SN2.9 p49 Pitfalls
+    """
+    ppm1 = PM(pred29_1, ref29_1)
+    ppm2 = PM(pred29_2, ref29_2)
+    value_test1 = ppm1.positive_likelihood_ratio()
+    value_test2 = ppm2.positive_likelihood_ratio()
+    expected_plr1 = 4.50
+    expected_plr2 = 4.50
+    assert_allclose(value_test1, expected_plr1, atol=0.01)
+    assert_allclose(value_test2, expected_plr2, atol=0.01)
 
 def test_hd():
     f20_ref = np.zeros([14, 14])
