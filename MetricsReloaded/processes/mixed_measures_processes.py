@@ -545,8 +545,8 @@ class MultiLabelLocMeasures(object):
         self.names = names
         self.pixdim = pixdim
         self.flag_fp_in = flag_fp_in
-        if len(self.names) < len(self.ref):
-            self.names = range(len(self.ref))
+        if len(self.names) < len(self.ref_class):
+            self.names = range(len(self.ref_class))
         self.flag_valid_proba = True
         if pred_prob is None or pred_prob[0] is None:
             self.flag_valid_proba=False
@@ -562,6 +562,7 @@ class MultiLabelLocMeasures(object):
                 pred_arr = np.asarray(self.pred_class[case])
                 ref_arr = np.asarray(self.ref_class[case])
                 ind_pred = np.where(pred_arr == lab)
+
                 pred_tmp = np.where(
                     pred_arr == lab, np.ones_like(pred_arr), np.zeros_like(pred_arr)
                 )
@@ -569,6 +570,7 @@ class MultiLabelLocMeasures(object):
                     ref_arr == lab, np.ones_like(ref_arr), np.zeros_like(ref_arr)
                 )
                 ind_ref = np.where(ref_arr == lab)
+
                 pred_loc_tmp = [self.pred_loc[case][f] for f in ind_pred[0]]
                 ref_loc_tmp = [self.ref_loc[case][f] for f in ind_ref[0]]
                 if self.flag_valid_proba:
@@ -585,6 +587,7 @@ class MultiLabelLocMeasures(object):
                     flag_fp_in=self.flag_fp_in,
                     pixdim=self.pixdim
                 )
+
                 df_matching = AS.df_matching
                 pred_tmp_fin = np.asarray(df_matching["pred"])
                 pred_tmp_fin = np.where(
