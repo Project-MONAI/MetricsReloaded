@@ -13,6 +13,12 @@ from sklearn.metrics import matthews_corrcoef as mcc
 
 from MetricsReloaded.metrics.prob_pairwise_measures import ProbabilityPairwiseMeasures
 
+#Data for figure SN 2.9 of Pitfalls p
+pred29_1 = np.concatenate([np.ones([45]),np.zeros([5]),np.ones([10]),np.zeros([40])])
+ref29_1 = np.concatenate([np.ones([50]),np.zeros([50])])
+pred29_2 = np.concatenate([np.ones([81]),np.zeros([9]),np.ones([2]),np.zeros([8])])
+ref29_2 = np.concatenate([np.ones([90]),np.zeros([10])])
+
 ### Small size of structures relative to pixel/voxel size (DSC)
 ## Larger structure
 p_large_ref = np.zeros((11, 11))
@@ -500,12 +506,25 @@ def test_sens():
 
 
 def test_ppv():
-    print(f27_pred1, f27_ref1)
-    pm = PM(f27_pred1, f27_ref1)
-    value_test = pm.positive_predictive_values()
-    print("PPV ", value_test)
-    expected_ppv = 0.975
-    assert_allclose(value_test, expected_ppv, atol=0.001)
+    """
+    Taking as inspiration figure SN2.9 p49 Pitfalls
+    """
+    # print(f27_pred1, f27_ref1)
+    # pm = PM(f27_pred1, f27_ref1)
+    # value_test = pm.positive_predictive_values()
+    # print("PPV ", value_test)
+    # expected_ppv = 0.975
+
+    ppm1 = PM(pred29_1, ref29_1)
+    ppm2 = PM(pred29_2, ref29_2)
+    value_test1 = ppm1.positive_predictive_values()
+    value_test2 = ppm2.positive_predictive_values()
+    expected_ppv1 = 0.82
+    expected_ppv2 = 0.98
+
+
+    assert_allclose(value_test1, expected_ppv1, atol=0.01)
+    assert_allclose(value_test2, expected_ppv2, atol=0.01)
 
 
 def test_positive_likelihood_ratio():
