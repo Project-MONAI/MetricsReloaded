@@ -6,9 +6,27 @@ from MetricsReloaded.processes.mixed_measures_processes import (
 )
 from MetricsReloaded.utility.assignment_localization import AssignmentMapping
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_almost_equal
 from sklearn.metrics import cohen_kappa_score as cks
 from sklearn.metrics import matthews_corrcoef as mcc
+
+#Data for figure 6a testing of assignment and average precision
+ref6c1 = np.asarray([3,2,7,5])
+ref6c2 = np.asarray([7,9,8,11])
+ref6c3 = np.asarray([1,16,3,18])
+ref6c4 = np.asarray([14,14,16,18])
+
+pred6c1 = np.asarray([2,3,6,6])
+pred6c2 = np.asarray([2,15,4,17])
+pred6c3 = np.asarray([13,13,15,17])
+pred6c4 = np.asarray([16,7,19,10])
+pred6c5 = np.asarray([12,2,15,4])
+
+pred_proba_6c = [[0.05, 0.95],[0.30,0.70],[0.20,0.80],[0.20,0.80],[0.10,0.90]]
+
+pred_boxes_6c = [pred6c1, pred6c2, pred6c3, pred6c4, pred6c5]
+ref_boxes_6c = [ref6c1, ref6c2, ref6c3, ref6c4]
+
 
 
 ## Data for figure 59 and testing of localisation
@@ -21,6 +39,18 @@ f59_pred1 = np.zeros([15, 15])
 f59_pred1[7:9, 8:10] = 1
 f59_pred2 = np.zeros([15, 15])
 f59_pred2[4:8, 5:9] = 1
+
+def test_assignment_6c():
+    asm1 = AssignmentMapping(pred_loc=pred_boxes_6c, ref_loc=ref_boxes_6c, pred_prob=pred_proba_6c, thresh=0.1,localization='box_iou')
+    df_matching, df_fn, df_fp, list_valid = asm1.initial_mapping()
+    print(asm1.matrix, df_matching, df_fp, df_fn, list_valid)
+    numb_fn = df_fn.shape[0]
+    numb_fp = df_fp.shape[0]
+    expected_fn = 1
+    expected_fp = 2
+    assert expected_fn ==  numb_fn
+    assert expected_fp == numb_fp
+    assert_array_almost_equal(np.asarray(list_valid),np.asarray([0,1,2]))
 
 def test_check_localization():
     ref_box = [[2,2,4,4]]
