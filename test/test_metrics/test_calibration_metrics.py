@@ -4,9 +4,7 @@ import numpy as np
 from scipy.special import gamma
 from MetricsReloaded.utility.utils import median_heuristic
 
-
-def test_expected_calibration_error():
-    f40_pred = [[1-0.22, 0.22 ],
+pred_224 = [[1-0.22, 0.22 ],
                 [1-0.48, 0.48],
                 [0.51,0.49],
                 [0.04, 0.96],
@@ -17,15 +15,38 @@ def test_expected_calibration_error():
                 [0.66, 0.34],
                 [0.13, 0.87]]
     #f40_pred = [0.22, 0.48, 0.49, 0.96, 0.55, 0.64, 0.78, 0.82, 0.34, 0.87]
-    f40_ref = [0, 1, 0, 0, 1, 1, 1, 1, 1, 0]
-    ppm = CalibrationMeasures(f40_pred, f40_ref)
-    ppm1 = CalibrationMeasures(f40_pred, f40_ref, dict_args={"bins_ece": 2})
-    value_test2 = ppm.expectation_calibration_error()
+ref_224 = [0, 1, 0, 0, 1, 1, 1, 1, 1, 0]
+
+def test_expected_calibration_error():
+    """
+    Using as reference SN 2.24 p67
+    """
+    ppm1 = CalibrationMeasures(pred_224, ref_224, dict_args={"bins_ece": 2})
+    ppm2 = CalibrationMeasures(pred_224, ref_224, dict_args={'bins_ece':5})
+    ppm3 = CalibrationMeasures(pred_224, ref_224)
     value_test1 = ppm1.expectation_calibration_error()
+    value_test2 = ppm2.expectation_calibration_error()
+    value_test3 = ppm3.expectation_calibration_error()
     expected_ece1 = 0.11
-    expected_ece2 = 0.36
+    expected_ece2 = 0.32
+    expected_ece3 = 0.36
     assert_allclose(value_test1, expected_ece1, atol=0.01)
     assert_allclose(value_test2, expected_ece2, atol=0.01)
+    assert_allclose(value_test3, expected_ece3, atol=0.01)
+
+def test_maximum_calibration_error():
+    ppm1 = CalibrationMeasures(pred_224, ref_224, dict_args={"bins_mce": 2})
+    ppm2 = CalibrationMeasures(pred_224, ref_224, dict_args={'bins_mce':5})
+    ppm3 = CalibrationMeasures(pred_224, ref_224)
+    value_test1 = ppm1.maximum_calibration_error()
+    value_test2 = ppm2.maximum_calibration_error()
+    value_test3 = ppm3.maximum_calibration_error()
+    expected_ece1 = 0.12
+    expected_ece2 = 0.55
+    expected_ece3 = 0.96
+    assert_allclose(value_test1, expected_ece1, atol=0.01)
+    assert_allclose(value_test2, expected_ece2, atol=0.01)
+    assert_allclose(value_test3, expected_ece3, atol=0.01)
 
 
 def test_logarithmic_score():

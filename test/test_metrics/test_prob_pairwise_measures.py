@@ -14,7 +14,10 @@ from MetricsReloaded.utility.utils import trapezoidal_integration
 from MetricsReloaded.metrics.prob_pairwise_measures import ProbabilityPairwiseMeasures
 
 
-def test_auc():
+def test_auroc():
+    """
+    Based on SN2.18 p60 of Pitfalls paper
+    """
     ref = np.asarray([0, 0, 0, 1, 1, 1])
     pred_proba = np.asarray([0.21, 0.35, 0.63, 0.92, 0.32, 0.79])
     ppm = ProbabilityPairwiseMeasures(pred_proba, ref)
@@ -24,7 +27,10 @@ def test_auc():
     assert_allclose(value_test, expected_auc, atol=0.01)
 
 
-def test_ap():
+def test_average_precision():
+    """
+    Based on SN2.18 p60 of pitfalls paper
+    """
     ref = np.asarray([0, 0, 0, 1, 1, 1])
     pred_proba = np.asarray([0.21, 0.35, 0.63, 0.92, 0.32, 0.79])
     ppm = ProbabilityPairwiseMeasures(pred_proba, ref)

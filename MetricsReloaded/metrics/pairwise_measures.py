@@ -265,6 +265,11 @@ class BinaryPairwiseMeasures(object):
             "fbeta": (self.fbeta, "FBeta"),
             "dsc":(self.dsc, "DSC"),
             "youden_ind": (self.youden_index, "YoudenInd"),
+            "ppv":(self.positive_predictive_value,'PPV'),
+            "npv":(self.negative_predictive_value,'NPV'),
+            "ior":(self.intersection_over_reference,"IoR"),
+            "sensitivity":(self.sensitivity,"Sens"),
+            "specificity":(self.specificity,"Spec"),
             "mcc": (self.matthews_correlation_coefficient, "MCC"),
             "cldice": (self.centreline_dsc, "CentreLineDSC"),
             "assd": (self.measured_average_distance, "ASSD"),
@@ -693,7 +698,7 @@ class BinaryPairwiseMeasures(object):
         else:
             return 0
 
-    def positive_predictive_values(self):
+    def positive_predictive_value(self):
         """
         Calculates the positive predictive value
 
@@ -785,10 +790,10 @@ class BinaryPairwiseMeasures(object):
             warnings.warn("beta value not specified in option - default set to 1")
             beta = 1
         numerator = (
-            (1 + np.square(beta)) * self.positive_predictive_values() * self.recall()
+            (1 + np.square(beta)) * self.positive_predictive_value() * self.recall()
         )
         denominator = (
-            np.square(beta) * self.positive_predictive_values() + self.recall()
+            np.square(beta) * self.positive_predictive_value() + self.recall()
         )
         if np.isnan(denominator):
             if self.fp() + self.fn() > 0:
@@ -830,7 +835,7 @@ class BinaryPairwiseMeasures(object):
         net_benefit = tp / n - fp / n * er
         return net_benefit
 
-    def negative_predictive_values(self):
+    def negative_predictive_value(self):
         """
         This function calculates the negative predictive value ratio between
         the number of true negatives and the total number of negative elements

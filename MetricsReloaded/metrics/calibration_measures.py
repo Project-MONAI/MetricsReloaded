@@ -31,7 +31,7 @@ Calculating calibration measures
 import numpy as np
 import math
 from scipy.special import gamma
-
+import warnings
 # from metrics.pairwise_measures import CacheFunctionOutput
 from MetricsReloaded.utility.utils import (
     CacheFunctionOutput,
@@ -150,6 +150,7 @@ class CalibrationMeasures(object):
         if "bins_ece" in self.dict_args:
             nbins = self.dict_args["bins_ece"]
         else:
+            warnings.warn("Bins ECE not specified in optional arguments dictionary - default set to 10")
             nbins = 10
         step = 1.0 / nbins
         range_values = np.arange(0, 1.00001, step)
@@ -176,7 +177,55 @@ class CalibrationMeasures(object):
             else:
                 list_values.append(nsamples * np.abs(prop - np.mean(pred_sel)))
             numb_samples += nsamples
-        return np.sum(np.asarray(list_values)) / numb_samples
+        ece = np.sum(np.asarray(list_values)) / numb_samples
+        return ece
+    
+
+    def maximum_calibration_error(self):
+        """
+        Derives the maximum calibration error in the case of binary task
+        bins_mce is the key in the dictionary for the number of bins to consider
+        Default is 10
+
+        .. math::
+
+            MCE = max(|\dfrac{1}{|B_m|}\sum_{i \in B_m}1(pred_ik==ref_ik)-\dfrac{1}{|B_m|}\sum_{i \in B_m}pred_i|)
+
+        :return: mce
+
+        """
+        if "bins_mce" in self.dict_args:
+            nbins = self.dict_args["bins_mce"]
+        else:
+            warnings.warn("Bins MCE not specified in optional arguments dictionary - default set to 10")
+            nbins = 10
+        step = 1.0 / nbins
+        range_values = np.arange(0, 1.00001, step)
+        list_values = []
+        numb_samples = 0
+        pred_prob = self.pred[:,1]
+        for (l, u) in zip(range_values[:-1], range_values[1:]):
+            ref_tmp = np.where(
+                np.logical_and(pred_prob > l, pred_prob <= u),
+                self.ref,
+                np.ones_like(self.ref) * -1,
+            )
+            ref_sel = ref_tmp[ref_tmp > -1]
+            nsamples = np.size(ref_sel)
+            prop = np.sum(ref_sel) / nsamples
+            pred_tmp = np.where(
+                np.logical_and(pred_prob > l, pred_prob <= u),
+                pred_prob,
+                np.ones_like(pred_prob) * -1,
+            )
+            pred_sel = pred_tmp[pred_tmp > -1]
+            if nsamples == 0:
+                list_values.append(0)
+            else:
+                list_values.append(np.abs(prop - np.mean(pred_sel)))
+        mce = np.max(np.asarray(list_values))
+        return mce
+
 
     def brier_score(self):
         """

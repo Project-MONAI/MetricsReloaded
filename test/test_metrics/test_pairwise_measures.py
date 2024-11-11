@@ -46,6 +46,14 @@ pred212[3:21, 2:21] = 1
 ppm212_1 = PM(pred212, ref212)
 ppm212_2 = PM(pred212,ref212,dict_args={'boundary_dist':2})
 
+#Data for figure 5c (Hausdoff with annotation error p14 Pitfalls)
+ref5c = np.zeros([14, 14])
+ref5c[1, 1] = 1
+ref5c[9:12, 9:12] = 1
+pred5c = np.zeros([14, 14])
+pred5c [9:12, 9:12] = 1
+bpm5c = PM(pred5c, ref5c, dict_args={'hd_perc':95})
+
 ### Small size of structures relative to pixel/voxel size (DSC)
 ## Larger structure
 p_large_ref = np.zeros((11, 11))
@@ -77,7 +85,7 @@ f27_pred1 = np.concatenate([np.ones([40]), np.zeros([30]), np.ones([1])])
 f27_ref2 = f27_pred1
 f27_pred2 = f27_ref1
 
-# Figure ClDice p 53 S2.14
+# Figure ClDice p 53 S2.14 pitfalls paper
 ref214 = np.zeros([24,24])
 ref214[1:10,7:12]=1
 ref214[10:12,3:19]=1
@@ -116,26 +124,26 @@ ppm214_2 = PM(pred214_2, ref214)
 
 
 
-# panoptic quality
-pq_pred1 = np.zeros([21, 21])
-pq_pred1[5:7, 2:5] = 1
-pq_pred2 = np.zeros([21, 21])
-pq_pred2[14:18, 4:6] = 1
-pq_pred2[16, 3] = 1
-pq_pred3 = np.zeros([21, 21])
-pq_pred3[14:18, 7:12] = 1
-pq_pred4 = np.zeros([21, 21])
-pq_pred4[2:8, 13:16] = 1
-pq_pred4[2:4, 12] = 1
+# panoptic quality Figure 3.51 p96
+pq_pred1 = np.zeros([18, 18])
+pq_pred1[ 3:7,1:3] = 1
+pq_pred1[3:6,3:7]=1
+pq_pred2 = np.zeros([18, 18])
+pq_pred2[13:16,4:6] = 1
+pq_pred3 = np.zeros([18, 18])
+pq_pred3[7:12,13:17] = 1
+pq_pred4 = np.zeros([18, 18])
+pq_pred4[13:15,13:17] = 1
+pq_pred4[15,15] = 1
 
-pq_ref1 = np.zeros([21, 21])
-pq_ref1[8:11, 3] = 1
-pq_ref1[9, 2:5] = 1
-pq_ref2 = np.zeros([21, 21])
-pq_ref2[14:19, 7:13] = 1
-pq_ref3 = np.zeros([21, 21])
-pq_ref3[2:7, 14:17] = 1
-pq_ref3[2:4, 12:14] = 1
+pq_ref1 = np.zeros([18, 18])
+pq_ref1[2:7, 1:3] = 1
+pq_ref1[2:5,3:6] = 1
+pq_ref2 = np.zeros([18, 18])
+pq_ref2[6:12,12:17] = 1
+pq_ref3 = np.zeros([18, 18])
+pq_ref3[14:15:,7:10] = 1
+pq_ref3[13:16,8:9] = 1
 
 f27_pred = np.concatenate([np.ones([81]), np.zeros([9]), np.ones([2]), np.zeros([8])])
 f27_ref = np.concatenate([np.ones([90]), np.zeros([10])])
@@ -324,16 +332,6 @@ def test_fn_map():
     fn2 = ppm210_2.fn()
     expected_fn1 = 12
     expected_fn2 = 0
-    # fn_map_1 = ppm210_1.__fn_map()
-    # expected_fn_map1 = np.zeros([14,14])
-    # expected_fn_map1[5:6,5:9] = 1
-    # expected_fn_map1[8:9,5:9] = 1 
-    # expected_fn_map1[5:9,5:6] = 1
-    # expected_fn_map1[5:9,8:9] = 1
-    # fn_map_2 = ppm210_2.__fn_map()
-    # expected_fn_map2 = np.zeros([14,14])
-    # assert_array_equal(fn_map_1, expected_fn_map1)
-    # assert_array_equal(fn_map_2, expected_fn_map2)
     assert fn1 == 12
     assert fn2 == 0 
 
@@ -553,8 +551,8 @@ def test_negative_predictive_value():
     """
     Taking figure SN 2.9 as inspiration p49 Pitfalls
     """
-    value_test1 = ppm29_1.negative_predictive_values()
-    value_test2 = ppm29_2.negative_predictive_values()
+    value_test1 = ppm29_1.negative_predictive_value()
+    value_test2 = ppm29_2.negative_predictive_value()
     expected_npv1 = 0.889
     expected_npv2 = 0.47
     assert_allclose(value_test1, expected_npv1, atol=0.001)
@@ -699,7 +697,7 @@ def test_nsd2():
     assert_allclose(value_test, expected_nsd2, atol=0.01)
 
 
-def test_iou():
+def test_intersection_over_union():
     bpm = PM(p_pred, p_ref)
     value_test = bpm.intersection_over_union()
     print("IoU ", value_test)
@@ -707,15 +705,19 @@ def test_iou():
     assert_allclose(value_test, expected_iou, atol=0.01)
 
 
-def test_fbeta():
-    pm = PM(p_large_pred1, p_large_ref)
-    pm2 = PM(p_large_pred1, p_large_ref, dict_args={"beta": 1})
-    value_test = pm.fbeta()
-    value_test2 = pm2.fbeta()
-    print(value_test)
-    expected_fbeta = 0.986
-    assert_allclose(value_test, expected_fbeta, atol=0.001)
-    assert_allclose(value_test2, expected_fbeta, atol=0.001)
+def test_fbeta_beta_value():
+    """
+    Taking inspiration from SN 2.9 - p49 Pitfalls
+    """
+    expected_f11 = 0.86
+    expected_f12 = 0.94
+    ppm29_1.dict_args={'beta':1}
+    ppm29_2.dict_args={'beta':1}
+    value_test1 = ppm29_1.fbeta()
+    value_test2 = ppm29_2.fbeta()
+    assert_allclose(value_test1, expected_f11, atol=0.01)
+    assert_allclose(value_test2, expected_f12, atol=0.01)
+
 
 def test_sensitivity():
     """
@@ -749,13 +751,13 @@ def test_sens():
     assert_allclose(value_test, expected_sens, atol=0.01)
 
 
-def test_ppv():
+def test_positive_predictive_value():
     """
     Taking as inspiration figure SN2.9 p49 Pitfalls
     """
     
-    value_test1 = ppm29_1.positive_predictive_values()
-    value_test2 = ppm29_2.positive_predictive_values()
+    value_test1 = ppm29_1.positive_predictive_value()
+    value_test2 = ppm29_2.positive_predictive_value()
     expected_ppv1 = 0.82
     expected_ppv2 = 0.98
     assert_allclose(value_test1, expected_ppv1, atol=0.01)
@@ -817,15 +819,12 @@ def test_nsd_s210():
     assert_allclose(nsd_1,expected_nsd1,atol=0.01)
     assert_allclose(nsd_2,expected_nsd2,atol=0.01)
 
-def test_hd():
-    f20_ref = np.zeros([14, 14])
-    f20_ref[1, 1] = 1
-    f20_ref[9:12, 9:12] = 1
-    f20_pred = np.zeros([14, 14])
-    f20_pred[9:12, 9:12] = 1
-    bpm = PM(f20_pred, f20_ref, dict_args={"hd_perc": 95})
-    hausdorff_distance = bpm.measured_hausdorff_distance()
-    hausdorff_distance_perc = bpm.measured_hausdorff_distance_perc()
+def test_hausdorff_distance_5c():
+    """
+    Using figure 5c p14 as illustration for calculation of HD and HD95
+    """
+    hausdorff_distance = bpm5c.measured_hausdorff_distance()
+    hausdorff_distance_perc = bpm5c.measured_hausdorff_distance_perc()
     print(hausdorff_distance_perc)
     expected_hausdorff_distance = 11.31
     expected_hausdorff_distance_perc = 6.79
