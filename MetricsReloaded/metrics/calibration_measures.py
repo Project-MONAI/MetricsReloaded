@@ -460,10 +460,14 @@ class CalibrationMeasures(object):
 
         George Cybenko, Dianne P O’Leary, and Jorma Rissanen. 1998. The Mathematics of Information Coding, Extraction
         and Distribution. Vol. 107. Springer Science & Business Media.
+        Cheat Sheet p 116 - Figure SN 3.71
 
         .. math::
 
-            NLL = -\sum_{i=1}{N} log(p_{i,k} | y_i=k)
+            NLL = -\dfrac{1}{N}\sum_{i=1}^{N}\sum_{k=1}^{C} y_{ik} \dot log(p_{i,k})
+
+        where :math: `y_{ik}` the outcome is 1 if the class of :math: `y_{i}` is k and :math: `p_{ik}` is the predicted 
+        probability for sample :math: `x_i` and class k
 
         :return: NLL
 
@@ -471,7 +475,7 @@ class CalibrationMeasures(object):
         log_pred = np.log(self.pred)
         numb_samples = self.pred.shape[0]
         ll = np.sum(log_pred[range(numb_samples), self.ref])
-        nll = -1 * ll
+        nll = -1/numb_samples * ll
         return nll
 
     def to_dict_meas(self, fmt="{:.4f}"):

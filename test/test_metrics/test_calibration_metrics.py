@@ -35,6 +35,9 @@ def test_expected_calibration_error():
     assert_allclose(value_test3, expected_ece3, atol=0.01)
 
 def test_maximum_calibration_error():
+    """
+    Using figure 2.24 p67 of pitfalls as reference
+    """
     ppm1 = CalibrationMeasures(pred_224, ref_224, dict_args={"bins_mce": 2})
     ppm2 = CalibrationMeasures(pred_224, ref_224, dict_args={'bins_mce':5})
     ppm3 = CalibrationMeasures(pred_224, ref_224)
@@ -88,7 +91,7 @@ def test_negative_log_likelihood():
     pred_nll = [[0.1, 0.8, 0.05, 0.1], [0.6, 0.1, 0, 0.7], [0.3, 0.1, 0.95, 0.2]]
     ref_nll = np.asarray(ref_nll)
     pred_nll = np.asarray(pred_nll).T
-    expected_nll = -1 * (np.log(0.8) + np.log(0.6) + np.log(0.7) + np.log(0.95))
+    expected_nll = -1/4 * (np.log(0.8) + np.log(0.6) + np.log(0.7) + np.log(0.95))
     cm = CalibrationMeasures(pred_nll, ref_nll)
     value_test = cm.negative_log_likelihood()
     assert_allclose(value_test, expected_nll)
