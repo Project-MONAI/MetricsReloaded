@@ -146,7 +146,7 @@ class MultiClassPairwiseMeasures(object):
             cov_pred += np.cov(one_hot_pred[:, f], one_hot_pred[:, f])[0, 1]
             cov_ref += np.cov(one_hot_ref[:, f], one_hot_ref[:, f])[0, 1]
             cov_pr += np.cov(one_hot_pred[:, f], one_hot_ref[:, f])[0, 1]
-        
+
         numerator = cov_pr
         denominator = np.sqrt(cov_pred * cov_ref)
         return numerator / denominator
@@ -233,7 +233,7 @@ class MultiClassPairwiseMeasures(object):
         for key in self.measures:
             result = self.measures_dict[key][0]()
             result_dict[key] = result
-        return result_dict  
+        return result_dict
 
 
 class BinaryPairwiseMeasures(object):
@@ -260,18 +260,27 @@ class BinaryPairwiseMeasures(object):
             "ba": (self.balanced_accuracy, "BalAcc"),
             "cohens_kappa": (self.cohens_kappa, "CohensKappa"),
             "lr+": (self.positive_likelihood_ratio, "LR+"),
+            "youden_ind": (self.youden_index, "YoudenInd"),
+            "mcc": (self.matthews_correlation_coefficient, "MCC"),
+            # overlap-based measures
             "iou": (self.intersection_over_union, "IoU"),
             "fbeta": (self.fbeta, "FBeta"),
             "dsc":(self.dsc, "DSC"),
-            "youden_ind": (self.youden_index, "YoudenInd"),
-            "mcc": (self.matthews_correlation_coefficient, "MCC"),
-            "cldice": (self.centreline_dsc, "CentreLineDSC"),
-            "assd": (self.measured_average_distance, "ASSD"),
             "boundary_iou": (self.boundary_iou, "BoundaryIoU"),
+            "cldice": (self.centreline_dsc, "CentreLineDSC"),
+            # distance-based measures
+            "assd": (self.measured_average_distance, "ASSD"),
             "hd": (self.measured_hausdorff_distance, "HD"),
             "hd_perc": (self.measured_hausdorff_distance_perc, "HDPerc"),
             "masd": (self.measured_masd, "MASD"),
             "nsd": (self.normalised_surface_distance, "NSD"),
+            # instance-specific measures
+            "lesion_ppv": (self.lesion_ppv, "LesionWisePPV"),
+            "lesion_sensitivity": (self.lesion_sensitivity, "LesionWiseSensitivity"),
+            "lesion_f1_score": (self.lesion_f1_score, "LesionWiseF1Score"),
+            # other measures
+            "vol_diff": (self.vol_diff, "VolDiff"),
+            "rel_vol_error": (self.rel_vol_error, "RelVolError"),
         }
 
         self.pred = pred
@@ -684,7 +693,7 @@ class BinaryPairwiseMeasures(object):
         ..math::
 
             DSC = \dfrac{2TP}{2TP+FP+FN}
-        
+
         This is also F:math:`{\\beta}` for :math:`{\\beta}`=1
 
         """
@@ -854,7 +863,7 @@ class BinaryPairwiseMeasures(object):
         :return: Euclidean distance between centre of mass when reference and prediction not empty
         -1 otherwise
         """
-        
+
         if self.flag_empty_pred or self.flag_empty_ref:
             return -1
         else:
@@ -908,6 +917,25 @@ class BinaryPairwiseMeasures(object):
         :return: vol_diff
         """
         return np.abs(self.n_pos_ref() - self.n_pos_pred()) / self.n_pos_ref()
+
+    def rel_vol_error(self):
+        """
+        This function calculates the relative volume error (RVE) in % between the prediction and the reference.
+        If the prediction is smaller than the reference, the relative volume difference is negative.
+        If the prediction is larger than the reference, the relative volume difference is positive.
+
+        :return: rel_vol_error
+        """
+        if self.flag_empty_ref and self.flag_empty_pred:
+            # Both reference and prediction are empty --> model learned correctly --> setting 0 representing no over-
+            # or under-segmentation
+            return 0
+        elif self.flag_empty_ref and not self.flag_empty_pred:
+            # Reference is empty, prediction is not empty --> model did not learn correctly --> setting positive value
+            # representing overestimation
+            return 100
+        else:
+            return ((self.n_pos_pred() - self.n_pos_ref()) / self.n_pos_ref()) * 100
 
     @CacheFunctionOutput
     def skeleton_versions(self):
@@ -979,8 +1007,8 @@ class BinaryPairwiseMeasures(object):
         This functions determines the boundary iou
 
         Bowen Cheng, Ross Girshick, Piotr Dollár, Alexander C Berg, and Alexander Kirillov. 2021. Boundary IoU: Improving
-Object-Centric Image Segmentation Evaluation. In Proceedings of the IEEE/CVF Conference on Computer Vision and
-Pattern Recognition. 15334–15342.
+        Object-Centric Image Segmentation Evaluation. In Proceedings of the IEEE/CVF Conference on Computer Vision and
+        Pattern Recognition. 15334–15342.
 
         .. math::
 
@@ -1095,7 +1123,7 @@ Pattern Recognition. 15334–15342.
             ref_border,
             pred_border,
         ) = self.border_distance()
-        print(ref_border_dist)
+        #print(ref_border_dist)
         average_distance = (np.sum(ref_border_dist) + np.sum(pred_border_dist)) / (
             np.sum(pred_border + ref_border)
         )
@@ -1105,7 +1133,7 @@ Pattern Recognition. 15334–15342.
         )
 
         hausdorff_distance = np.max([np.max(ref_border_dist), np.max(pred_border_dist)])
-       
+
         hausdorff_distance_perc = np.max(
             [
                 np.percentile(ref_border_dist[pred_border > 0], q=perc),
@@ -1135,14 +1163,14 @@ Pattern Recognition. 15334–15342.
     def measured_masd(self):
         """
         This function returns only the mean average surface distance defined as
-        
+
         Miroslav Beneš and Barbara Zitová. 2015. Performance evaluation of image segmentation algorithms on microscopic
         image data. Journal of microscopy 257, 1 (2015), 65–85.
 
         .. math::
 
             MASD(A,B) = \dfrac{1}{2}\left(\dfrac{\sum_{a\in A}d(a,B)}{|A|} + \dfrac{\sum_{b\inB}d(b,A)}{|B|})
-        
+
         :return: masd
         """
         return self.measured_distance()[3]
@@ -1165,11 +1193,132 @@ Pattern Recognition. 15334–15342.
 
         Daniel P Huttenlocher, Gregory A. Klanderman, and William J Rucklidge. 1993. Comparing images using the Hausdorff
         distance. IEEE Transactions on pattern analysis and machine intelligence 15, 9 (1993), 850–863.
-        
+
         :return: hausdorff_distance_perc
         """
         return self.measured_distance()[2]
 
+    def lesion_wise_tp_fp_fn(self, truth, prediction):
+        """
+        Computes the true positives, false positives, and false negatives two masks. Masks are considered true positives
+        if at least one voxel overlaps between the truth and the prediction.
+        Adapted from: https://github.com/npnl/atlas2_grand_challenge/blob/main/isles/scoring.py#L341
+
+        Parameters
+        ----------
+        truth : array-like, bool
+            3D array. If not boolean, will be converted.
+        prediction : array-like, bool
+            3D array with a shape matching 'truth'. If not boolean, will be converted.
+        empty_value : scalar, float
+            Optional. Value to which to default if there are no labels. Default: 1.0.
+
+        Returns
+        -------
+        tp (int): 3D connected-component from the ground-truth image that overlaps at least on one voxel with the prediction image.
+        fp (int): 3D connected-component from the prediction image that has no voxel overlapping with the ground-truth image.
+        fn (int): 3d connected-component from the ground-truth image that has no voxel overlapping with the prediction image.
+
+        Notes
+        -----
+        This function computes lesion-wise score by defining true positive lesions (tp), false positive lesions (fp) and
+        false negative lesions (fn) using 3D connected-component-analysis.
+
+        tp: 3D connected-component from the ground-truth image that overlaps at least on one voxel with the prediction image.
+        fp: 3D connected-component from the prediction image that has no voxel overlapping with the ground-truth image.
+        fn: 3d connected-component from the ground-truth image that has no voxel overlapping with the prediction image.
+        """
+        tp, fp, fn = 0, 0, 0
+
+        # For each true lesion, check if there is at least one overlapping voxel. This determines true positives and
+        # false negatives (unpredicted lesions)
+        labeled_ground_truth, num_lesions = ndimage.label(truth.astype(bool))
+        for idx_lesion in range(1, num_lesions+1):
+            lesion = labeled_ground_truth == idx_lesion
+            lesion_pred_sum = lesion + prediction
+            if(np.max(lesion_pred_sum) > 1):
+                tp += 1
+            else:
+                fn += 1
+
+        # For each predicted lesion, check if there is at least one overlapping voxel in the ground truth.
+        labaled_prediction, num_pred_lesions = ndimage.label(prediction.astype(bool))
+        for idx_lesion in range(1, num_pred_lesions+1):
+            lesion = labaled_prediction == idx_lesion
+            lesion_pred_sum = lesion + truth
+            if(np.max(lesion_pred_sum) <= 1):  # No overlap
+                fp += 1
+
+        return tp, fp, fn
+
+    def lesion_f1_score(self):
+        """
+        Computes the lesion-wise F1-score between two masks by defining true positive lesions (tp), false positive lesions (fp)
+        and false negative lesions (fn) using 3D connected-component-analysis.
+
+        Masks are considered true positives if at least one voxel overlaps between the truth and the prediction.
+
+        Returns
+        -------
+        f1_score : float
+            Lesion-wise F1-score as float.
+            Max score = 1
+            Min score = 0
+            If both images are empty (tp + fp + fn =0) = empty_value
+        """
+        empty_value = 1.0   # Value to which to default if there are no labels. Default: 1.0.
+        tp, fp, fn = self.lesion_wise_tp_fp_fn(self.ref, self.pred)
+        f1_score = empty_value
+
+        # Compute f1_score
+        denom = tp + (fp + fn)/2
+        if(denom != 0):
+            f1_score = tp / denom
+        return f1_score
+
+    def lesion_ppv(self):
+        """
+        Computes the lesion-wise positive predictive value (PPV) between two masks
+        Returns
+        -------
+        ppv (float): Lesion-wise positive predictive value as float.
+            Max score = 1
+            Min score = 0
+            If both images are empty (tp + fp + fn =0) = empty_value
+        """
+        empty_value = 1.0
+
+        tp, fp, fn = self.lesion_wise_tp_fp_fn(self.ref, self.pred)
+        ppv = empty_value
+
+        # Compute ppv
+        denom = tp + fp
+        if(denom != 0):
+            ppv = tp / denom
+        return ppv
+
+    def lesion_sensitivity(self):
+        """
+        Computes the lesion-wise sensitivity between two masks
+        Returns
+        -------
+        sensitivity (float): Lesion-wise sensitivity as float.
+            Max score = 1
+            Min score = 0
+            If both images are empty (tp + fp + fn =0) = empty_value
+        """
+        empty_value = 1.0
+
+        tp, fp, fn = self.lesion_wise_tp_fp_fn(self.ref, self.pred)
+        sensitivity = empty_value
+
+        # Compute sensitivity
+        denom = tp + fn
+        if(denom != 0):
+            sensitivity = tp / denom
+        return sensitivity
+
+    # NOTE: it's best to keep this function at the end as it does not explicitly compute any metric
     def to_dict_meas(self, fmt="{:.4f}"):
         result_dict = {}
         for key in self.measures:
@@ -1178,6 +1327,4 @@ Pattern Recognition. 15334–15342.
             else:
                 result = self.measures_dict[key][0](self.measures_dict[key][2])
             result_dict[key] = result
-        return result_dict  
-
-    
+        return result_dict
