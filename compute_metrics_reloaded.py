@@ -238,6 +238,9 @@ def main():
     # Initialize a list to store the output dictionaries (representing a single reference-prediction pair per subject)
     output_list = list()
 
+    # Check if both -pred-map and -ref-map are referenced if at least one is specified
+    if any((args.ref_map is None, args.pred_map is None)) and any((args.ref_map is not None, args.pred_map is not None)):
+        raise ValueError(f'If used, both -ref-map and -pred-map must be provided.')
     # Print the metrics to be computed
     print(f'Computing metrics: {args.metrics}')
     print(f'Using {args.jobs} CPU cores in parallel ...')
