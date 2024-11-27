@@ -43,6 +43,7 @@ import nibabel as nib
 import pandas as pd
 from multiprocessing import Pool, cpu_count
 from functools import partial
+import json
 
 from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures as BPM
 
@@ -130,7 +131,7 @@ def get_images_in_folder(prediction, reference):
     return prediction_files, reference_files
 
 
-def compute_metrics_single_subject(prediction, reference, metrics):
+def compute_metrics_single_subject(prediction, reference, metrics, ref_map, pred_map):
     """
     Compute MetricsReloaded metrics for a single subject
     :param prediction: path to the nifti image with the prediction
@@ -223,11 +224,11 @@ def build_output_dataframe(output_list):
     return df
 
 
-def process_subject(prediction_file, reference_file, metrics):
+def process_subject(prediction_file, reference_file, metrics, ref_map, pred_map):
     """
     Wrapper function to process a single subject.
     """
-    return compute_metrics_single_subject(prediction_file, reference_file, metrics)
+    return compute_metrics_single_subject(prediction_file, reference_file, metrics, ref_map, pred_map)
 
 
 def main():
@@ -267,14 +268,19 @@ def main():
         # Use multiprocessing to parallelize the computation
         with Pool(args.jobs) as pool:
             # Create a partial function to pass the metrics argument to the process_subject function
-            func = partial(process_subject, metrics=args.metrics)
+            func = partial(
+                process_subject, 
+                metrics=args.metrics, 
+                ref_map=ref_map, 
+                pred_map=pred_map
+            )
             # Compute metrics for each subject in parallel
             results = pool.starmap(func, zip(prediction_files, reference_files))
 
             # Collect the results
             output_list.extend(results)
     else:
-        metrics_dict = compute_metrics_single_subject(args.prediction, args.reference, args.metrics)
+        metrics_dict = compute_metrics_single_subject(args.prediction, args.reference, args.metrics, args.ref_map, args.pred_map)
         # Append the output dictionary (representing a single reference-prediction pair per subject) to the output_list
         output_list.append(metrics_dict)
 
