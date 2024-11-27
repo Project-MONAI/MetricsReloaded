@@ -83,6 +83,10 @@ def get_parser():
                              'see: https://metricsreloaded.readthedocs.io/en/latest/reference/metrics/metrics.html.')
     parser.add_argument('-output', type=str, default='metrics.csv', required=False,
                         help='Path to the output CSV file to save the metrics. Default: metrics.csv')
+    parser.add_argument('-pred-map', type=str, metavar='<json>', default=None, required=False,
+                        help='JSON file containing the prediction mapping between the imaged structure and the corresponding integer value in the image ~/<your_path>/<myjson>.json')
+    parser.add_argument('-ref-map', type=str, metavar='<json>', default=None, required=False,
+                        help='JSON file containing the reference mapping between the imaged structure and the corresponding integer value in the image ~/<your_path>/<myjson>.json')
     parser.add_argument('-jobs', type=int, default=cpu_count()//8, required=False,
                         help='Number of CPU cores to use in parallel. Default: cpu_count()//8.')
 
