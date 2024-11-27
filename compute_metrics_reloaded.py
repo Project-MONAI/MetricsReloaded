@@ -241,6 +241,20 @@ def main():
     # Check if both -pred-map and -ref-map are referenced if at least one is specified
     if any((args.ref_map is None, args.pred_map is None)) and any((args.ref_map is not None, args.pred_map is not None)):
         raise ValueError(f'If used, both -ref-map and -pred-map must be provided.')
+    
+    # Load JSON mapping if provided
+    if any((args.ref_map is None, args.pred_map is None)):
+        # Load JSON files and create a dictionary
+        with open(args.ref_map, "r") as file:
+            ref_map = json.load(file)
+        # Load JSON files and create a dictionary
+        with open(args.pred_map, "r") as file:
+            pred_map = json.load(file)
+    else:
+        # Assign None value if not used
+        ref_map = None
+        pred_map = None
+
     # Print the metrics to be computed
     print(f'Computing metrics: {args.metrics}')
     print(f'Using {args.jobs} CPU cores in parallel ...')
