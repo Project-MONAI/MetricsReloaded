@@ -143,21 +143,25 @@ def compute_metrics_single_subject(prediction, reference, metrics, ref_map, pred
     prediction_data = load_nifti_image(prediction)
     reference_data = load_nifti_image(reference)
 
-    # check whether the images have the same shape and orientation
-    if prediction_data.shape != reference_data.shape:
-        raise ValueError(f'The prediction and reference (ground truth) images must have the same shape. '
-                         f'The prediction image has shape {prediction_data.shape} and the ground truth image has '
-                         f'shape {reference_data.shape}.')
+    if ref_map is None and pred_map is None:
+        # check whether the images have the same shape and orientation
+        if prediction_data.shape != reference_data.shape:
+            raise ValueError(f'The prediction and reference (ground truth) images must have the same shape. '
+                            f'The prediction image has shape {prediction_data.shape} and the ground truth image has '
+                            f'shape {reference_data.shape}.')
 
-    # get all unique labels (classes)
-    # for example, for nnunet region-based segmentation, spinal cord has label 1, and lesions have label 2
-    unique_labels_reference = np.unique(reference_data)
-    unique_labels_reference = unique_labels_reference[unique_labels_reference != 0]  # remove background
-    unique_labels_prediction = np.unique(prediction_data)
-    unique_labels_prediction = unique_labels_prediction[unique_labels_prediction != 0]  # remove background
+        # get all unique labels (classes)
+        # for example, for nnunet region-based segmentation, spinal cord has label 1, and lesions have label 2
+        unique_labels_reference = np.unique(reference_data)
+        unique_labels_reference = unique_labels_reference[unique_labels_reference != 0]  # remove background
+        unique_labels_prediction = np.unique(prediction_data)
+        unique_labels_prediction = unique_labels_prediction[unique_labels_prediction != 0]  # remove background
 
-    # Get the unique labels that are present in the reference OR prediction images
-    unique_labels = np.unique(np.concatenate((unique_labels_reference, unique_labels_prediction)))
+        # Get the unique labels that are present in the reference OR prediction images
+        unique_labels = np.unique(np.concatenate((unique_labels_reference, unique_labels_prediction)))
+    else:
+        # Get the unique labels that are present in the reference OR prediction images
+        unique_labels = np.unique(np.concatenate(list(ref_map.keys()), list(pred_map.keys())))
 
     # append entry into the output_list to store the metrics for the current subject
     metrics_dict = {'reference': reference, 'prediction': prediction}
@@ -171,8 +175,12 @@ def compute_metrics_single_subject(prediction, reference, metrics, ref_map, pred
     # by doing this, we can compute metrics for each label separately, e.g., separately for spinal cord and lesions
     for label in unique_labels:
         # create binary masks for the current label
-        prediction_data_label = np.array(prediction_data == label, dtype=float)
-        reference_data_label = np.array(reference_data == label, dtype=float)
+        if not isinstance(label, str):
+            prediction_data_label = np.array(prediction_data == label, dtype=float)
+            reference_data_label = np.array(reference_data == label, dtype=float)
+        else:
+            prediction_data_label = np.array(prediction_data == pred_map[label], dtype=float)
+            reference_data_label = np.array(reference_data == ref_map[label], dtype=float)
 
         bpm = BPM(prediction_data_label, reference_data_label, measures=metrics)
         dict_seg = bpm.to_dict_meas()
