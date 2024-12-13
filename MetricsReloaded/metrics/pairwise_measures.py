@@ -155,7 +155,7 @@ class MultiClassPairwiseMeasures(object):
         """Determines the probability of agreeing by chance given two classifications.
         To be used for CK calculation
 
-
+        return: chance (probability for classification of agreeing by chance)
         """
         chance = 0
         for f in self.list_values:
@@ -189,22 +189,22 @@ class MultiClassPairwiseMeasures(object):
         col_sum = np.sum(cm, 0)
         numerator = np.sum(np.diag(cm) / col_sum)
         denominator = len(self.list_values)
-        return numerator / denominator
+        balanced_accuracy = numerator / denominator
+        return balanced_accuracy
 
     def expectation_matrix(self):
         """
         Determination of the expectation matrix to be used for CK derivation
 
         :return: expectation_matrix
+
         """
         one_hot_pred = one_hot_encode(self.pred, len(self.list_values))
         one_hot_ref = one_hot_encode(self.ref, len(self.list_values))
         pred_numb = np.sum(one_hot_pred, 0)
         ref_numb = np.sum(one_hot_ref, 0)
-        return (
-            np.matmul(np.reshape(pred_numb, [-1, 1]), np.reshape(ref_numb, [1, -1]))
-            / np.shape(one_hot_pred)[0]
-        )
+        expectation_matrix = np.matmul(np.reshape(pred_numb, [-1, 1]), np.reshape(ref_numb, [1, -1]))/ np.shape(one_hot_pred)[0]
+        return expectation_matrix
 
     def weighted_cohens_kappa(self):
         """
@@ -225,7 +225,8 @@ class MultiClassPairwiseMeasures(object):
             )
         numerator = np.sum(weights * cm)
         denominator = np.sum(weights * exp)
-        return 1 - numerator / denominator
+        weighted_cohens_kappa = 1 - numerator / denominator
+        return weighted_cohens_kappa
 
     def to_dict_meas(self, fmt="{:.4f}"):
         """Given the selected metrics provides a dictionary with relevant metrics"""
@@ -264,6 +265,11 @@ class BinaryPairwiseMeasures(object):
             "fbeta": (self.fbeta, "FBeta"),
             "dsc":(self.dsc, "DSC"),
             "youden_ind": (self.youden_index, "YoudenInd"),
+            "ppv":(self.positive_predictive_value,'PPV'),
+            "npv":(self.negative_predictive_value,'NPV'),
+            "ior":(self.intersection_over_reference,"IoR"),
+            "sensitivity":(self.sensitivity,"Sens"),
+            "specificity":(self.specificity,"Spec"),
             "mcc": (self.matthews_correlation_coefficient, "MCC"),
             "cldice": (self.centreline_dsc, "CentreLineDSC"),
             "assd": (self.measured_average_distance, "ASSD"),
@@ -272,6 +278,7 @@ class BinaryPairwiseMeasures(object):
             "hd_perc": (self.measured_hausdorff_distance_perc, "HDPerc"),
             "masd": (self.measured_masd, "MASD"),
             "nsd": (self.normalised_surface_distance, "NSD"),
+            "avdr": (self.absolute_volume_difference_ratio, "AVDR")
         }
 
         self.pred = pred
@@ -296,8 +303,9 @@ class BinaryPairwiseMeasures(object):
         """
         ref_float = np.asarray(self.ref, dtype=np.float32)
         pred_float = np.asarray(self.pred, dtype=np.float32)
-        return np.asarray((pred_float - ref_float) > 0.0, dtype=np.float32)
-
+        fp_map = np.asarray((pred_float - ref_float) > 0.0, dtype=np.float32)
+        return fp_map
+    
     def __fn_map(self):
         """
         This function calculates the false negative map
@@ -306,8 +314,9 @@ class BinaryPairwiseMeasures(object):
         """
         ref_float = np.asarray(self.ref, dtype=np.float32)
         pred_float = np.asarray(self.pred, dtype=np.float32)
-        return np.asarray((ref_float - pred_float) > 0.0, dtype=np.float32)
-
+        fn_map = np.asarray((ref_float - pred_float) > 0.0, dtype=np.float32)
+        return fn_map
+    
     def __tp_map(self):
         """
         This function calculates the true positive map
@@ -316,7 +325,8 @@ class BinaryPairwiseMeasures(object):
         """
         ref_float = np.asarray(self.ref, dtype=np.float32)
         pred_float = np.asarray(self.pred, dtype=np.float32)
-        return np.asarray((ref_float + pred_float) > 1.0, dtype=np.float32)
+        tp_map = np.asarray((ref_float + pred_float) > 1.0, dtype=np.float32)
+        return tp_map
 
     def __tn_map(self):
         """
@@ -326,8 +336,9 @@ class BinaryPairwiseMeasures(object):
         """
         ref_float = np.asarray(self.ref, dtype=np.float32)
         pred_float = np.asarray(self.pred, dtype=np.float32)
-        return np.asarray((ref_float + pred_float) < 0.5, dtype=np.float32)
-
+        tn_map = np.asarray((ref_float + pred_float) < 0.5, dtype=np.float32)
+        return tn_map
+    
     def __union_map(self):
         """
         This function calculates the union map between prediction and
@@ -344,70 +355,103 @@ class BinaryPairwiseMeasures(object):
 
         :return: intersection map
         """
-        return np.multiply(self.ref, self.pred)
+        intersection_map = np.multiply(self.ref, self.pred)
+        return intersection_map
 
     @CacheFunctionOutput
     def n_pos_ref(self):
         """
         Returns the number of elements in ref
+        
+        :return: n_pos_ref
         """
-        return np.sum(self.ref)
+        n_pos_ref = np.sum(self.ref)
+        return n_pos_ref
 
     @CacheFunctionOutput
     def n_neg_ref(self):
         """
         Returns the number of negative elements in ref
+        
+        :return: n_neg_ref
         """
-        return np.sum(1 - self.ref)
+        n_neg_ref = np.sum(1-self.ref)
+        return n_neg_ref
 
     @CacheFunctionOutput
     def n_pos_pred(self):
         """
         Returns the number of positive elements in the prediction
+        
+        :return: n_pos_pred
         """
+        n_pos_pred = np.sum(self.pred)
         return np.sum(self.pred)
 
     @CacheFunctionOutput
     def n_neg_pred(self):
         """
         Returns the number of negative elements in the prediction
+        
+        :return: n_neg_pred
         """
-        return np.sum(1 - self.pred)
+        n_neg_pred = np.sum(1-self.pred)
+        return n_neg_pred
 
     @CacheFunctionOutput
     def fp(self):
         """
         Calculates the number of FP as sum of elements in FP_map
+        
+        :return: fp
         """
-        return np.sum(self.__fp_map())
+        fp = np.sum(self.__fp_map())
+        return fp
 
     @CacheFunctionOutput
     def fn(self):
         """
         Calculates the number of FN as sum of elements of FN_map
+        
+        :return: fn
         """
-        return np.sum(self.__fn_map())
+        fn = np.sum(self.__fn_map())
+        return fn
 
     @CacheFunctionOutput
     def tp(self):
         """
         Returns the number of true positive (TP) elements
+        
+        :return: tp
         """
-        return np.sum(self.__tp_map())
+        tp = np.sum(self.__tp_map())
+        return tp
 
     @CacheFunctionOutput
     def tn(self):
         """
         Returns the number of True Negative (TN) elements
+        
+        :return: tn
         """
-        return np.sum(self.__tn_map())
+        tn = np.sum(self.__tn_map())
+        return tn
 
     @CacheFunctionOutput
     def n_intersection(self):
         """
         Returns the number of elements in the intersection of reference and prediction (=TP)
+        
+        .. math::
+
+            I =  TP
+
+
+        :return: n_intersection
         """
-        return np.sum(self.__intersection_map())
+        n_intersection = np.sum(self.__intersection_map())
+        return n_intersection
 
     @CacheFunctionOutput
     def n_union(self):
@@ -418,8 +462,10 @@ class BinaryPairwiseMeasures(object):
 
             U = {\vert} Pred {\vert} + {\vert} Ref {\vert} - TP
 
+        :return: n_union
         """
-        return np.sum(self.__union_map())
+        n_union = np.sum(self.__union_map())
+        return n_union
 
     def youden_index(self):
         """
@@ -431,9 +477,10 @@ class BinaryPairwiseMeasures(object):
 
         Youden, W.J, Index for rating diagnostic tests - 1950 Cancer 3 - 32,35
 
-        :return: Youden index
+        :return: youden_index
         """
-        return self.specificity() + self.sensitivity() - 1
+        youden_index =  self.specificity() + self.sensitivity() - 1
+        return youden_index
 
     def sensitivity(self):
         """
@@ -441,7 +488,7 @@ class BinaryPairwiseMeasures(object):
 
         .. math::
 
-            Sens = \dfrac{TP}{\sharp Ref}
+            Sens = \dfrac{TP}{|Ref|}
 
         Yerushalmy J., Statistical Problems in assessing Methods of Medical Diagnosis with Special reference to X-Ray Techniques, 1947, Public Health Reports, pp1432-1449
 
@@ -452,7 +499,8 @@ class BinaryPairwiseMeasures(object):
         if self.n_pos_ref() == 0:
             warnings.warn("reference empty, sensitivity not defined")
             return np.nan
-        return self.tp() / self.n_pos_ref()
+        sensitivity = self.tp() / self.n_pos_ref()
+        return sensitivity
 
     def specificity(self):
         """
@@ -460,7 +508,7 @@ class BinaryPairwiseMeasures(object):
 
         .. math::
 
-            Spec = \dfrac{TN}{\sharp {1-Ref}}
+            Spec = \dfrac{TN}{|1-Ref|}
 
         Yerushalmy J., Statistical Problems in assessing Methods of Medical Diagnosis with Special reference to X-Ray Techniques, 1947, Public Health Reports, pp1432-1449
 
@@ -472,7 +520,8 @@ class BinaryPairwiseMeasures(object):
         if self.n_neg_ref() == 0:
             warnings.warn("reference all positive, specificity not defined")
             return np.nan
-        return self.tn() / self.n_neg_ref()
+        specificity = self.tn() / self.n_neg_ref()
+        return specificity
 
     def balanced_accuracy(self):
         """
@@ -484,7 +533,8 @@ class BinaryPairwiseMeasures(object):
 
         :return: balanced accuracy
         """
-        return 0.5 * self.sensitivity() + 0.5 * self.specificity()
+        balanced_accuracy = 0.5 * self.sensitivity() + 0.5 * self.specificity()
+        return balanced_accuracy
 
     def accuracy(self):
         """
@@ -499,7 +549,8 @@ class BinaryPairwiseMeasures(object):
 
         :return: accuracy
         """
-        return (self.tn() + self.tp()) / (self.tn() + self.tp() + self.fn() + self.fp())
+        accuracy = (self.tn() + self.tp()) / (self.tn() + self.tp() + self.fn() + self.fp())
+        return accuracy
 
     def false_positive_rate(self):
         """
@@ -507,13 +558,14 @@ class BinaryPairwiseMeasures(object):
 
         .. math::
 
-            FPR = \dfrac{FP}{\sharp \bar{Ref}}
+            FPR = \dfrac{FP}{|1-Ref|}
 
         Burke D, Brundage J, Redfield R., Measurement of the False positive rate in a screening Program for Human Immunodeficiency Virus Infections - 1988 - The New England Journal of Medicine 319 (15) 961-964
 
-        :return: false positive rate
+        :return: false_positive_rate
         """
-        return self.fp() / self.n_neg_ref()
+        false_positive_rate = self.fp() / self.n_neg_ref()
+        return false_positive_rate
 
     def normalised_expected_cost(self):
         """
@@ -521,7 +573,7 @@ class BinaryPairwiseMeasures(object):
 
         Luciana Ferrer. 2022. Analysis and Comparison of Classification Metrics. arXiv preprint arXiv:2209.05355 (2022).
 
-        :return: normalised expected cost
+        :return: normalised_expected_cost
         """
 
         prior_background = (self.tn() + self.fp()) / (np.size(self.ref))
@@ -541,10 +593,10 @@ class BinaryPairwiseMeasures(object):
         r_fp = self.fp() / self.n_neg_ref()
         r_fn = self.fn() / self.n_pos_ref()
         if alpha >= 1:
-            ecn = alpha * r_fp + r_fn
+            normalised_expected_cost = alpha * r_fp + r_fn
         else:
-            ecn = r_fp + 1 / alpha * r_fn
-        return ecn
+            normalised_expected_cost = r_fp + 1 / alpha * r_fn
+        return normalised_expected_cost
 
     def matthews_correlation_coefficient(self):
         """
@@ -556,7 +608,7 @@ class BinaryPairwiseMeasures(object):
 
             MCC = \dfrac{TP * TN - FP * FN}{(TP+FP)*(TP+FN)*(TN+FP)*(TN+FN)}
 
-        :return: MCC
+        :return: mcc
         """
         numerator = self.tp() * self.tn() - self.fp() * self.fn()
         denominator = (
@@ -565,7 +617,8 @@ class BinaryPairwiseMeasures(object):
             * (self.tn() + self.fp())
             * (self.tn() + self.fn())
         )
-        return numerator / np.sqrt(denominator)
+        mcc = numerator / np.sqrt(denominator)
+        return mcc
 
     def expected_matching_ck(self):
         list_values = np.unique(self.ref)
@@ -592,19 +645,19 @@ class BinaryPairwiseMeasures(object):
 
             CK = \dfrac{p_o - p_e}{1-p_e}
 
-        where
-
-        :math:`p_e = ` expected chance matching and :math:`p_o = `observed accuracy
+        where :math: `p_e = ` expected chance matching and :math: `p_o = `observed accuracy
 
         Cohen, J. A coefficient of agreement for nominal scales - Educational and Psychological Measurement (1960) 20 37-46
 
-        :return: CK
+        :return: cohens_kappa
+
         """
         p_e = self.expected_matching_ck()
         p_o = self.accuracy()
         numerator = p_o - p_e
         denominator = 1 - p_e
-        return numerator / denominator
+        cohens_kappa = numerator / denominator
+        return cohens_kappa
 
     def positive_likelihood_ratio(self):
         """
@@ -617,11 +670,21 @@ class BinaryPairwiseMeasures(object):
 
             LR+ = \dfrac{Sensitivity}{1-Specificity}
 
-        :return: LR+
+        :return: positive_likelihood_ratio (LR+)
         """
         numerator = self.sensitivity()
         denominator = 1 - self.specificity()
-        return numerator / denominator
+        if self.n_neg_ref() == 0:
+            warnings.warn("reference all positive, specificity not defined")
+            return np.nan
+        if self.n_pos_ref() == 0:
+            warnings.warn("reference empty - sensitivity not defined")
+            return np.nan
+        if self.specificity() == 1:
+            warnings.warn("Perfect specifiicty - likelihood ratio not defined")
+            return np.nan
+        positive_likelihood_ratio = numerator / denominator
+        return positive_likelihood_ratio
 
     def pred_in_ref(self):
         """
@@ -635,7 +698,7 @@ class BinaryPairwiseMeasures(object):
         else:
             return 0
 
-    def positive_predictive_values(self):
+    def positive_predictive_value(self):
         """
         Calculates the positive predictive value
 
@@ -648,7 +711,7 @@ class BinaryPairwiseMeasures(object):
 
         Fletcher, R.H and Fletcher S.W (2005) - Clinical Epidemiology, the essentials p45
 
-        :return: PPV
+        :return: positive_predictive_value (PPV)
         """
         if self.flag_empty_pred:
             if self.flag_empty_ref:
@@ -657,7 +720,8 @@ class BinaryPairwiseMeasures(object):
             else:
                 warnings.warn("prediction empty, ppv not defined but set to 0")
                 return 0
-        return self.tp() / (self.tp() + self.fp())
+        positive_predictive_value = self.tp() / (self.tp() + self.fp())
+        return positive_predictive_value
 
     def recall(self):
         """
@@ -673,7 +737,8 @@ class BinaryPairwiseMeasures(object):
                 "prediction is empty but ref not, recall not defined but set to 0"
             )
             return 0
-        return self.tp() / (self.tp() + self.fn())
+        recall = self.tp() / (self.tp() + self.fn())
+        return recall
 
     def dsc(self):
         """
@@ -684,8 +749,11 @@ class BinaryPairwiseMeasures(object):
         ..math::
 
             DSC = \dfrac{2TP}{2TP+FP+FN}
+
         
         This is also F:math:`{\\beta}` for :math:`{\\beta}`=1
+
+        :return: dsc
 
         """
 
@@ -695,7 +763,8 @@ class BinaryPairwiseMeasures(object):
             warnings.warn("Both Prediction and Reference are empty - set to 1 as correct solution even if not defined")
             return 1
         else:
-            return numerator / denominator
+            dsc = numerator / denominator
+            return dsc
 
     def fbeta(self):
         """
@@ -718,12 +787,13 @@ class BinaryPairwiseMeasures(object):
         if "beta" in self.dict_args.keys():
             beta = self.dict_args["beta"]
         else:
+            warnings.warn("beta value not specified in option - default set to 1")
             beta = 1
         numerator = (
-            (1 + np.square(beta)) * self.positive_predictive_values() * self.recall()
+            (1 + np.square(beta)) * self.positive_predictive_value() * self.recall()
         )
         denominator = (
-            np.square(beta) * self.positive_predictive_values() + self.recall()
+            np.square(beta) * self.positive_predictive_value() + self.recall()
         )
         if np.isnan(denominator):
             if self.fp() + self.fn() > 0:
@@ -736,7 +806,8 @@ class BinaryPairwiseMeasures(object):
             else:
                 return 1  # Potentially modify to nan
         else:
-            return numerator / denominator
+            fbeta = numerator / denominator
+            return fbeta
 
     def net_benefit_treated(self):
         """
@@ -747,12 +818,12 @@ class BinaryPairwiseMeasures(object):
 
         .. math::
 
-            NB = \dfrac{TP}{N} - \dfrac{FP}{N} * ER
+            NB = \dfrac{TP}{TP+TN+FP+FN} - \dfrac{FP}{TP+TN+FP+FN} * ER
 
         where ER relates to the exchange rate. For instance if a suitable exchange rate is to find
         1 positive case among 10 tested (1TP for 9 FP), the exchange rate would be 1/9
 
-        :return: NB
+        :return: net_benefit
         """
         if "exchange_rate" in self.dict_args.keys():
             er = self.dict_args["exchange_rate"]
@@ -761,15 +832,19 @@ class BinaryPairwiseMeasures(object):
         n = np.size(self.pred)
         tp = self.tp()
         fp = self.fp()
-        nb = tp / n - fp / n * er
-        return nb
+        net_benefit = tp / n - fp / n * er
+        return net_benefit
 
-    def negative_predictive_values(self):
+    def negative_predictive_value(self):
         """
         This function calculates the negative predictive value ratio between
         the number of true negatives and the total number of negative elements
 
         Fletcher, R.H and Fletcher S.W (2005) - Clinical Epidemiology, the essentials p45
+
+        .. math::
+
+            NPV = \dfrac{TN}{N}
 
         :return: NPV
         """
@@ -785,23 +860,9 @@ class BinaryPairwiseMeasures(object):
                     "Nothing negative in pred but should be NPV not defined but set to 0"
                 )
                 return 0
-        return self.tn() / (self.fn() + self.tn())
+        negative_predictive_value = self.tn() / (self.fn() + self.tn())
+        return negative_predictive_value
 
-    # def dice_score(self):
-    #     """
-    #     This function returns the dice score coefficient between a reference
-    #     and prediction images
-
-    #     :return: dice score
-    #     """
-    #     if not "fbeta" in self.dict_args.keys():
-    #         self.dict_args["fbeta"] = 1
-    #     elif self.dict_args["fbeta"] != 1:
-    #         warnings.warn("Modifying fbeta option to get dice score")
-    #         self.dict_args["fbeta"] = 1
-    #     else:
-    #         print("Already correct value for fbeta option")
-    #     return self.fbeta()
 
     def fppi(self):
         """
@@ -815,7 +876,8 @@ class BinaryPairwiseMeasures(object):
         sum_per_image = np.sum(
             np.reshape(self.__fp_map(), -1, self.ref.shape[-1]), axis=0
         )
-        return np.mean(sum_per_image)
+        fppi = np.mean(sum_per_image)
+        return fppi
 
     def intersection_over_reference(self):
         """
@@ -824,12 +886,18 @@ class BinaryPairwiseMeasures(object):
 
         Pavel Matula, Martin Maška, Dmitry V Sorokin, Petr Matula, Carlos Ortiz-de Solórzano, and Michal Kozubek. Cell tracking accuracy measurement based on comparison of acyclic oriented graphs. PloS one, 10(12):e0144959, 2015.
 
+        .. math::
+
+            IoR = \dfrac{| \text{Pred} \cap \text{Ref} |}{| Ref |}
+
         :return: IoR
+
         """
         if self.flag_empty_ref:
-            warnings.warn("Empty reference")
+            warnings.warn("IoR not defined - Empty reference")
             return np.nan
-        return self.n_intersection() / self.n_pos_ref()
+        ior = self.n_intersection()/self.n_pos_ref()
+        return ior
 
     def intersection_over_union(self):
         """
@@ -839,23 +907,32 @@ class BinaryPairwiseMeasures(object):
 
         Murphy, A.H. The Finley Affair: a signal event in the history of forecast verification - Weather and Forecasting (1996) 11
 
+        .. math::
+
+            IoU = \dfrac{|Pred \cap Ref|}{| Pred \cup Ref |}
+
         :return: IoU
+
         """
         if self.flag_empty_pred and self.flag_empty_ref:
-            warnings.warn("Both reference and prediction are empty")
+            warnings.warn("IoU not defined - Both reference and prediction are empty")
             return np.nan
-        return self.n_intersection() / self.n_union()
+        iou = self.n_intersection() / self.n_union()
+        return iou
 
     def com_dist(self):
         """
         This function calculates the euclidean distance between the centres
         of mass of the reference and prediction.
 
+        
         :return: Euclidean distance between centre of mass when reference and prediction not empty
         -1 otherwise
+
         """
         
         if self.flag_empty_pred or self.flag_empty_ref:
+            warnings.warn('Impossible to calculate distance between centre of masses as either reference of prediction is empty')
             return -1
         else:
             com_ref = compute_center_of_mass(self.ref)
@@ -879,11 +956,13 @@ class BinaryPairwiseMeasures(object):
         This function calculates the centre of mass of the reference
         prediction
 
-        :return: Centre of mass coordinates of reference when not empty, -1 otherwise
+        :return: com_ref - Centre of mass coordinates of reference when not empty, -1 otherwise
         """
         if self.flag_empty_ref:
+            warnings.warn('Empty reference - centre of mass not defined')
             return -1
-        return ndimage.center_of_mass(self.ref)
+        com_ref = ndimage.center_of_mass(self.ref)
+        return com_ref
 
     def com_pred(self):
         """
@@ -891,23 +970,39 @@ class BinaryPairwiseMeasures(object):
         :returns: -1 if empty image, centre of mass of prediction otherwise
         """
         if self.flag_empty_pred:
+            warnings.warn('Empty prediction - centre of mass not defined')
             return -1
         else:
-            return ndimage.center_of_mass(self.pred)
+            com_pred = ndimage.center_of_mass(self.pred)
+            return com_pred
 
     def list_labels(self):
+        """
+        Creates the tuple with unique values of labels
+
+        return list_labels
+        """
         if self.list_labels is None:
             return ()
         return tuple(np.unique(self.list_labels))
 
-    def vol_diff(self):
+    def absolute_volume_difference_ratio(self):
         """
         This function calculates the ratio of difference in volume between
         the reference and prediction images.
 
-        :return: vol_diff
+        .. math::
+
+            AVDR = \dfrac{| Pred - Ref|}{| Ref |} 
+
+        :return: avdr
+
         """
-        return np.abs(self.n_pos_ref() - self.n_pos_pred()) / self.n_pos_ref()
+        if self.n_pos_ref() == 0:
+            warnings.warn('Empty reference - absolute volume difference ratio not defined')
+            return np.nan
+        avdr = np.abs(self.n_pos_ref() - self.n_pos_pred()) / self.n_pos_ref()
+        return avdr
 
     @CacheFunctionOutput
     def skeleton_versions(self):
@@ -935,7 +1030,11 @@ class BinaryPairwiseMeasures(object):
         skeleton_ref, skeleton_pred = self.skeleton_versions()
         numerator = np.sum(skeleton_pred * self.ref)
         denominator = np.sum(skeleton_pred)
-        return numerator / denominator
+        if denominator == 0:
+            warnings.warn('Empty prediction skeleton - topology precision not defined')
+            return np.nan
+        topology_precision = numerator / denominator
+        return topology_precision
 
     def topology_sensitivity(self):
         """
@@ -952,7 +1051,11 @@ class BinaryPairwiseMeasures(object):
         skeleton_ref, skeleton_pred = self.skeleton_versions()
         numerator = np.sum(skeleton_ref * self.pred)
         denominator = np.sum(skeleton_ref)
-        return numerator / denominator
+        if denominator == 0:
+            warnings.warn("Reference skeleton empty - topology sensitivity not defined")
+            return np.nan
+        topology_sensitivity = numerator / denominator
+        return topology_sensitivity
 
     def centreline_dsc(self):
         """
@@ -972,7 +1075,11 @@ class BinaryPairwiseMeasures(object):
         top_sens = self.topology_sensitivity()
         numerator = 2 * top_sens * top_prec
         denominator = top_sens + top_prec
-        return numerator / denominator
+        if np.isnan(top_sens) or np.isnan(top_sens):
+            warnings.warn("Topology sensitivity or precision not defined")
+            return np.nan
+        cDSC = numerator / denominator
+        return cDSC
 
     def boundary_iou(self):
         """
@@ -988,6 +1095,7 @@ Pattern Recognition. 15334–15342.
 
         where :math:A_d are the pixels of A within a distance d of the boundary
         :return: boundary_iou
+
         """
         if "boundary_dist" in self.dict_args.keys():
             distance = self.dict_args["boundary_dist"]
@@ -1018,7 +1126,11 @@ Pattern Recognition. 15334–15342.
                 np.zeros_like(border_pred),
             )
         )
-        return intersect / union
+        if union == 0:
+            warnings.warn('Union empty for boundary iou - not defined')
+            return np.nan
+        boundary_iou = intersect / union
+        return boundary_iou
 
 
     @CacheFunctionOutput
@@ -1063,6 +1175,7 @@ Pattern Recognition. 15334–15342.
         if "nsd" in self.dict_args.keys():
             tau = self.dict_args["nsd"]
         else:
+            warnings.warn('No value set up for NSD tolerance - default to 1')
             tau = 1
         dist_ref, dist_pred, border_ref, border_pred = self.border_distance()
         reg_ref = np.where(
@@ -1071,8 +1184,11 @@ Pattern Recognition. 15334–15342.
         reg_pred = np.where(
             dist_pred <= tau, np.ones_like(dist_pred), np.zeros_like(dist_pred)
         )
+        # print(np.sum(border_pred),np.sum(reg_ref),np.sum(border_ref),np.sum(reg_pred))
+        # print(np.sum(border_pred*reg_ref),np.sum(border_ref*reg_pred))
         numerator = np.sum(border_pred * reg_ref) + np.sum(border_ref * reg_pred)
         denominator = np.sum(border_ref) + np.sum(border_pred)
+        # print(numerator, denominator, tau)
         return numerator / denominator
 
     def measured_distance(self):
@@ -1082,12 +1198,15 @@ Pattern Recognition. 15334–15342.
 
         :return: hausdorff distance and average symmetric distance, hausdorff distance at perc
         and masd
+
         """
         if "hd_perc" in self.dict_args.keys():
             perc = self.dict_args["hd_perc"]
         else:
+            warnings.warn('Percentile not specified in options for Hausdorff distance - default set to 95')
             perc = 95
         if np.sum(self.pred + self.ref) == 0:
+            warnings.warn("Prediction and reference empty - distances set to 0")
             return 0, 0, 0, 0
         (
             ref_border_dist,
@@ -1123,14 +1242,15 @@ Pattern Recognition. 15334–15342.
 
         .. math::
 
-            ASSD(A,B) = \dfrac{\sum_{a\inA}d(a,B) + \sum_{b\inB}d(b,A)}{|A|+ |B|}
+            ASSD(A,B) = \dfrac{\sum_{a\in A}d(a,B) + \sum_{b\in B}d(b,A)}{|A|+ |B|}
 
         Heimann, T., et al. (2009), Comparison and evaluation of methods for liver segmentation from CT datasets. IEEE Trans Med Imaging. 28(8): p. 1251-65.
         Varduhi Yeghiazaryan and Irina Voiculescu. An overview of current evaluation methods used in medical image segmentation. Department of Computer Science, University of Oxford, 2015.
 
         :return: assd
         """
-        return self.measured_distance()[1]
+        assd = self.measured_distance()[1]
+        return assd
 
     def measured_masd(self):
         """
@@ -1141,11 +1261,14 @@ Pattern Recognition. 15334–15342.
 
         .. math::
 
-            MASD(A,B) = \dfrac{1}{2}\left(\dfrac{\sum_{a\in A}d(a,B)}{|A|} + \dfrac{\sum_{b\inB}d(b,A)}{|B|})
+            MASD(A,B) = \dfrac{1}{2}(\dfrac{\sum_{a\in A}d(a,B)}{|A|} + \dfrac{\sum_{b\in B}d(b,A)}{|B|})
         
+            
         :return: masd
+
         """
-        return self.measured_distance()[3]
+        masd = self.measured_distance()[3]
+        return masd
 
     def measured_hausdorff_distance(self):
         """
@@ -1157,7 +1280,8 @@ Pattern Recognition. 15334–15342.
 
         :return: hausdorff_distance
         """
-        return self.measured_distance()[0]
+        hausdorff_distance = self.measured_distance()[0]
+        return hausdorff_distance
 
     def measured_hausdorff_distance_perc(self):
         """
@@ -1168,7 +1292,8 @@ Pattern Recognition. 15334–15342.
         
         :return: hausdorff_distance_perc
         """
-        return self.measured_distance()[2]
+        hausdorff_distance_perc = self.measured_distance()[2]
+        return hausdorff_distance_perc
 
     def to_dict_meas(self, fmt="{:.4f}"):
         result_dict = {}

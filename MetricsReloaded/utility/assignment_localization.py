@@ -437,10 +437,12 @@ class AssignmentMapping(object):
             possible_binary = np.where(
                 matrix < self.thresh, np.ones_like(matrix), np.zeros_like(matrix)
             )
+            print(np.sum(possible_binary), "Possible matches from com or dist")
         else:
             possible_binary = np.where(
                 matrix > self.thresh, np.ones_like(matrix), np.zeros_like(matrix)
             )
+            print(np.sum(possible_binary), "Possible matches")
 
         list_valid = []
         list_matching = []

@@ -4,9 +4,7 @@ import numpy as np
 from scipy.special import gamma
 from MetricsReloaded.utility.utils import median_heuristic
 
-
-def test_expected_calibration_error():
-    f40_pred = [[1-0.22, 0.22 ],
+pred_224 = [[1-0.22, 0.22 ],
                 [1-0.48, 0.48],
                 [0.51,0.49],
                 [0.04, 0.96],
@@ -17,15 +15,41 @@ def test_expected_calibration_error():
                 [0.66, 0.34],
                 [0.13, 0.87]]
     #f40_pred = [0.22, 0.48, 0.49, 0.96, 0.55, 0.64, 0.78, 0.82, 0.34, 0.87]
-    f40_ref = [0, 1, 0, 0, 1, 1, 1, 1, 1, 0]
-    ppm = CalibrationMeasures(f40_pred, f40_ref)
-    ppm1 = CalibrationMeasures(f40_pred, f40_ref, dict_args={"bins_ece": 2})
-    value_test2 = ppm.expectation_calibration_error()
+ref_224 = [0, 1, 0, 0, 1, 1, 1, 1, 1, 0]
+
+def test_expected_calibration_error():
+    """
+    Using as reference SN 2.24 p67
+    """
+    ppm1 = CalibrationMeasures(pred_224, ref_224, dict_args={"bins_ece": 2})
+    ppm2 = CalibrationMeasures(pred_224, ref_224, dict_args={'bins_ece':5})
+    ppm3 = CalibrationMeasures(pred_224, ref_224)
     value_test1 = ppm1.expectation_calibration_error()
+    value_test2 = ppm2.expectation_calibration_error()
+    value_test3 = ppm3.expectation_calibration_error()
     expected_ece1 = 0.11
-    expected_ece2 = 0.36
+    expected_ece2 = 0.32
+    expected_ece3 = 0.36
     assert_allclose(value_test1, expected_ece1, atol=0.01)
     assert_allclose(value_test2, expected_ece2, atol=0.01)
+    assert_allclose(value_test3, expected_ece3, atol=0.01)
+
+def test_maximum_calibration_error():
+    """
+    Using figure 2.24 p67 of pitfalls as reference
+    """
+    ppm1 = CalibrationMeasures(pred_224, ref_224, dict_args={"bins_mce": 2})
+    ppm2 = CalibrationMeasures(pred_224, ref_224, dict_args={'bins_mce':5})
+    ppm3 = CalibrationMeasures(pred_224, ref_224)
+    value_test1 = ppm1.maximum_calibration_error()
+    value_test2 = ppm2.maximum_calibration_error()
+    value_test3 = ppm3.maximum_calibration_error()
+    expected_ece1 = 0.12
+    expected_ece2 = 0.55
+    expected_ece3 = 0.96
+    assert_allclose(value_test1, expected_ece1, atol=0.01)
+    assert_allclose(value_test2, expected_ece2, atol=0.01)
+    assert_allclose(value_test3, expected_ece3, atol=0.01)
 
 
 def test_logarithmic_score():
@@ -67,7 +91,7 @@ def test_negative_log_likelihood():
     pred_nll = [[0.1, 0.8, 0.05, 0.1], [0.6, 0.1, 0, 0.7], [0.3, 0.1, 0.95, 0.2]]
     ref_nll = np.asarray(ref_nll)
     pred_nll = np.asarray(pred_nll).T
-    expected_nll = -1 * (np.log(0.8) + np.log(0.6) + np.log(0.7) + np.log(0.95))
+    expected_nll = -1/4 * (np.log(0.8) + np.log(0.6) + np.log(0.7) + np.log(0.95))
     cm = CalibrationMeasures(pred_nll, ref_nll)
     value_test = cm.negative_log_likelihood()
     assert_allclose(value_test, expected_nll)
@@ -120,12 +144,12 @@ def test_kernel_calibration_error():
     expected_median_heuristic = 0.90
     value_median = median_heuristic(pred)
     assert_allclose(value_median, expected_median_heuristic, atol = 0.01)
-    kernel_01 = np.exp(-np.sqrt(0.78)/value_median) * np.ones([3,3])
-    kernel_02 = np.exp(-np.sqrt(0.86)/value_median) * np.ones([3,3])
-    kernel_03 = np.exp(-np.sqrt(0.02)/value_median) * np.ones([3,3])
-    kernel_12 = np.exp(-np.sqrt(1.26)/value_median) * np.ones([3,3])
-    kernel_13 = np.exp(-np.sqrt(0.86)/value_median) * np.ones([3,3])
-    kernel_23 = np.exp(-np.sqrt(1.14)/value_median) * np.ones([3,3])
+    kernel_01 = np.exp(-np.sqrt(0.78)/value_median) * np.eye(3)
+    kernel_02 = np.exp(-np.sqrt(0.86)/value_median) * np.eye(3)
+    kernel_03 = np.exp(-np.sqrt(0.02)/value_median) * np.eye(3)
+    kernel_12 = np.exp(-np.sqrt(1.26)/value_median) * np.eye(3)
+    kernel_13 = np.exp(-np.sqrt(0.86)/value_median) * np.eye(3)
+    kernel_23 = np.exp(-np.sqrt(1.14)/value_median) * np.eye(3)
 
     vect_0 = np.asarray([-0.1, 0.4, -0.3])
     vect_1 = np.asarray([0.2, -0.1, -0.1])

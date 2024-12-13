@@ -776,7 +776,7 @@ class MultiLabelPairwiseMeasures(object):
                         dict_mt["label"] = lab
                         dict_mt["case"] = name
                         list_mt.append(dict_mt)
-                    else:
+                    if not self.flag_valid_proba and len(self.measures_mt)>0:
                         warnings.warn('No probabilistic input or no probabilistic measure so impossible to get multi-threshold metric')
                 else:
                     list_pred.append(pred_tmp)
