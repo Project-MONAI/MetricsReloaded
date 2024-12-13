@@ -138,6 +138,9 @@ class CalibrationMeasures(object):
         """
         Derives the expectation calibration error in the case of binary task
         bins_ece is the key in the dictionary for the number of bins to consider
+        Cheat sheet SN 3.68 p113
+        Defined in Mahdi Pakdaman Naeini, Gregory Cooper, and Milos Hauskrecht. Obtaining well calibrated probabilities using
+        bayesian binning. In Twenty-Ninth AAAI Conference on Artificial Intelligence, 2015.
         Default is 10
 
         .. math::
