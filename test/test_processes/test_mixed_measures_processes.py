@@ -9,26 +9,26 @@ from numpy.testing import assert_allclose
 from sklearn.metrics import cohen_kappa_score as cks
 from sklearn.metrics import matthews_corrcoef as mcc
 
-# panoptic quality
-pq_pred1 = np.zeros([21, 21])
-pq_pred1[5:7, 2:5] = 1
-pq_pred2 = np.zeros([21, 21])
-pq_pred2[14:18, 4:6] = 1
-pq_pred2[16, 3] = 1
-pq_pred3 = np.zeros([21, 21])
-pq_pred3[14:18, 7:12] = 1
-pq_pred4 = np.zeros([21, 21])
-pq_pred4[2:8, 13:16] = 1
-pq_pred4[2:4, 12] = 1
+# Data for panoptic quality Figure 3.51 p96
+pq_pred1 = np.zeros([18, 18])
+pq_pred1[ 3:7,1:3] = 1
+pq_pred1[3:6,3:7]=1
+pq_pred2 = np.zeros([18, 18])
+pq_pred2[13:16,4:6] = 1
+pq_pred3 = np.zeros([18, 18])
+pq_pred3[7:12,13:17] = 1
+pq_pred4 = np.zeros([18, 18])
+pq_pred4[13:15,13:17] = 1
+pq_pred4[15,15] = 1
 
-pq_ref1 = np.zeros([21, 21])
-pq_ref1[8:11, 3] = 1
-pq_ref1[9, 2:5] = 1
-pq_ref2 = np.zeros([21, 21])
-pq_ref2[14:19, 7:13] = 1
-pq_ref3 = np.zeros([21, 21])
-pq_ref3[2:7, 14:17] = 1
-pq_ref3[2:4, 12:14] = 1
+pq_ref1 = np.zeros([18, 18])
+pq_ref1[2:7, 1:3] = 1
+pq_ref1[2:5,3:6] = 1
+pq_ref2 = np.zeros([18, 18])
+pq_ref2[6:12,12:17] = 1
+pq_ref3 = np.zeros([18, 18])
+pq_ref3[14:15:,7:10] = 1
+pq_ref3[13:16,8:9] = 1
 
 
 def test_mismatch_category():

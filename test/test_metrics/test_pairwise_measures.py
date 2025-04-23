@@ -46,7 +46,7 @@ pred212[3:21, 2:21] = 1
 ppm212_1 = PM(pred212, ref212)
 ppm212_2 = PM(pred212,ref212,dict_args={'boundary_dist':2})
 
-#Data for figure 5c (Hausdoff with annotation error p14 Pitfalls)
+#Data for figure 5c (Hausdorff with annotation error p14 Pitfalls)
 ref5c = np.zeros([14, 14])
 ref5c[1, 1] = 1
 ref5c[9:12, 9:12] = 1
@@ -628,6 +628,7 @@ def test_mcc():
     mcc = mpm.matthews_correlation_coefficient()
     print(mcc)
     assert mcc < 1
+
 
 
 def test_distance_empty():
