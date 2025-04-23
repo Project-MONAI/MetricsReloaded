@@ -834,6 +834,30 @@ def test_hausdorff_distance_5c():
         hausdorff_distance_perc, expected_hausdorff_distance_perc, atol=0.01
     )
 
+def test_distance_empty_ref():
+    ppm1 = PM(pred29_1, ref29_1*0)
+    hd, hd_perc, masd, assd = ppm1.measured_distance()
+    assert np.isnan(hd)
+    assert np.isnan(hd_perc)
+    assert np.isnan(masd)
+    assert np.isnan(assd)
+
+def test_distance_empty_pred():
+    ppm1 = PM(pred29_1*0, ref29_1)
+    hd, hd_perc, masd, assd = ppm1.measured_distance()
+    assert np.isnan(hd)
+    assert np.isnan(hd_perc)
+    assert np.isnan(masd)
+    assert np.isnan(assd)
+
+
+def test_distance_empty_pred_and_ref():
+    ppm1 = PM(pred29_1*0, ref29_1*0)
+    hd, hd_perc, masd, assd = ppm1.measured_distance()
+    assert hd == 0
+    assert hd_perc == 0
+    assert masd == 0
+    assert assd == 0
 
 def test_boundary_iou():
     """
