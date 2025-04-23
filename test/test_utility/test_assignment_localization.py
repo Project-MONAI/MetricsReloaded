@@ -27,7 +27,11 @@ pred_proba_6a = [[0.05, 0.95],[0.30,0.70],[0.20,0.80],[0.20,0.80],[0.10,0.90]]
 pred_boxes_6a = [pred6a1, pred6a2, pred6a3, pred6a4, pred6a5]
 ref_boxes_6a = [ref6a1, ref6a2, ref6a3, ref6a4]
 
-#Data from Panoptic Quality - 3.51 p96
+#Data from SN2.17 from Metrics Reloaded
+
+
+
+#Data from Panoptic Quality - 3.51 p96 of Pitfalls
 #Figure 3.51 p96
 pq_pred1 = np.zeros([18, 18])
 pq_pred1[ 3:7,1:3] = 1

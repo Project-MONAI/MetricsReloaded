@@ -1200,6 +1200,7 @@ Pattern Recognition. 15334–15342.
         and masd
 
         """
+     
         if "hd_perc" in self.dict_args.keys():
             perc = self.dict_args["hd_perc"]
         else:
@@ -1208,13 +1209,19 @@ Pattern Recognition. 15334–15342.
         if np.sum(self.pred + self.ref) == 0:
             warnings.warn("Prediction and reference empty - distances set to 0")
             return 0, 0, 0, 0
+        if np.sum(self.pred) == 0 and np.sum(self.ref)>0:
+            warnings.warn("Prediction empty but reference not empty - need to set to worse case in aggregation")
+            return np.nan, np.nan, np.nan, np.nan
+        if np.sum(self.ref) == 0 and np.sum(self.pred)>0:
+            warnings.warn('Prediction not empty but reference empty - non existing output - need be set to WORSE case in aggregation')
+            return np.nan, np.nan, np.nan, np.nan
         (
             ref_border_dist,
             pred_border_dist,
             ref_border,
             pred_border,
         ) = self.border_distance()
-        print(ref_border_dist)
+        # print(ref_border_dist)
         average_distance = (np.sum(ref_border_dist) + np.sum(pred_border_dist)) / (
             np.sum(pred_border + ref_border)
         )

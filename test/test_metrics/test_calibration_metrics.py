@@ -71,6 +71,7 @@ def test_brier_score():
     expected_bs = 0.4
     assert_allclose(expected_bs, value_test, atol=0.01)
 
+#To use SN 2.14 p 99 of Metrics Reloaded
 
 def test_top_label_classification_error():
     ref_tce = [1, 0, 2, 1]
