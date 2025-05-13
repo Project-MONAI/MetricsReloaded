@@ -485,6 +485,9 @@ class ProcessEvaluation(object):
         self.resmcc = df_resmcc
         self.rescal = df_rescal
         return
+    
+    def identify_empty_ref(self):
+        return
 
     def complete_missing_cases(self):
         if len(self.data['ref_missing']) == 0:
