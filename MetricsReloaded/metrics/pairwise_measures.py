@@ -1071,6 +1071,9 @@ class BinaryPairwiseMeasures(object):
 
         :return: cDSC
         """
+        if self.n_pos_pred == 0 and self.n_pos_ref == 0:
+            warnings.warn("Both reference and prediction are empty - setting to max")
+            return 1
         top_prec = self.topology_precision()
         top_sens = self.topology_sensitivity()
         numerator = 2 * top_sens * top_prec
@@ -1101,36 +1104,40 @@ Pattern Recognition. 15334–15342.
             distance = self.dict_args["boundary_dist"]
         else:
             distance = 1
-        border_ref = MorphologyOps(self.ref, self.connectivity).border_map()
-        distance_border_ref = ndimage.distance_transform_edt(1 - border_ref)
+        if int(self.n_pos_ref()) == 0 and int(self.n_pos_pred()) == 0:
+            warnings.warn("Both prediction and reference empty - setting to max for boudnary ioU")
+            return 1
+        else:
+            border_ref = MorphologyOps(self.ref, self.connectivity).border_map()
+            distance_border_ref = ndimage.distance_transform_edt(1 - border_ref)
 
-        border_pred = MorphologyOps(self.pred, self.connectivity).border_map()
-        distance_border_pred = ndimage.distance_transform_edt(1 - border_pred)
+            border_pred = MorphologyOps(self.pred, self.connectivity).border_map()
+            distance_border_pred = ndimage.distance_transform_edt(1 - border_pred)
 
-        lim_dbp = np.where(
-            np.logical_and(distance_border_pred < distance, self.pred>0),
-            np.ones_like(border_pred),
-            np.zeros_like(border_pred),
-        )
-        lim_dbr = np.where(
-            np.logical_and(distance_border_ref < distance, self.ref>0),
-            np.ones_like(border_ref),
-            np.zeros_like(border_ref),
-        )
-
-        intersect = np.sum(lim_dbp * lim_dbr)
-        union = np.sum(
-            np.where(
-                lim_dbp + lim_dbr > 0,
-                np.ones_like(border_ref),
+            lim_dbp = np.where(
+                np.logical_and(distance_border_pred < distance, self.pred>0),
+                np.ones_like(border_pred),
                 np.zeros_like(border_pred),
             )
-        )
-        if union == 0:
-            warnings.warn('Union empty for boundary iou - not defined')
-            return np.nan
-        boundary_iou = intersect / union
-        return boundary_iou
+            lim_dbr = np.where(
+                np.logical_and(distance_border_ref < distance, self.ref>0),
+                np.ones_like(border_ref),
+                np.zeros_like(border_ref),
+            )
+
+            intersect = np.sum(lim_dbp * lim_dbr)
+            union = np.sum(
+                np.where(
+                    lim_dbp + lim_dbr > 0,
+                    np.ones_like(border_ref),
+                    np.zeros_like(border_pred),
+                )
+            )
+            # if union == 0:
+            #     warnings.warn('Union empty for boundary iou - not defined')
+            #     return np.nan
+            boundary_iou = intersect / union
+            return boundary_iou
 
 
     @CacheFunctionOutput
@@ -1177,19 +1184,23 @@ Pattern Recognition. 15334–15342.
         else:
             warnings.warn('No value set up for NSD tolerance - default to 1')
             tau = 1
-        dist_ref, dist_pred, border_ref, border_pred = self.border_distance()
-        reg_ref = np.where(
+        if int(self.n_pos_pred()) == 0 and int(self.n_pos_ref()) == 0 :
+            warnings.warn("Both reference and prediction are empty - setting to best")
+            return 1
+        else:
+            dist_ref, dist_pred, border_ref, border_pred = self.border_distance()
+            reg_ref = np.where(
             dist_ref <= tau, np.ones_like(dist_ref), np.zeros_like(dist_ref)
-        )
-        reg_pred = np.where(
-            dist_pred <= tau, np.ones_like(dist_pred), np.zeros_like(dist_pred)
-        )
-        # print(np.sum(border_pred),np.sum(reg_ref),np.sum(border_ref),np.sum(reg_pred))
-        # print(np.sum(border_pred*reg_ref),np.sum(border_ref*reg_pred))
-        numerator = np.sum(border_pred * reg_ref) + np.sum(border_ref * reg_pred)
-        denominator = np.sum(border_ref) + np.sum(border_pred)
-        # print(numerator, denominator, tau)
-        return numerator / denominator
+            )
+            reg_pred = np.where(
+                dist_pred <= tau, np.ones_like(dist_pred), np.zeros_like(dist_pred)
+            )
+            # print(np.sum(border_pred),np.sum(reg_ref),np.sum(border_ref),np.sum(reg_pred))
+            # print(np.sum(border_pred*reg_ref),np.sum(border_ref*reg_pred))
+            numerator = np.sum(border_pred * reg_ref) + np.sum(border_ref * reg_pred)
+            denominator = np.sum(border_ref) + np.sum(border_pred)
+            # print(numerator, denominator, tau)
+            return numerator / denominator
 
     def measured_distance(self):
         """

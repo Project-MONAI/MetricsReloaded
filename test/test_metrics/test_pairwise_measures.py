@@ -870,6 +870,16 @@ def test_boundary_iou():
     value_test2 = ppm212_2.boundary_iou()
     assert_allclose(value_test1, expected_biou_1, atol=0.1)
     assert_allclose(value_test2, expected_biou_2, atol=0.1)
+
+def test_empty_ref_pred_nsd_biou():
+    ref_empty = np.zeros([14,14])
+    pred_empty = np.zeros([14,14])
+    ppm_empty = PM(pred_empty, ref_empty)
+    nsd = ppm_empty.normalised_surface_distance()
+    assert nsd == 1
+    biou = ppm_empty.boundary_iou()
+    assert biou == 1
+
     
 def test_cldsc_s214():
     value_test1 = ppm214_1.centreline_dsc()
