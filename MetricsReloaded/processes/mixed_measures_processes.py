@@ -705,8 +705,9 @@ class MultiLabelPairwiseMeasures(object):
         self.connectivity_type = connectivity_type
         ndim = 0
         self.pixdim = pixdim
+        self.squeeze_ref_and_pred_to_size()
         if len(self.pred)>0:
-            ndim = np.asarray(self.pred[0]).ndim
+            ndim = np.asarray(self.ref[0]).ndim
         if len(self.pixdim) == 0 and ndim>0:
             self.pixdim = np.ones([ndim])
         elif ndim>0:
@@ -721,6 +722,16 @@ class MultiLabelPairwiseMeasures(object):
         
         if pred_proba is None or pred_proba[0] is None:
             self.flag_valid_proba = False
+
+    def squeeze_ref_and_pred_to_size(self):
+        for i,(p,r) in enumerate(zip(self.pred, self.ref)):
+            if np.size(np.asarray(p)) == np.size(np.asarray(r)) and np.asarray(p).ndim != np.asarray(r).ndim:
+                warnings.warn("There is a dimensional mismatch between pred and ref despite same size")
+                p = np.squeeze(np.asarray(p))
+                r = np.squeeze(np.asarray(r))
+                self.pred[i] = p
+                self.ref[i] = r
+        return
 
     def per_label_dict(self):
         list_bin = []
