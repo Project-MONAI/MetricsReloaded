@@ -23,11 +23,20 @@ pred2[15:17,13:15] = 1
 ref12 = ref1 + 2*ref2
 pred12 = pred1 + 2*pred2
 
+pred_empty = np.zeros([21,21])
+ref_empty = np.zeros([21,21])
+
 data_init = {}
 data_init['pred_class'] = [pred1, pred2]
 data_init['ref_class'] = [ref1, ref2]
 data_init['list_values'] = [1]
 data_init['pred_prob'] = [None,None]
+
+data_nan = {}
+data_nan['pred_class'] = [pred1, pred1, pred_empty, pred1]
+data_nan['ref_class'] = [ref12, ref1, ref1, ref_empty]
+data_nan['list_values'] = [1,2]
+data_nan['pred_prob'] = [None,None,None,None]
 
 data_miss = {}
 data_miss['pred_class'] = [pred1, pred2]
@@ -48,17 +57,23 @@ data_agg2['ref_class'] = [ref12,ref1]
 data_agg2['list_values'] = [1,2]
 data_agg2['pred_prob'] = [None,None]
 
+def test_op_nanreplacement():
+    pe = PE(data_nan,'SemS',measures_overlap=['fbeta'],measures_boundary=['masd'])
+    print(pe.resseg, pe.resseg.columns,pe.resseg[['fbeta','fbeta_nanrep','masd','masd_nanrep','check_empty','label','case']])
+    assert_allclose(pe.resseg.shape,[8,10])
+    df_test = pe.resseg
+    assert_allclose(df_test[(df_test['label']==1) & (df_test['case']==2)]['masd_nanrep'],29.69,atol=0.01)
 
 def test_op_aggregation():
     pe = PE(data_init,'SemS',measures_overlap=['fbeta'],measures_boundary=['boundary_iou'])
     print(pe.grouped_lab)
-    assert_allclose(pe.grouped_lab.shape,[2,4])
+    assert_allclose(pe.grouped_lab.shape,[2,8])
 
 
 def test_op_refmissing():
     pe = PE(data_miss,'SemS',measures_overlap=['fbeta'],measures_boundary=['boundary_iou'])
     print(pe.grouped_lab, pe.resseg)
-    assert_allclose(pe.grouped_lab.shape,[3,4])
+    assert_allclose(pe.grouped_lab.shape,[3,8])
 
 
 

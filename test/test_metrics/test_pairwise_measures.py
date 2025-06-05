@@ -631,16 +631,16 @@ def test_mcc():
 
 
 
-def test_distance_empty():
-    """
-    Testing that output is 0 when reference and prediction empty for calculation of distance
-    """
-    pred = np.zeros([14, 14])
-    ref = np.zeros([14, 14])
-    bpm = PM(pred, ref)
-    value_test = bpm.measured_distance()
-    expected_dist = (0, 0, 0, 0)
-    assert_allclose(value_test, expected_dist)
+# def test_distance_empty():
+#     """
+#     Testing that output is 0 when reference and prediction empty for calculation of distance
+#     """
+#     pred = np.zeros([14, 14])
+#     ref = np.zeros([14, 14])
+#     bpm = PM(pred, ref)
+#     value_test = bpm.measured_distance()
+#     expected_dist = (0, 0, 0, 0)
+#     assert_allclose(value_test, expected_dist)
 
 def test_fbeta():
     """
@@ -854,10 +854,17 @@ def test_distance_empty_pred():
 def test_distance_empty_pred_and_ref():
     ppm1 = PM(pred29_1*0, ref29_1*0)
     hd, hd_perc, masd, assd = ppm1.measured_distance()
-    assert hd == 0
-    assert hd_perc == 0
-    assert masd == 0
-    assert assd == 0
+    assert np.isnan(hd)
+    assert np.isnan(hd_perc)
+    assert np.isnan(masd)
+    assert np.isnan(assd)
+
+def test_calculate_worse_dist():
+    ppm_pix1 = PM(pred210_1, ref210)
+    ppm_pix12 = PM(pred210_1, ref210,pixdim=[1,2])
+    assert_allclose(ppm_pix1.worse_dist,19.80,atol=0.01)
+    assert_allclose(ppm_pix12.worse_dist,31.30,atol=0.01)
+
 
 def test_boundary_iou():
     """
@@ -876,9 +883,11 @@ def test_empty_ref_pred_nsd_biou():
     pred_empty = np.zeros([14,14])
     ppm_empty = PM(pred_empty, ref_empty)
     nsd = ppm_empty.normalised_surface_distance()
-    assert nsd == 1
+    assert np.isnan(nsd)
     biou = ppm_empty.boundary_iou()
-    assert biou == 1
+    assert np.isnan(biou)
+    cldsc = ppm_empty.centreline_dsc()
+    assert np.isnan(cldsc)
 
     
 def test_cldsc_s214():
@@ -941,7 +950,7 @@ def test_empty_reference():
         spec = pm2.specificity()
 
     expected_fbeta = 1
-    assert fbeta == expected_fbeta
+    assert np.isnan(fbeta)
     assert sens != sens  # True if nan
     assert spec != spec  # True if nan
 

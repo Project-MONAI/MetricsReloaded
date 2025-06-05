@@ -286,14 +286,28 @@ class BinaryPairwiseMeasures(object):
         self.flag_empty = empty
         self.flag_empty_pred = False
         self.flag_empty_ref = False
-        if np.sum(self.pred) == 0:
+        if int(np.sum(self.pred)) == 0:
             self.flag_empty_pred = True
-        if np.sum(self.ref) == 0:
+        if int(np.sum(self.ref)) == 0:
             self.flag_empty_ref = True
         self.measures = measures if measures is not None else self.measures_dict
         self.connectivity = connectivity_type
         self.pixdim = pixdim
+        self.worse_dist = self.calculate_worse_dist()
         self.dict_args = dict_args
+
+    def calculate_worse_dist(self):
+        shape = self.ref.shape
+        pixdim = self.pixdim
+        if pixdim is not None:
+            mult_sp = shape * np.asarray(pixdim)
+        else:
+            mult_sp = shape
+        print(mult_sp)
+        max_dist = np.sqrt(np.sum(np.square(mult_sp)))
+        print(max_dist)
+        return max_dist
+
 
     def __fp_map(self):
         """
@@ -479,6 +493,12 @@ class BinaryPairwiseMeasures(object):
 
         :return: youden_index
         """
+        if self.n_pos_ref() == 0:
+            warnings.warn("Reference is empty - sensitivity is not defined")
+            return np.nan
+        if self.n_neg_ref() == 0:
+            warnings.warn("Reference is fully positive, specificity is not defined")
+            return np.nan
         youden_index =  self.specificity() + self.sensitivity() - 1
         return youden_index
 
@@ -533,6 +553,12 @@ class BinaryPairwiseMeasures(object):
 
         :return: balanced accuracy
         """
+        if self.n_neg_ref() == 0:
+            warnings.warn('Reference All positive - speciicity not defined')
+            return np.nan
+        if self.n_pos_ref() == 0:
+            warnings.warn("Reference All negative - sensitivity not defined")
+            return np.nan
         balanced_accuracy = 0.5 * self.sensitivity() + 0.5 * self.specificity()
         return balanced_accuracy
 
@@ -564,6 +590,9 @@ class BinaryPairwiseMeasures(object):
 
         :return: false_positive_rate
         """
+        if self.n_neg_ref() == 0:
+            warnings.warn("All positive in reference - FPR not defined")
+            return np.nan
         false_positive_rate = self.fp() / self.n_neg_ref()
         return false_positive_rate
 
@@ -578,6 +607,12 @@ class BinaryPairwiseMeasures(object):
 
         prior_background = (self.tn() + self.fp()) / (np.size(self.ref))
         prior_foreground = (self.tp() + self.fn()) / np.size(self.ref)
+        if self.n_pos_ref() == 0:
+            warnings.warn("Reference empty - r_fn not defined")
+            return np.nan
+        if self.n_neg_ref() == 0:
+            warnings.warn("Reference all positive - r_fp not defined")
+            return np.nan
 
         if "cost_fn" in self.dict_args.keys():
             c_fn = self.dict_args["cost_fn"]
@@ -681,7 +716,7 @@ class BinaryPairwiseMeasures(object):
             warnings.warn("reference empty - sensitivity not defined")
             return np.nan
         if self.specificity() == 1:
-            warnings.warn("Perfect specifiicty - likelihood ratio not defined")
+            warnings.warn("Perfect specificity - likelihood ratio not defined")
             return np.nan
         positive_likelihood_ratio = numerator / denominator
         return positive_likelihood_ratio
@@ -718,8 +753,8 @@ class BinaryPairwiseMeasures(object):
                 warnings.warn("ref and prediction empty ppv not defined")
                 return np.nan
             else:
-                warnings.warn("prediction empty, ppv not defined but set to 0")
-                return 0
+                warnings.warn("prediction empty, ppv not defined")
+                return np.nan
         positive_predictive_value = self.tp() / (self.tp() + self.fp())
         return positive_predictive_value
 
@@ -734,7 +769,7 @@ class BinaryPairwiseMeasures(object):
             return np.nan
         if self.n_pos_pred() == 0:
             warnings.warn(
-                "prediction is empty but ref not, recall not defined but set to 0"
+                "prediction is empty but ref not, recall set to 0"
             )
             return 0
         recall = self.tp() / (self.tp() + self.fn())
@@ -760,8 +795,8 @@ class BinaryPairwiseMeasures(object):
         numerator = 2 * self.tp()
         denominator = self.n_pos_pred() + self.n_pos_ref()
         if denominator == 0:
-            warnings.warn("Both Prediction and Reference are empty - set to 1 as correct solution even if not defined")
-            return 1
+            warnings.warn("Both Prediction and Reference are empty - not defined - can be set to 1 when aggregating")
+            return np.nan
         else:
             dsc = numerator / denominator
             return dsc
@@ -796,15 +831,15 @@ class BinaryPairwiseMeasures(object):
             np.square(beta) * self.positive_predictive_value() + self.recall()
         )
         if np.isnan(denominator):
-            if self.fp() + self.fn() > 0:
+            if self.fp() + self.fn() > 0: # Would occur if reference empty and prediction not
                 return 0
             else:
-                return 1  # Potentially modify to nan
+                return np.nan  # Potentially modify to nan
         elif denominator == 0:
             if self.fp() + self.fn() > 0:
                 return 0
             else:
-                return 1  # Potentially modify to nan
+                return np.nan  # Potentially modify to nan
         else:
             fbeta = numerator / denominator
             return fbeta
@@ -857,9 +892,9 @@ class BinaryPairwiseMeasures(object):
                 return np.nan  # Potentially modify to 1
             else:
                 warnings.warn(
-                    "Nothing negative in pred but should be NPV not defined but set to 0"
+                    "Nothing negative in pred but should be NPV not defined set to nan - possibly set to 0 in aggregation"
                 )
-                return 0
+                return np.nan
         negative_predictive_value = self.tn() / (self.fn() + self.tn())
         return negative_predictive_value
 
@@ -1071,18 +1106,19 @@ class BinaryPairwiseMeasures(object):
 
         :return: cDSC
         """
-        if self.n_pos_pred == 0 and self.n_pos_ref == 0:
-            warnings.warn("Both reference and prediction are empty - setting to max")
-            return 1
-        top_prec = self.topology_precision()
-        top_sens = self.topology_sensitivity()
-        numerator = 2 * top_sens * top_prec
-        denominator = top_sens + top_prec
-        if np.isnan(top_sens) or np.isnan(top_sens):
-            warnings.warn("Topology sensitivity or precision not defined")
+        if int(self.n_pos_pred()) == 0 and int(self.n_pos_ref()) == 0:
+            warnings.warn("Both reference and prediction are empty - setting to nan - should be changed to max in aggregation")
             return np.nan
-        cDSC = numerator / denominator
-        return cDSC
+        else:
+            top_prec = self.topology_precision()
+            top_sens = self.topology_sensitivity()
+            numerator = 2 * top_sens * top_prec
+            denominator = top_sens + top_prec
+            if np.isnan(top_sens) or np.isnan(top_sens):
+                warnings.warn("Topology sensitivity or precision not defined")
+                return np.nan
+            cDSC = numerator / denominator
+            return cDSC
 
     def boundary_iou(self):
         """
@@ -1105,8 +1141,8 @@ Pattern Recognition. 15334–15342.
         else:
             distance = 1
         if int(self.n_pos_ref()) == 0 and int(self.n_pos_pred()) == 0:
-            warnings.warn("Both prediction and reference empty - setting to max for boudnary ioU")
-            return 1
+            warnings.warn("Both prediction and reference empty - return nan but setting to max for boudnary ioU in aggregation")
+            return np.nan
         else:
             border_ref = MorphologyOps(self.ref, self.connectivity).border_map()
             distance_border_ref = ndimage.distance_transform_edt(1 - border_ref)
@@ -1185,8 +1221,8 @@ Pattern Recognition. 15334–15342.
             warnings.warn('No value set up for NSD tolerance - default to 1')
             tau = 1
         if int(self.n_pos_pred()) == 0 and int(self.n_pos_ref()) == 0 :
-            warnings.warn("Both reference and prediction are empty - setting to best")
-            return 1
+            warnings.warn("Both reference and prediction are empty - setting to best in aggregation but returning nan here")
+            return np.nan
         else:
             dist_ref, dist_pred, border_ref, border_pred = self.border_distance()
             reg_ref = np.where(
@@ -1201,7 +1237,8 @@ Pattern Recognition. 15334–15342.
             denominator = np.sum(border_ref) + np.sum(border_pred)
             # print(numerator, denominator, tau)
             return numerator / denominator
-
+   
+    @CacheFunctionOutput
     def measured_distance(self):
         """
         This functions calculates the average symmetric distance and the
@@ -1218,8 +1255,8 @@ Pattern Recognition. 15334–15342.
             warnings.warn('Percentile not specified in options for Hausdorff distance - default set to 95')
             perc = 95
         if np.sum(self.pred + self.ref) == 0:
-            warnings.warn("Prediction and reference empty - distances set to 0")
-            return 0, 0, 0, 0
+            warnings.warn("Prediction and reference empty -not defined - need to set to 0 in aggregation ")
+            return np.nan, np.nan, np.nan, np.nan
         if np.sum(self.pred) == 0 and np.sum(self.ref)>0:
             warnings.warn("Prediction empty but reference not empty - need to set to worse case in aggregation")
             return np.nan, np.nan, np.nan, np.nan

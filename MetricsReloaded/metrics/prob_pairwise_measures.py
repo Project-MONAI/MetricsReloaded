@@ -74,6 +74,8 @@ class ProbabilityPairwiseMeasures(object):
         self.ref = ref_proba
         self.case = case
         self.flag_empty = empty
+        self.flag_ref_empty = True if int(self.n_pos_ref()) == 0 else False
+        self.flag_pred_empty = True if int(self.n_pos_pred()) == 0 else False
         self.dict_args = dict_args
         self.measures = measures if measures is not None else self.measures_dict
 
@@ -96,6 +98,10 @@ class ProbabilityPairwiseMeasures(object):
     @CacheFunctionOutput
     def n_pos_ref(self):
         return np.sum(self.ref)
+    
+    @CacheFunctionOutput
+    def n_pos_pred(self):
+        return np.sum(self.pred)
 
     @CacheFunctionOutput
     def n_neg_ref(self):

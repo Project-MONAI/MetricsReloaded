@@ -227,6 +227,8 @@ dict_valid={
 
 MAX = 1000
 
+LIST_DISTANCE = ['hd','masd','assd','hd_perc']
+
 WORSE = {
     "ap": 0,
     "auroc": 0,
@@ -256,6 +258,38 @@ WORSE = {
     "boundary_iou": 0,
     "nsd": 0,
 }
+
+BEST = {
+    "ap": 1,
+    "auroc": 1,
+    "froc": 1,
+    "sens@spec": 1,
+    "sens@ppv": 1,
+    "spec@sens": 1,
+    "fppi@sens": 0,
+    "ppv@sens": 1,
+    "sens@fppi": 1,
+    "fbeta": 1,
+    "ec":0,
+    "accuracy": 1,
+    "ba": 1,
+    "lr+": 1,
+    "youden_ind": 1,
+    "mcc": 1,
+    "wck": 1,
+    "cohens_kappa": 1,
+    "iou": 1,
+    "dsc": 1,
+    "cldice": 1,
+    "masd": 0,
+    "assd": 0,
+    "hd_perc": 0,
+    "hd": 0,
+    "boundary_iou": 1,
+    "nsd": 1,
+}
+
+NAN_LIST = ["iou","dsc","fbeta","masd",'cldice','hd','hd_perc','assd','boundary_iou','nsd']
 
 class ProcessEvaluation(object):
     """
@@ -484,7 +518,37 @@ class ProcessEvaluation(object):
         self.resmt = df_resmt
         self.resmcc = df_resmcc
         self.rescal = df_rescal
+        self.create_mapping_column_nan_replaced_seg()
         return
+    
+    def create_mapping_column_nan_replaced_seg(self):
+        """
+        For each measure (segmentation) for which nan are possible 
+        creates an additional column in which nans are replaced by value (worse or best according to situation
+        """
+        list_to_map = []
+        for x in self.measures_boundary:
+            if x in NAN_LIST:
+                list_to_map.append(x)
+        for x in self.measures_overlap:
+            if x in NAN_LIST:
+                list_to_map.append(x)
+        for k in list_to_map:
+            self.resseg[k+'_nanrep'] = self.resseg[k]
+            
+            self.resseg[k+'_nanrep'] = np.where(np.logical_and(self.resseg[k].isna(),self.resseg['check_empty']=='Both')
+                                                               ,BEST[k],self.resseg[k+'_nanrep'])
+            self.resseg[k+'_nanrep'] = np.where(np.logical_and(self.resseg[k+'_nanrep'].isna(),self.resseg['check_empty']=='Ref')
+                                                               ,WORSE[k],self.resseg[k+'_nanrep'])
+            self.resseg[k+'_nanrep'] = np.where(np.logical_and(self.resseg[k+'_nanrep'].isna(),self.resseg['check_empty']=='Pred')
+                                                               ,WORSE[k],self.resseg[k+'_nanrep'])
+            self.resseg[k+'_nanrep'] = np.where(np.logical_and(self.resseg[k].isna(),k in LIST_DISTANCE)
+                                                               ,self.resseg['worse_dist'],self.resseg[k+'_nanrep'])
+
+        return
+        
+        
+
     
     def identify_empty_ref(self):
         return
