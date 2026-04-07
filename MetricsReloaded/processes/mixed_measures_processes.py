@@ -73,6 +73,7 @@ __all__ = [
     "MultiLabelPairwiseMeasures",
 ]
 
+list_distance = ['masd','assd','hd','hd_perc']
 
 class MixedLocSegPairwiseMeasure(object):
     """
@@ -704,8 +705,9 @@ class MultiLabelPairwiseMeasures(object):
         self.connectivity_type = connectivity_type
         ndim = 0
         self.pixdim = pixdim
+        self.squeeze_ref_and_pred_to_size()
         if len(self.pred)>0:
-            ndim = np.asarray(self.pred[0]).ndim
+            ndim = np.asarray(self.ref[0]).ndim
         if len(self.pixdim) == 0 and ndim>0:
             self.pixdim = np.ones([ndim])
         elif ndim>0:
@@ -720,6 +722,16 @@ class MultiLabelPairwiseMeasures(object):
         
         if pred_proba is None or pred_proba[0] is None:
             self.flag_valid_proba = False
+
+    def squeeze_ref_and_pred_to_size(self):
+        for i,(p,r) in enumerate(zip(self.pred, self.ref)):
+            if np.size(np.asarray(p)) == np.size(np.asarray(r)) and np.asarray(p).ndim != np.asarray(r).ndim:
+                warnings.warn("There is a dimensional mismatch between pred and ref despite same size")
+                p = np.squeeze(np.asarray(p))
+                r = np.squeeze(np.asarray(r))
+                self.pred[i] = p
+                self.ref[i] = r
+        return
 
     def per_label_dict(self):
         list_bin = []
@@ -764,6 +776,16 @@ class MultiLabelPairwiseMeasures(object):
                         dict_bin = BPM.to_dict_meas()
                         dict_bin["label"] = lab
                         dict_bin["case"] = name
+                        dict_bin["worse_dist"] = BPM.worse_dist
+                        if any(x in self.measures_binary for x in list_distance):
+                            dict_bin["worse_dist"] = BPM.worse_dist
+                        dict_bin["check_empty"] = "None"
+                        if BPM.flag_empty_pred and BPM.flag_empty_ref:
+                            dict_bin["check_empty"] = "Both"
+                        elif BPM.flag_empty_ref:
+                            dict_bin["check_empty"] = "Ref"
+                        elif BPM.flag_empty_pred:
+                            dict_bin["check_empty"] = "Pred"
                         list_bin.append(dict_bin)
                     if self.flag_valid_proba and len(self.measures_mt)>0:
                         PPM = ProbabilityPairwiseMeasures(
@@ -772,6 +794,7 @@ class MultiLabelPairwiseMeasures(object):
                         measures=self.measures_mt,
                         dict_args=self.dict_args,
                         )
+                        
                         dict_mt = PPM.to_dict_meas()
                         dict_mt["label"] = lab
                         dict_mt["case"] = name
