@@ -9,7 +9,7 @@ name: Unit Tests
 
 on:
   push:
-    branches: [ main ]  # run when anything is pushed to these branches
+    branches: [ main, docs_test ]  # run when anything is pushed to these branches
   pull_request:
     branches: [ main ]  # run for the code submitted as a PR to these branches
 
