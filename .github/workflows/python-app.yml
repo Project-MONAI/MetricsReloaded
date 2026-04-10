@@ -9,7 +9,7 @@ name: Unit Tests
 
 on:
   push:
-    branches: [ main ]  # run when anything is pushed to these branches
+    branches: [ main, docs_tests ]  # run when anything is pushed to these branches
   pull_request:
     branches: [ main ]  # run for the code submitted as a PR to these branches
 
@@ -55,12 +55,14 @@ jobs:
 
     # Using Codecov's action, upload the coverage report for the triggering commit/PR
     - name: Upload coverage
-      uses: codecov/codecov-action@v2
+      uses: codecov/codecov-action@v4
       with:
         file: ./coverage.xml
         fail_ci_if_error: true
         verbose: true
         version: "v0.1.15"
+        codecov: 
+        token: ${{ secrets.CODECOV_TOKEN }}
   
   build_docs:
     runs-on: ubuntu-latest
