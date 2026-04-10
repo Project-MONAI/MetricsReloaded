@@ -55,34 +55,40 @@ __all__ = [
 class AssignmentMapping(object):
     """
     Class allowing the assignment and localization of individual objects of interests.
-    The localization strategies are either based on box characteristics:
-    - box_iou
-    - box_ior
-    - box_com
-    or on the masks
-    - mask_iou
-    - mask_ior
-    - mask_com
-    - boundary_iou
-    or using only centre of mass
-    - com_dist
-    or a mix of mask and box
-    - point_in_box
-    or of point and mask
-    - point_in_mask
+    The localization strategies are either based on
+
+    * box characteristics:
+        * box_iou
+        * box_ior
+        * box_com
+    * on the masks
+        * mask_iou
+        * mask_ior
+        * mask_com
+        * boundary_iou
+    * using only centre of mass
+        * com_dist
+    * a mix of mask and box
+        * point_in_box
+    * of point and mask
+        * point_in_mask
+
     where iou refers to Intersection over Union, IoR to Intersection over Reference, and CoM to Centre of Mass
     Options to solve assignment ambiguities are one of the following:
-    - hungarian: minimising assignment cost
-    - greedy_matching: based on best matching
-    - greedy_performance: based on probability score
+
+    * hungarian: minimising assignment cost
+    * greedy_matching: based on best matching
+    * greedy_performance: based on probability score
+
     flag_fp_in indicates whether or not to consider the double detection of reference objects as false positives or not 
-    :param pred_loc:
-    :param ref_loc:
-    :param pred_prob:
-    :param localization:
-    :param assignment:
-    :param pixdim:
-    :param flag_fp_in:
+
+    :param pred_loc: list of location for each predicted element
+    :param ref_loc: list of locations for each reference element
+    :param pred_prob: list of predicted probabilities
+    :param localization: chosen localisation method - default box_iou
+    :param assignment: chosen assignment method - default greedy matching
+    :param pixdim: pixel dimensions
+    :param flag_fp_in: indicator flag to specify whether the false positives should be considered
     
     """
 
@@ -172,6 +178,12 @@ class AssignmentMapping(object):
 
     
     def check_input_localization(self):
+        """
+        Checks whether the provided input to the localisation is usable and if possible reprocess to provide the correct input
+
+        :return: flag_usable, flag_predmod, flag_refmod indicating whether the data is usable and whether prediction and or reference needed to be modified to confirm to the original choices
+        
+        """
         flag_refmod = False
         flag_predmod = False
         flag_usable = True
@@ -256,30 +268,55 @@ class AssignmentMapping(object):
         return flag_usable, flag_predmod, flag_refmod
 
     def com_frompredbox(self):
+        """
+        Loop through the list of box elements from self.pred_loc and identify the centre of mass of the different objects.
+        Assign the list of centres of mass to self.pred_loc_mod
+        """
+
         list_mod = []
         for f in range(self.pred_loc.shape[0]):
             list_mod.append(com_from_box(self.pred_loc[f,...]))
         self.pred_loc_mod = np.vstack(list_mod)
 
     def com_fromrefbox(self):
+        """
+        Loop through the list of reference box elements from self.ref_loc and identify the centre of mass of the different objects.
+        Assign the list of centres of mass to self.ref_loc_mod
+        """
+
         list_mod = []
         for f in range(self.ref_loc.shape[0]):
             list_mod.append(com_from_box(self.ref_loc[f,...]))
         self.ref_loc_mod = np.vstack(list_mod)
 
     def com_frompredmask(self):
+        """
+        Loop through the list of predicted mask elements from self.pred_loc and identify the centre of mass of the different objects.
+        Assign the list of centres of mass to self.pred_loc_mod
+        """
+
         list_mod = []
         for f in range(self.pred_loc.shape[0]):
             list_mod.append(compute_center_of_mass(self.pred_loc[f,...]))
         self.pred_loc_mod = np.vstack(list_mod)
 
     def com_fromrefmask(self):
+        """
+        Loop through the list of reference masks elements from self.ref_loc and identify the centre of mass of the different objects.
+        Assign the list of centres of mass to self.ref_loc_mod
+        """
+
         list_mod = []
         for f in range(self.ref_loc.shape[0]):
             list_mod.append(compute_center_of_mass(self.ref_loc[f,...]))
         self.ref_loc_mod = np.vstack(list_mod)
 
     def box_fromrefmask(self):
+        """
+        Loop through the list of reference masks elements from self.ref_loc and identify the bounding box of the different objects.
+        Assign the list of boxes of mass to self.ref_loc_mod
+        """
+
         list_mod = []
         for f in range(self.ref_loc.shape[0]):
             list_mod.append(compute_box(self.ref_loc[f,...]))
@@ -287,6 +324,11 @@ class AssignmentMapping(object):
         self.ref_loc_mod = np.vstack(list_mod)
 
     def box_frompredmask(self):
+        """
+        Loop through the list of predicted masks elements from self.pred_loc and identify the bounding box of the different objects.
+        Assign the list of boxes of mass to self.pred_loc_mod
+        """
+
         list_mod = []
         for f in range(self.pred_loc.shape[0]):
             list_mod.append(compute_box(self.pred_loc[f,...]))
@@ -296,6 +338,8 @@ class AssignmentMapping(object):
         """
         Creates a matrix of size numb_prediction elements x number of reference elements
         indicating the pairwise distance of the centre of mass of the location boxes
+
+        :return: matrix_cdist - matrix of pairwise distance between the centres of mass of the predicted elements and the reference elements
         """
         pred_coms = self.pred_loc
         ref_coms = self.ref_loc
@@ -311,6 +355,8 @@ class AssignmentMapping(object):
         """
         Creates a matrix of size number of prediction elements x number of reference elements
         indicating binarily whether the point representing the prediction element is in the reference box
+
+        :return: matrix_pinb matrix of binary indicating whether a predicted element point is in a reference element box
         """
         ref_boxes = self.ref_loc
         pred_points = self.pred_loc
@@ -328,6 +374,8 @@ class AssignmentMapping(object):
         """
         Creates a matrix of size number of prediction elements x number of reference elements
         indicating binarily whether the point representing the prediction element is in the reference mask 
+
+        :return: matrix_pinm matrix indicating whether a point in the predicted element is in the mask of reference element in a pairwise manner across all elements of the predicted and reference elements
         """
         ref_masks = self.ref_loc
         pred_points = self.pred_loc
@@ -346,6 +394,8 @@ class AssignmentMapping(object):
         """
         Creates a matrix of size number of prediction elements x number of reference elements
         indicating the pairwise box iou
+
+        :return: matrix_iou
         """
         ref_box = self.ref_loc
         pred_box = self.pred_loc
@@ -364,6 +414,8 @@ class AssignmentMapping(object):
         """
         Creates a matrix of size number of prediction elements x number of reference elements
         indicating the pairwise mask ior
+
+        :return: matrix_ior
         """
         matrix_ior = np.zeros([self.pred_loc.shape[0], self.ref_loc.shape[0]])
         for p in range(self.pred_loc.shape[0]):
@@ -376,6 +428,8 @@ class AssignmentMapping(object):
         """
         Creates a matrix of size number of prediction elements x number of reference elements
         indicating the pairwise boundary iou 
+
+        :return: matrix_biou
         """
         matrix_biou = np.zeros([self.pred_loc.shape[0],self.ref_loc.shape[0]])
         for p in range(self.pred_loc.shape[0]):
@@ -388,6 +442,8 @@ class AssignmentMapping(object):
         """
         Creates a matrix of size number of prediction elements x number of reference elements
         indicating the pairwise distance between mask centre of mass
+
+        :return: matrix_com
         """
         matrix_com = np.zeros([self.pred_loc.shape[0], self.ref_loc.shape[0]])
         for p in range(self.pred_loc.shape[0]):
@@ -400,6 +456,8 @@ class AssignmentMapping(object):
         """
         Creates a matrix of size number of prediction elements x number of reference elements
         indicating the pairwise mask iou.
+
+        :return: matrix_iou
         """
         matrix_iou = np.zeros([self.pred_loc.shape[0], self.ref_loc.shape[0]])
         for p in range(self.pred_loc.shape[0]):
@@ -412,6 +470,8 @@ class AssignmentMapping(object):
         """
         Creates a matrix of size number of prediction elements x number of reference elements
         indicating the pairwise box ior
+
+        :return: matrix_ior
         """
         ref_boxes = self.ref_loc
         pred_boxes = self.pred_loc
@@ -430,7 +490,16 @@ class AssignmentMapping(object):
         Identifies an original ideal mapping between references and prediction element for all those
         when there is no ambiguity in the assignment (only one to one matching available). Creates the list of
         possible options when multiple are possible and populates the relevant dataframes with performance of the
-        localization metrics and the assigned score probability.
+        localization metrics and the assigned score probability. The dataframes are as follows:
+
+        * df_matching: where the reference matches for each prediction are indicated
+        * df_fn: the references elements for which there is no prediction possibly matching
+        * df_fp: the predicted elements for which there is no reference possibly matching
+        
+        list_valid is the list of indices of prediction with a matching reference
+
+
+        :return: df_matching, df_fn, df_fp, list_valid
         """
         matrix = self.matrix
         if self.localization in ['mask_com', 'box_com','com_dist']:

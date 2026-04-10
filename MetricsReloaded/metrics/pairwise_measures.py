@@ -64,9 +64,19 @@ __all__ = [
 class MultiClassPairwiseMeasures(object):
     """
 
-    Class dealing with measures of direct multi-class such as MCC, Cohen's kappa, Expected cost
-    or balanced accuracy
+    Class dealing with measures of direct multi-class. Included metrics are:
+    
+    * Matthews Correlation Coefficient (MCC)
+    * Weithed Cohens kappa
+    * Balanced accuracy
+    * Expected Cost 
+    * Normalised expected cost
 
+    :param pred: Prediction
+    :param ref: Reference
+    :param list_values: List of label values to consider
+    :param measures: list of measures to extract
+    :param dict_args: dictionary of additional arguments for the metrics
 
     """
 
@@ -81,9 +91,26 @@ class MultiClassPairwiseMeasures(object):
             "wck": (self.weighted_cohens_kappa, "WCK"),
             "ba": (self.balanced_accuracy, "BAcc"),
             "ec": (self.expected_cost, "EC"),
+            "nec": (self.normalised_expected_cost,"NEC"),
+
         }
 
     def expected_cost(self):
+        """
+        Calculates the expected cost defined as:
+
+        Luciana Ferrer - Analysis and comparison of classification metrics - https://arxiv.org/pdf/2209.05355
+
+        .. math::
+
+            EC = \sum_{r}\sum_p c_{rp} P_rD_{rp}
+
+        where :math: `c_{rp}` {is the cost of misclassifying class r as class p. :math: `P_r` is the probability of 
+        class r in the reference data, :math: `D_{rp}` is the fraction of samples of class r that are classified as 
+        class p
+
+
+        """
         cm = self.confusion_matrix()
         priors = np.sum(cm, 0) / np.sum(cm)
         numb_perc = np.sum(cm, 0)
@@ -100,6 +127,9 @@ class MultiClassPairwiseMeasures(object):
         return ec
 
     def best_naive_ec(self):
+        """
+        Calculate the naive expected cost that can be used for normalisation purposes
+        """
         cm = self.confusion_matrix()
         priors = np.sum(cm, 0) / np.sum(cm)
         prior_matrix = np.tile(priors, [cm.shape[0], 1])
@@ -115,6 +145,9 @@ class MultiClassPairwiseMeasures(object):
         return np.min(total_cost)
 
     def normalised_expected_cost(self):
+        """
+        Calculates the normalised expected cost as the ratio of the expected cost to the naive expected cost.
+        """
         naive_cost = self.best_naive_ec()
         ec = self.expected_cost()
         return ec / naive_cost
@@ -229,7 +262,11 @@ class MultiClassPairwiseMeasures(object):
         return weighted_cohens_kappa
 
     def to_dict_meas(self, fmt="{:.4f}"):
-        """Given the selected metrics provides a dictionary with relevant metrics"""
+        """
+
+        Given the selected metrics provides a dictionary with relevant metrics
+
+        """
         result_dict = {}
         for key in self.measures:
             result = self.measures_dict[key][0]()
@@ -238,6 +275,43 @@ class MultiClassPairwiseMeasures(object):
 
 
 class BinaryPairwiseMeasures(object):
+    """
+    Class allowing for the derivation of pairwise measures when using binary input, measures include:
+
+    * accuracy
+    * net benefit treated
+    * normalised expected cost
+    * balanced accuracy
+    * cohen's kappa
+    * positive likelihood ratio
+    * positive predictive value
+    * negative predictive value
+    * sensitivity
+    * specificity
+    * intersection over union
+    * youden index
+    * intersection over reference
+    * fbeta
+    * Dice score
+    * centreline Dice
+    * Matthew Correlation coefficient
+    * Average symmetric surface distance
+    * Mean Average surface distance
+    * Hausdorff distance
+    * Percentile of Hausdorff distance 
+    * Normalised surface distance
+    * boundary IoU
+    * absolute volume difference ratio
+
+    Input includes:
+    :param pred: Prediction
+    :param ref: Reference
+    :param measures: list of measures to extract
+    :param connectivity_type: Type of connectivity to use
+    :param pixdim: list of pixel dimensions
+    :param empty:
+    :param dict_args: Dictionary with additional arguments for the different metrics
+    """
     def __init__(
         self,
         pred,
@@ -297,6 +371,12 @@ class BinaryPairwiseMeasures(object):
         self.dict_args = dict_args
 
     def calculate_worse_dist(self):
+        """
+        From an image for which pixel dimensions and full shape is known, calculates the worst possible distance value.
+        This is to be used when distance cannot be calculated due to reference or prediction being empty and the worst
+        value assigned to the metric
+        :return max_dist: maximum distance for the given case
+        """
         shape = self.ref.shape
         pixdim = self.pixdim
         if pixdim is not None:
@@ -656,6 +736,15 @@ class BinaryPairwiseMeasures(object):
         return mcc
 
     def expected_matching_ck(self):
+        """
+        Derives p_e for the cohen's kappa calculation. p_e, the expected chance matching is defined as 
+
+        .. math::
+
+            p_e = \sum_k \dfrac{n_{k\\text{ref}}}{N}\dfrac{n_{k\\text{pred}}}{N}
+
+        :return: p_e
+        """
         list_values = np.unique(self.ref)
         p_e = 0
         for val in list_values:
@@ -680,7 +769,7 @@ class BinaryPairwiseMeasures(object):
 
             CK = \dfrac{p_o - p_e}{1-p_e}
 
-        where :math: `p_e = ` expected chance matching and :math: `p_o = `observed accuracy
+        where :math:`p_e =` expected chance matching and :math:` p_o =` observed accuracy
 
         Cohen, J. A coefficient of agreement for nominal scales - Educational and Psychological Measurement (1960) 20 37-46
 
@@ -783,10 +872,11 @@ class BinaryPairwiseMeasures(object):
 
         ..math::
 
+
             DSC = \dfrac{2TP}{2TP+FP+FN}
 
         
-        This is also F:math:`{\\beta}` for :math:`{\\beta}`=1
+        This is also F:math:\`{\\beta}` for :math:\`{\\beta}`=1
 
         :return: dsc
 
@@ -905,6 +995,7 @@ class BinaryPairwiseMeasures(object):
          image, assuming that the cases are collated on the last axis of the array
 
         Bram Van Ginneken, Samuel G Armato III, Bartjan de Hoop, Saskia van Amelsvoort-van de Vorst, Thomas Duindam, Meindert Niemeijer, Keelin Murphy, Arnold Schilham, Alessandra Retico, Maria Evelina Fantacci, et al. Comparing and combining algorithms for computer-aided detection of pulmonary nodules in computed tomography scans: the anode09 study. Medical image analysis, 14(6):707–722, 2010.
+        
         Andriy I Bandos, Howard E Rockette, Tao Song, and David Gur. Area under the free-response roc curve (froc) and a related summary index. Biometrics, 65(1):247–256, 2009.
         
         """
@@ -923,7 +1014,7 @@ class BinaryPairwiseMeasures(object):
 
         .. math::
 
-            IoR = \dfrac{| \text{Pred} \cap \text{Ref} |}{| Ref |}
+            IoR = \dfrac{| \\text{Pred} \cap \\text{Ref} |}{| Ref |}
 
         :return: IoR
 
@@ -961,8 +1052,7 @@ class BinaryPairwiseMeasures(object):
         of mass of the reference and prediction.
 
         
-        :return: Euclidean distance between centre of mass when reference and prediction not empty
-        -1 otherwise
+        :return: Euclidean distance between centre of mass when reference and prediction not empty -1 otherwise
 
         """
         
@@ -1132,7 +1222,8 @@ Pattern Recognition. 15334–15342.
 
             B_{IoU}(A,B) = \dfrac{| A_{d} \cap B_{d} |}{|A_d| + |B_d| - |A_d \cap B_d|}
 
-        where :math:A_d are the pixels of A within a distance d of the boundary
+        where :math:`A_d` are the pixels of A within a distance d of the boundary
+
         :return: boundary_iou
 
         """
@@ -1316,7 +1407,8 @@ Pattern Recognition. 15334–15342.
 
         .. math::
 
-            MASD(A,B) = \dfrac{1}{2}(\dfrac{\sum_{a\in A}d(a,B)}{|A|} + \dfrac{\sum_{b\in B}d(b,A)}{|B|})
+            MASD(A,B) = \dfrac{1}{2}\dfrac{\sum_{a\in A}d(a,B)}{|A|} + \dfrac{1}{2}\dfrac{\sum_{b\in B}d(b,A)}{|B|}
+        
         
             
         :return: masd
@@ -1351,6 +1443,11 @@ Pattern Recognition. 15334–15342.
         return hausdorff_distance_perc
 
     def to_dict_meas(self, fmt="{:.4f}"):
+        """
+        Transform to a dictionary the results of the different calculated measures
+
+        :return: result_dict
+        """
         result_dict = {}
         for key in self.measures:
             if len(self.measures_dict[key]) == 2:

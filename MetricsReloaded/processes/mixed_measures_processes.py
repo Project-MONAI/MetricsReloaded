@@ -15,8 +15,10 @@ Mixed measures processes - :mod:`MetricsReloaded.processes.mixed_measures_proces
 ====================================================================================
 
 This module provides classes for performing the evaluation processes of
- :ref:`instance segmentation <instanceseg>`, :ref:`multi label instance segmentation <mlinstanceseg>`, 
-:ref:`multilabel object detection <mlod>` and :ref:`multi class classification  <multiclass>`.
+ :ref:`instance segmentation <instanceseg>`, 
+ :ref:`multi label instance segmentation <mlinstanceseg>`, 
+ :ref:`multilabel object detection <mlod>` and 
+ :ref:`multi class classification  <multiclass>`.
 
 .. _instanceseg:
 
@@ -49,6 +51,7 @@ Performing the process associated with multiple labels in classification (semant
 
 .. autoclass:: MultiLabelPairwiseMeasures
     :members:
+    
 """
 
 
@@ -91,6 +94,7 @@ class MixedLocSegPairwiseMeasure(object):
     :param measures_pcc: list of choices of measures of per class counting in terms of classification of instances
     :param measures_detseg: consideration (list) of metrics combining both segmentation and detection performance
     :param dict_args: dictionary with relevant arguments for the metrics
+
     """
     def __init__(
         self,
@@ -201,12 +205,12 @@ class MultiLabelLocSegPairwiseMeasure(object):
     This class represents the processing for instance segmentation on true positive 
     Characterised by the predicted classes and associated reference classes
 
-    :param pred_class: list for each considered case of classes predicted 
-    :param ref_class:list for each considered case of reference classes
+    :param pred_class: list for each considered case of classes predicted
+    :param ref_class: list for each considered case of reference classes
     :param pred_loc: list for each considered case of the individual image considering an individual predicted element
     :param ref_loc: list for each considered case of the individual images considering individual reference elements (note that ref_loc and ref_class entities are matching)
-    :param pred_prob:
-    :param list_values: list of possible label values 
+    :param pred_prob: list for each considered case of the individual element predicted probabilities
+    :param list_values: list of possible label values
     :param measures_pcc: list of per class counting measures to be derived during the process
     :param measures_overlap: list of overlap (segmentation) measures to be derived during the process
     :param measures_boundary: list of boundary measures to be derived during the comparison process
@@ -220,6 +224,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
     :param thresh:
     :param flag_fp_in: flag to consider the false positive elements in the assessment
     :param dict_args: dictionary for additional arguments related to the chosen metrics.
+
     """
     
     def __init__(
@@ -283,6 +288,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
     def create_nifti_image(self, list_maps, file_ref, category):
         """
         Creates a nifti image of either the true positives, true negatives, false positives or false negatives
+
         :param list_maps: list of np.arrays containing an element to add to the final image
         :param file_ref: reference nifti file to use for saving the final image
         :param category: category description of the elements being saved (classically TP TN FP FN)
@@ -304,11 +310,12 @@ class MultiLabelLocSegPairwiseMeasure(object):
         According to the specifications of metrics to be used and the type of assignment and localization, performs, per label value in 
         list_values the processing per case (overall prediction associated to overall reference image).
         This is organised in multiple steps:
-            - identification for each predicted case of the items considered as of the class specified by label considered
-            - identification for each associated case, the items considered as of the class specified by the considered label 
-            - creation of the associated list of individual images of elements selected beforehand both in the prediction images and the reference images (the images are listed in the same order with one element per image)
-            - assigment procedure based on the segmentation images
-            - derivation of metrics either on a case by case basis or grouping all cases together. 
+
+        1. identification for each predicted case of the items considered as of the class specified by label considered
+        2. identification for each associated case, the items considered as of the class specified by the considered label 
+        3. creation of the associated list of individual images of elements selected beforehand both in the prediction images and the reference images (the images are listed in the same order with one element per image)
+        4. assigment procedure based on the segmentation images
+        5. derivation of metrics either on a case by case basis or grouping all cases together. 
 
         """
         list_det = []
@@ -495,8 +502,9 @@ class MultiLabelLocSegPairwiseMeasure(object):
 class MultiLabelLocMeasures(object):
     """
     Class for the processing of multilabel object detection processes
+
     :param pred_class: list for each considered case of classes predicted 
-    :param ref_class:list for each considered case of reference classes
+    :param ref_class: list for each considered case of reference classes
     :param pred_loc: list for each considered case of the individual image considering an individual predicted element
     :param ref_loc: list for each considered case of the individual images considering individual reference elements (note that ref_loc and ref_class entities are matching)
     :param pred_prob:
@@ -553,6 +561,11 @@ class MultiLabelLocMeasures(object):
             self.flag_valid_proba=False
 
     def per_label_dict(self):
+        """
+        Process allowing for the creation of dictionaries with the resulting measures for per label detection metrics and multi threshold metrics
+
+        :return: dict_det, dict_mt
+        """
         list_det = []
         list_mt = []
         for lab in self.list_values:
@@ -657,22 +670,24 @@ class MultiLabelLocMeasures(object):
 class MultiLabelPairwiseMeasures(object):
     """
       Semantic segmentation or Image wide classification with possibility of multiple labels
-      :param pred:
-      :param ref:
-      :param pred_proba:
-      :param list_values:
-      :param names:
-      :param measures_pcc:
-      :param measures_mt:
-      :param measures_mcc:
-      :param measures_overlap:
-      :param measures_boundary:
-      :param measures_calibration:
-      :param connectivity_type:
-      :param per_case:
-      :param pixdim:
+
+      :param pred: Prediction data
+      :param ref: Reference data
+      :param pred_proba: Prediction probability data
+      :param list_values: list of label values
+      :param names: list of names of cases/files
+      :param measures_pcc: list of per class counting metrics
+      :param measures_mt: list of multi threshold probability metrics
+      :param measures_mcc: list of multi class counting metrics
+      :param measures_overlap: list of overlap metrics
+      :param measures_boundary: list of boundary metrics
+      :param measures_calibration: list of calibration metrics
+      :param connectivity_type: connectivity type -default 1
+      :param per_case: flag indicating whether metrics should be calculated overall or per case
+      :param pixdim: pixel dimension
       :param empty:
-      :param dict_args: 
+      :param dict_args: dictionary of specific arguments to be used in the metrics
+
     """
     def __init__(
         self,
@@ -724,6 +739,9 @@ class MultiLabelPairwiseMeasures(object):
             self.flag_valid_proba = False
 
     def squeeze_ref_and_pred_to_size(self):
+        """
+        Utility function to check for number of dimension in each prediction and reference case and squeeze added dimensions if possible
+        """
         for i,(p,r) in enumerate(zip(self.pred, self.ref)):
             if np.size(np.asarray(p)) == np.size(np.asarray(r)) and np.asarray(p).ndim != np.asarray(r).ndim:
                 warnings.warn("There is a dimensional mismatch between pred and ref despite same size")
@@ -734,6 +752,11 @@ class MultiLabelPairwiseMeasures(object):
         return
 
     def per_label_dict(self):
+        """
+        Process allowing for the creation of dictionaries with the resulting measures for per label binary pairwise metrics and multi threshold metrics
+
+        :return: dict_bin, dict_mt
+        """
         list_bin = []
         list_mt = []
         for lab in self.list_values:
@@ -843,6 +866,11 @@ class MultiLabelPairwiseMeasures(object):
         return pd.DataFrame.from_dict(list_bin), pd.DataFrame.from_dict(list_mt)
 
     def multi_label_res(self):
+        """
+        Creation of the multilabel results with mutilabel counting metrics and calibration metrics returned as separate dictionaries
+
+        :return: pd_mcc, pd_cal
+        """
         list_pred = []
         list_ref = []
         list_prob = []

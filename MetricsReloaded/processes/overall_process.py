@@ -295,7 +295,7 @@ class ProcessEvaluation(object):
     """
     Performs the evaluation of the data stored in a pickled file according to all the measures, categories and choices of processing
 
-    :param data: dictionary containing all the data to be used for the comparison; possible keys include "pred_loc", "ref_loc", "pred_prob", 
+    :param data: dictionary containing all the data to be used for the comparison; possible keys include "pred_loc", "ref_loc", "pred_prob", "ref_missing_pred"
     :param category: task to be considered choice among ImLC, ObD, SemS, InS
     :param measures_pcc: list of per class counting measures (these need to be adequate for the chosen task category)
     :param measures_mcc: list of multi class counting measures
@@ -354,6 +354,7 @@ class ProcessEvaluation(object):
         self.flag_fp_in = flag_fp_in
         self.flag_ignore_missing = ignore_missing
         self.flag_valid = self.check_valid_measures_cat()
+        self.list_empty_ref = self.identify_empty_ref()
         self.pixdim = pixdim
         if self.flag_valid:
             self.process_data()
@@ -551,10 +552,38 @@ class ProcessEvaluation(object):
 
     
     def identify_empty_ref(self):
-        return
+        """
+        Identify empty reference elements in the list of cases to evaluate in all categories except image classification. This is stored as a list of boolean flagging empty cases as True
+
+        :return: list_empty list of boolean indicating whether reference is empty or not
+        """
+        list_empty = []
+        if self.category == 'ImLC':
+            warnings.warn("No need to identify empty reference with image level classification - only suitable for instance segmentation, object detection and image segmentation") 
+            return list_empty
+        elif self.category in ["ObD", "InS"]:
+            
+            for ref_case in self.data['ref_class']:
+                flag_empty = False
+                if len(ref_case) == 0:
+                    flag_empty = True
+                list_empty.append(flag_empty)
+            return list_empty
+        else:
+            for ref_case in self.data['ref_class']:
+                flag_empty = False
+                if np.sum(ref_case) == 0:
+                    flag_empty = True
+                list_empty.append(flag_empty)
+            return list_empty
 
     def complete_missing_cases(self):
-        if len(self.data['ref_missing']) == 0:
+        """
+        
+        For all cases with missing predictions, complete according to the options set up - ignoring them or replacing with worse value
+
+        """
+        if len(self.data['ref_missing_pred']) == 0:
             return
         if self.flag_ignore_missing:
             warnings.warn("The set up currently ignores any missing case / dataset")
@@ -566,7 +595,7 @@ class ProcessEvaluation(object):
             list_missing_mcc = []
             numb_valid = len(self.data['ref_class'])
             if self.case:
-                for (i,f) in enumerate(self.data['ref_missing']):
+                for (i,f) in enumerate(self.data['ref_missing_pred']):
                     dict_mt = {}
                     dict_mcc = {}
                     dict_seg = {}
@@ -602,16 +631,22 @@ class ProcessEvaluation(object):
                             dict_mt['case'] = i + numb_valid
                             dict_mt["label"] = l
                             list_missing_mt.append(dict_mt)
-            df_miss_det = pd.DataFrame.from_dict(list_missing_det)
-            df_miss_seg = pd.DataFrame.from_dict(list_missing_seg)
-            df_miss_mcc = pd.DataFrame.from_dict(list_missing_mcc)
-            df_miss_mt = pd.DataFrame.from_dict(list_missing_mt)
-            self.resdet = combine_df(self.resdet, df_miss_det)
-            self.resseg = combine_df(self.resseg, df_miss_seg)
-            self.resmt = combine_df(self.resmt, df_miss_mt)
-            self.resmcc = combine_df(self.resmcc, df_miss_mcc)
+                df_miss_det = pd.DataFrame.from_dict(list_missing_det)
+                df_miss_seg = pd.DataFrame.from_dict(list_missing_seg)
+                df_miss_mcc = pd.DataFrame.from_dict(list_missing_mcc)
+                df_miss_mt = pd.DataFrame.from_dict(list_missing_mt)
+                self.resdet = combine_df(self.resdet, df_miss_det)
+                self.resseg = combine_df(self.resseg, df_miss_seg)
+                self.resmt = combine_df(self.resmt, df_miss_mt)
+                self.resmcc = combine_df(self.resmcc, df_miss_mcc)
+                return
 
     def label_aggregation(self, option='average',dict_args={}):
+        """
+        Performs the aggregation of the results across labels according to different aggregation strategies
+
+        :return: df_grouped_all dataframe with the results aggregated labels
+        """
         if len(self.data['list_values']) == 1:
             # print('DET', self.resdet,'CAL',self.rescal, 'SEG',self.resseg,'MT', self.resmt,'MCC', self.resmcc)
             df_grouped_all = merge_list_df([self.resdet, self.resseg, self.resmt,self.resmcc, self.rescal])
@@ -631,8 +666,7 @@ class ProcessEvaluation(object):
         list_measures = self.measures_boundary + self.measures_overlap + self.measures_detseg + self.measures_pcc + self.measures_mt
         dict_measures = {k:[('prevalence',wm),('weights',wm2),('average',wm3)] for k in list_measures}
         df_grouped_lab = df_all_labels.groupby('case',as_index=False).agg(dict_measures).reset_index()
-        df_grouped_lab.columns = ['_'.join(col).rstrip('_') for col in df_grouped_lab.columns.values
-]
+        df_grouped_lab.columns = ['_'.join(col).rstrip('_') for col in df_grouped_lab.columns.values]
         
         # print(df_grouped_lab, " grouped lab ")                                             
         df_grouped_all = merge_list_df([df_grouped_lab.reset_index(), self.resmcc, self.rescal], on=['case'])
@@ -640,6 +674,9 @@ class ProcessEvaluation(object):
         return df_grouped_all
 
     def get_stats_res(self):
+        """
+        Create summary statistics overall and per label available in self.stats_lab and self.stats_all
+        """
         df_stats_all = self.grouped_lab.describe()
         df_all_labels = merge_list_df([self.resdet, self.resseg, self.resmt], on=['label','case'])
         df_stats_lab = df_all_labels.groupby('label').describe()

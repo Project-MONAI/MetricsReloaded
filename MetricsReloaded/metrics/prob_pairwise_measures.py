@@ -46,6 +46,28 @@ __all__ = [
 
 
 class ProbabilityPairwiseMeasures(object):
+    """
+    Class defining all the pairwise measures based on probability predictions
+    The following measures can be optained:
+    - net benefit treated
+    - auroc
+    - froc
+    - average precision
+    - sensitivity at specificity
+    - specificity at sensitivity
+    - sensitivity at ppv
+    - ppv at sensitivity
+    - fppi at sensitivity
+    - sensitivity at ppv
+    
+    :param pred_proba: predicted probabilities 
+    :param ref_proba: reference probabilities 
+    :param case:
+    :param measures: list of the measures to extract
+    :param empty:
+    :param dict_args: Dictiionary with the necessary arguments for the different measures if needed
+    
+    """
     def __init__(
         self,
         pred_proba,
@@ -81,30 +103,69 @@ class ProbabilityPairwiseMeasures(object):
 
     @CacheFunctionOutput
     def fp_thr(self, thresh):
+        """
+        Given a threshold probability, return the number of false positive elements:
+
+        :param thresh: Threshold to apply to the probability input
+        :return fp_thr: Number of FP elements when thresholding the probability to consider things positives at thresh
+        """
         return np.sum(self.__fp_map_thr(thresh))
 
     @CacheFunctionOutput
     def fn_thr(self, thresh):
+        """
+        Given a threshold probability to determine positive samples, return the number of false negative elements:
+
+        :param thresh: Threshold to apply to the probability input
+        :return fn_thr: Number of FN elements when thresholding the probability to consider things positives at thresh
+        """
         return np.sum(self.__fn_map_thr(thresh))
 
     @CacheFunctionOutput
     def tp_thr(self, thresh):
+        """
+        Given a threshold probability to determine positive samples, return the number of true positive elements:
+
+        :param thresh: Threshold to apply to the probability input
+        :return tp_thr: Number of TP elements when thresholding the probability to consider things positives at thresh
+        """
         return np.sum(self.__tp_map_thr(thresh))
 
     @CacheFunctionOutput
     def tn_thr(self, thresh):
+        """
+        Given a threshold probability to determine positive samples, return the number of true negative elements:
+
+        :param thresh: Threshold to apply to the probability input
+        :return tn_thr: Number of TN elements when thresholding the probability to consider things positives at thresh
+        """
         return np.sum(self.__tn_map_thr(thresh))
 
     @CacheFunctionOutput
     def n_pos_ref(self):
+        """
+        Derive the number of positve elements in the reference
+
+        :return: number of elements in reference
+        """
         return np.sum(self.ref)
     
     @CacheFunctionOutput
     def n_pos_pred(self):
+        """
+        Derive the number of positive elements in the prediction
+
+        :return: number of elements in prediction
+        """
         return np.sum(self.pred)
 
     @CacheFunctionOutput
     def n_neg_ref(self):
+        """
+        Derive the number of negative elements in the reference
+
+        :return number of negative elements in reference
+        """
         return np.sum(1 - self.ref)
 
     @CacheFunctionOutput
@@ -115,6 +176,8 @@ class ProbabilityPairwiseMeasures(object):
         Function defining the list of values for ppv, sensitivity, specificity
         and FPPI according to a list of probabilistic thresholds. The thresholds are defined to obtain equal bin sizes
         The default maximum number of thresholds is 1500
+
+        :return: unique_new_thresh, list_sens, list_spec, list_ppv, list_ffpi
         """
         unique_thresh, unique_counts = np.unique(self.pred, return_counts=True)
         if len(unique_thresh) < max_number_thresh:
@@ -154,6 +217,10 @@ class ProbabilityPairwiseMeasures(object):
     def __fp_map_thr(self, thresh):
         """
         Map of FP given a specific threshold value
+
+        :param thresh: threshold at which to consider an element of the prediction probability map as positive 
+
+        :return: FP map at given threshold
         """
         pred_bin = self.pred >= thresh
         return np.asarray((pred_bin - self.ref) > 0.0, dtype=np.float32)
@@ -162,7 +229,9 @@ class ProbabilityPairwiseMeasures(object):
         """
         This function calculates the false negative map based on a threshold
 
-        :return: FN map
+        :param thresh: threshold at which to consider an element of the prediction probability map as positive 
+
+        :return: FN map at given threshold
         """
         pred_bin = self.pred >= thresh
         return np.asarray((self.ref - pred_bin) > 0.0, dtype=np.float32)
@@ -170,6 +239,8 @@ class ProbabilityPairwiseMeasures(object):
     def __tp_map_thr(self, thresh):
         """
         TP map given a specified threshold
+
+        :param thresh: threshold at which to consider an element of the prediction probability map as positive 
 
         :return: TP map at specified threshold
         """
@@ -180,6 +251,8 @@ class ProbabilityPairwiseMeasures(object):
         """
         TN map given a specified threshold
 
+        :param thresh: threshold at which to consider an element of the prediction probability map as positive 
+
         :return: TN map at specified threshold
         """
         pred_bin = self.pred >= thresh
@@ -188,6 +261,8 @@ class ProbabilityPairwiseMeasures(object):
     def positive_predictive_values_thr(self, thresh):
         """
         PPV given a specified threshold
+
+        :param thresh: threshold at which to consider an element of the prediction probability map as positive 
 
         :return: PPV at specified threshold
         """
@@ -199,6 +274,8 @@ class ProbabilityPairwiseMeasures(object):
         """
         Specificity given a specified threshold
 
+        :param thresh: threshold at which to consider an element of the prediction probability map as positive 
+
         :return: Specificity at specified threshold
         """
         return self.tn_thr(thresh) / self.n_neg_ref()
@@ -207,11 +284,20 @@ class ProbabilityPairwiseMeasures(object):
         """
         Sensitivity given a specified threshold
 
+        :param thresh: threshold at which to consider an element of the prediction probability map as positive 
+
         :return: Sensitivity at specified threshold
         """
         return self.tp_thr(thresh) / self.n_pos_ref()
 
     def fppi_thr(self, thresh):
+        """
+        For the list of individual cases, calculate for a chosen threshold the number of FP elements and average across the cases:
+
+        :param thresh: Threshold at which predictions are considered positives
+        :return fppi: Average Number of FP per image given a specified probability threshold
+
+        """
         if self.case is not None:
             list_sum = []
             for f in range(np.max(self.case)):
@@ -231,6 +317,8 @@ class ProbabilityPairwiseMeasures(object):
     def net_benefit_treated(self):
         """
         Calculation of net benefit given a specified threshold
+
+        :return: net benefit value
         """
         if "benefit_proba" in self.dict_args.keys():
             thresh = self.dict_args["benefit_proba"]
@@ -277,6 +365,8 @@ class ProbabilityPairwiseMeasures(object):
         Meindert Niemeijer, Keelin Murphy, Arnold Schilham, Alessandra Retico, Maria Evelina Fantacci, et al. 2010.
         Comparing and combining algorithms for computer-aided detection of pulmonary nodules in computed tomography
         scans: the ANODE09 study. Medical image analysis 14, 6 (2010), 707–722.
+
+        :return: FROC
         """
         (
             unique_thresh,
@@ -509,6 +599,8 @@ class ProbabilityPairwiseMeasures(object):
     def to_dict_meas(self, fmt="{:.4f}"):
         """
         Transforming the results to form a dictionary
+
+        :return: result_dict
         """
         result_dict = {}
         for key in self.measures:

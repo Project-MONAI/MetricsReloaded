@@ -128,9 +128,18 @@ class MorphologyOps(object):
         return border
 
     def foreground_component(self):
+        """
+        Create the connected component map from the binary map stored in self.binary_map
+
+        return: label map
+        """
         return ndimage.label(self.binary_map)
 
     def list_foreground_component(self):
+        """
+        For each connected component from the binary map, create and return as lists per element, 
+        the list of corresponding indices, the list of volumes and the list of centres of mass
+        """
         labels, _ = self.foreground_component()
         list_ind_lab = []
         list_volumes = []
@@ -150,8 +159,8 @@ def intersection_boxes(box1, box2):
     """
     Intersection area/volume between two boxes given their extreme corners
 
-    :param: box1 - first box to consider for intersection
-    :param: box2 - second box to consider for intersection
+    :param box1:  first box to consider for intersection
+    :param box2:  second box to consider for intersection
     :return: intersection -value of the intersected volume / area  as number of pixels / voxels
     """
     min_values = np.minimum(box1, box2)
@@ -169,7 +178,7 @@ def guess_input_style(a):
     """
     Given an array a, guess whether it represents a mask, a box or a centre of mass
 
-    :param: a - input array to check
+    :param a: input array to check
     :return: string from either mask, box or com
 
     """
@@ -185,7 +194,7 @@ def com_from_box(box):
     """
     Identifies the centre of mass of a box from its extreme coordinates
 
-    :param: box: box identified as a vector of size 2xndim with first the ndim minimum values and then the ndim maximum values
+    :param box: box identified as a vector of size 2xndim with first the ndim minimum values and then the ndim maximum values
     :return: Centre of mass of the box as a vector of size ndim
     """
     min_corner = box[:box.shape[0]//2]
@@ -198,8 +207,8 @@ def point_in_box(point, box):
     """
     Indicates whether a point is contained in an axis-aligned box specified by min and maximum corners
 
-    :param: point: coordinates of the point to assess
-    :param: box: vector of size 2 x ndim (2 or 3), the first ndim values corresponding to the minimum corner and the last ndim to the maximum corner
+    :param point: coordinates of the point to assess
+    :param box: vector of size 2 x ndim (2 or 3), the first ndim values corresponding to the minimum corner and the last ndim to the maximum corner
     :return: 1 if the point is in the box 0 otherwise
     """
     min_corner = box[:box.shape[0]//2]
@@ -217,8 +226,8 @@ def point_in_mask(point, mask):
     """
     Indicates whether a point (given by coordinates 2D or 3D) is in a mask
 
-    :param: point - coordinates of the point to check (list or np-array)
-    :param: mask - nd array for a segmentation mask
+    :param point: coordinates of the point to check (list or np-array)
+    :param mask: nd array for a segmentation mask
     :return: 1 if the point is in the mask, 0 otherwise
     """
     new_mask = np.zeros_like(mask)
@@ -236,8 +245,7 @@ def area_box(box1):
     """
     Determines the area / volume given the coordinates of extreme corners
     
-    :param: box extreme corners specified as :math:`x_{min},y_{min},x_{max},y_{max}` or
-    :math:`x_{min},y_{min},z_{min},x_{max},y_{max},z_{max}` 
+    :param box1: box extreme corners specified as :math:`x_{min},y_{min},x_{max},y_{max}` or :math:`x_{min},y_{min},z_{min},x_{max},y_{max},z_{max}` 
     :return: area/volume of the box (in pixels/voxels)
     """
     box_corner1 = box1[: box1.shape[0] // 2]
@@ -249,7 +257,8 @@ def union_boxes(box1, box2):
     """
     Calculates the union of two boxes given their corner coordinates
     
-    :param: box1 and box2 specified as for area_box
+    :param box1:first box considered for union of boxes
+    :param  box2: second box specified for area_box
     :return: union of two boxes in number of pixels
     """
     value = area_box(box1) + area_box(box2) - intersection_boxes(box1, box2)
@@ -260,7 +269,8 @@ def box_iou(box1, box2):
     """
     Calculates the iou of two boxes given their extreme corners coordinates
     
-    :param: box1, box2
+    :param box1: first box to consider in the iou calculation
+    :param box2: second box with which to calculate iou
     :return: intersection over union of the two boxes
     """
     numerator = intersection_boxes(box1, box2)
@@ -272,12 +282,21 @@ def box_ior(box1, box2):
     """
     Calculates the intersection over reference between two boxes (reference box being the second one)
 
+    :param box1: first box to consider in the ior calculation - counting as prediction box
+    :param box2: second box with which to calculate ior - counting as reference box
+    :return: intersection over reference of the two boxes
     """
     numerator = intersection_boxes(box1, box2)
     denominator = area_box(box2)
     return numerator / denominator
 
 def median_heuristic(matrix_proba):
+    """
+    From a matrix of probabilities return the median of the pairwise distance
+
+    :param matrix_proba: matrix of probabilities
+    :return: median_heuristic
+    """
     pairwise_dist = squareform(pdist(matrix_proba))
     median_heuristic = np.median(pairwise_dist)
     return median_heuristic
@@ -288,7 +307,7 @@ def compute_skeleton(img):
     """
     Computes skeleton using skimage.morphology.skeletonize
 
-    :param: img - array with the binary mask of the element to skeletonise
+    :param img: array with the binary mask of the element to skeletonise
     :return: nd array with the mask of the skeleton of the element considered in img
     """
     return skeletonize(img)
@@ -297,7 +316,7 @@ def compute_box(img):
     """
     Computes the coordinates of the bounding box based on a mask (in img)
 
-    :param: img: mask of the element for which to compute bounding box
+    :param img: mask of the element for which to compute bounding box
     :return: indices of the bottom left and top right corners of the bounding box axis aligned.
     """
     indices = np.asarray(np.where(img>0)).T
@@ -311,14 +330,20 @@ def compute_center_of_mass(img):
     """
     Computes center of mass using scipy.ndimage
 
-    :param: img as multidimensional array
+    :param img: a multidimensional array
     :return: Returns the centre
     """
     return ndimage.center_of_mass(img)
 
 
 def distance_transform_edt(img, sampling=None):
-    """Computes Euclidean distance transform using ndimage
+    """
+    Computes Euclidean distance transform using ndimage
+
+    :param img: mask from which to calculate distance
+    :param sampling: sampling to use (None as default considering isotropic 1 voxels)
+    :return: distance map
+
     """
     return ndimage.distance_transform_edt(
             img, sampling=sampling, return_indices=False
@@ -328,10 +353,10 @@ def max_x_at_y_more(x, y, cut_off):
     """Gets max of elements in x where elements 
     in y are geq to a cut off value - used in the metrics based on probability thresholds
 
-    :param: x: array of values
-    :param: y: array of values similar length to x
-    :param: cutoff - value at which to consider the cut-offon y
-    :param
+    :param x: array of values
+    :param y: array of values similar length to x
+    :param cut_off: value at which to consider the cut-offon y
+
     :return: return the maximum of x for all corresponding values of y greater than or equal to the cut-off 
     """
     x = np.asarray(x)
@@ -343,11 +368,11 @@ def max_x_at_y_less(x, y, cut_off):
     """Gets max of elements in x where elements 
     in y are leq to a cut off value
 
-    :param: x: array of values
-    :param: y: array of values similar length to x
-    :param: cutoff - value at which to consider the cut-offon y
-    :param
-    :return: return the maximum of x for all corresponding values of y less than the cut-off 
+    :param x: array of values
+    :param y: array of values similar length to x
+    :param cut_off: value at which to consider the cut-offon y
+
+    :return:  the maximum of x for all corresponding values of y less than the cut-off 
     """
     x = np.asarray(x)
     y = np.asarray(y)    
@@ -358,11 +383,11 @@ def min_x_at_y_less(x, y, cut_off):
     """Gets min of elements in x where elements 
     in y are leq to a cut off value
 
-    :param: x: array of values
-    :param: y: array of values similar length to x
-    :param: cutoff - value at which to consider the cut-offon y
-    :param
-    :return: return the maximum of x for all corresponding values of y less than the cut-off 
+    :param x: array of values
+    :param y: array of values similar length to x
+    :param cut_off: value at which to consider the cut-offon y
+
+    :return: the maximum of x for all corresponding values of y less than the cut-off 
     """
     x = np.asarray(x)
     y = np.asarray(y)    
@@ -373,9 +398,9 @@ def min_x_at_y_more(x,y,cut_off):
     """Gets min of elements in x where elements in 
     y are greater than cutoff value
     
-    :param: x, vector of values
-    :param: y, vector of values same size of x
-    :param: cutoff cutoff value for y
+    :param x: vector of values
+    :param y: vector of values same size of x
+    :param cut_off: cutoff value for y
     :return: min of x where y >= cut_off
     """
     x = np.asarray(x)
@@ -386,13 +411,21 @@ def min_x_at_y_more(x,y,cut_off):
 def one_hot_encode(img, n_classes):
     """One-hot encodes categorical image
 
-    :param: img: labelled nd-array to encode
-    :param: n_classes: number of classes to consider when encoding - this is specified to avoid "forgetting one class"
+    :param img: labelled nd-array to encode
+    :param n_classes: number of classes to consider when encoding - this is specified to avoid "forgetting one class"
     :return: one hot encoded version of the input labelled image given the number of classes specified
     """
     return np.eye(n_classes)[img]
 
 def to_string_count(measures_count, counting_dict, fmt="{:.4f}"):
+    """
+    Transform to a comma separated string the content of results from the dictionary with all the counting based metrics
+
+    :param measures_count: list of counting metrics
+    :param counting_dict: dictionary with the results of the counting metrics
+    :param fmt: format in which the outputs should be written (default 4 decimal points)
+    :return: complete comma-separated string of results in the order of keys specifid by measures_dist
+    """
     result_str = ""
     # list_space = ['com_ref', 'com_pred', 'list_labels']
     for key in measures_count:
@@ -413,9 +446,9 @@ def to_string_dist(measures_dist, distance_dict, fmt="{:.4f}"):
     """
     Transform to a comma separated string the content of results from the dictionary with all the distance based metrics
 
-    :param: measures_dist: list of distance metrics
-    :param: distance_dict: dictionary with the results of the distance metrics
-    :param: fmt: format in which the outputs should be written (default 4 decimal points)
+    :param measures_dist: list of distance metrics
+    :param distance_dict: dictionary with the results of the distance metrics
+    :param fmt: format in which the outputs should be written (default 4 decimal points)
     :return: complete comma-separated string of results in the order of keys specifid by measures_dist
     """
     result_str = ""
@@ -438,9 +471,9 @@ def to_string_mt(measures_mthresh, multi_thresholds_dict, fmt="{:.4f}"):
     """
     Transform to a comma separated string the content of results from the dictionary with all the multi-threshold metric
 
-    :param: measures_mthresh: list of multi threshold metrics
-    :param: multi_thresholds_dict: dictionary with the results of the multi-threshold metrics
-    :param: fmt: format in which the outputs should be written (default 4 decimal points)
+    :param measures_mthresh: list of multi threshold metrics
+    :param multi_thresholds_dict: dictionary with the results of the multi-threshold metrics
+    :param fmt: format in which the outputs should be written (default 4 decimal points)
     :return: complete comma-separated string of results in the order of keys specifid by measures_mthresh
     """
     result_str = ""
@@ -462,8 +495,16 @@ def to_string_mt(measures_mthresh, multi_thresholds_dict, fmt="{:.4f}"):
 
     
 def to_dict_meas_(measures, measures_dict, fmt="{:.4f}"):
-    """Given the selected metrics provides a dictionary 
-    with relevant metrics"""
+    """
+    Given the selected metrics provides a dictionary 
+    with relevant metrics
+    
+    :param measures: list of measures
+    :param measures_dict: dictionary of result for metrics
+    :param fmt: format to use (default 4 decimal places)
+    
+    :return: result_dict
+    """
     result_dict = {}
     # list_space = ['com_ref', 'com_pred', 'list_labels']
     for key in measures:
@@ -478,8 +519,8 @@ def combine_df(df1,df2):
     """
     Perform the concatenation of two dataframes - is used in the overall process when combining dataframe from existing and missing/failed prediction
 
-    :param: df1 First dataframe to concatenate
-    :param: df2 Second dataframe to concatenate
+    :param df1: First dataframe to concatenate
+    :param df2: Second dataframe to concatenate
     :return: concatenated dataframe of df1 and df2
     """
     if df1 is None or df1.shape[0]==0:
@@ -500,8 +541,9 @@ def merge_list_df(list_df, on=['label','case']):
     """
     Performs the merging of different dataframes of results given the label and cases values
 
-    :param: list_df: list of dataframes to merge together
-    :param: on list of columns on which to perform the merging operation
+    :param list_df: list of dataframes to merge together
+    :param on: list of columns on which to perform the merging operation
+
     :return: df_fin: final merged dataframe
     """
 
@@ -535,5 +577,9 @@ def trapezoidal_integration(x, fx):
 
     Reference
        https://en.wikipedia.org/w/index.php?title=Trapezoidal_rule&oldid=1104074899#Non-uniform_grid
+
+    :param x: values on the x axis
+    :param fx: values on the y axis
+    :return: integration
     """
     return np.sum((fx[:-1] + fx[1:])/2 * (x[1:] - x[:-1]))
