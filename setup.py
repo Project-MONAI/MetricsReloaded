@@ -25,7 +25,7 @@ setup(
     description=version_info["__description__"],
     author=version_info["__author__"],
     author_email=version_info["__author_email__"],
-    url="https://github.com/csudre/MetricsReloaded",
+    url="https://github.com/Project-MONAI/MetricsReloaded",
     packages=find_packages(),
     py_modules=[
         os.path.splitext(os.path.basename(path))[0]
@@ -50,7 +50,7 @@ setup(
     ],
     project_urls={
         "Documentation": "https://MetricsReloaded.readthedocs.io/",
-        "Issue Tracker": "https://github.com/csudre/MetricsReloaded/issues",
+        "Issue Tracker": "https://github.com/Project-MONAI/MetricsReloaded/issues",
     },
     python_requires=">=3.7",
     install_requires=requirements,
