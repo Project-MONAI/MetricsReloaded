@@ -112,26 +112,26 @@ class MorphologyOps(object):
         border = self.binary_map - eroded
         return border
 
-    def border_map2(self):
-        """
-        Creates the border for a 3D image
-        :return:
-        """
-        west = ndimage.shift(self.binary_map, [-1, 0, 0], order=0)
-        east = ndimage.shift(self.binary_map, [1, 0, 0], order=0)
-        north = ndimage.shift(self.binary_map, [0, 1, 0], order=0)
-        south = ndimage.shift(self.binary_map, [0, -1, 0], order=0)
-        top = ndimage.shift(self.binary_map, [0, 0, 1], order=0)
-        bottom = ndimage.shift(self.binary_map, [0, 0, -1], order=0)
-        cumulative = west + east + north + south + top + bottom
-        border = ((cumulative < 6) * self.binary_map) == 1
-        return border
+    # def border_map2(self):
+    #     """
+    #     Creates the border for a 3D image
+    #     :return:
+    #     """
+    #     west = ndimage.shift(self.binary_map, [-1, 0, 0], order=0)
+    #     east = ndimage.shift(self.binary_map, [1, 0, 0], order=0)
+    #     north = ndimage.shift(self.binary_map, [0, 1, 0], order=0)
+    #     south = ndimage.shift(self.binary_map, [0, -1, 0], order=0)
+    #     top = ndimage.shift(self.binary_map, [0, 0, 1], order=0)
+    #     bottom = ndimage.shift(self.binary_map, [0, 0, -1], order=0)
+    #     cumulative = west + east + north + south + top + bottom
+    #     border = ((cumulative < 6) * self.binary_map) == 1
+    #     return border
 
     def foreground_component(self):
         """
         Create the connected component map from the binary map stored in self.binary_map
 
-        return: label map
+        return: label map and number of labels
         """
         return ndimage.label(self.binary_map)
 
@@ -417,103 +417,103 @@ def one_hot_encode(img, n_classes):
     """
     return np.eye(n_classes)[img]
 
-def to_string_count(measures_count, counting_dict, fmt="{:.4f}"):
-    """
-    Transform to a comma separated string the content of results from the dictionary with all the counting based metrics
+# def to_string_count(measures_count, counting_dict, fmt="{:.4f}"):
+#     """
+#     Transform to a comma separated string the content of results from the dictionary with all the counting based metrics
 
-    :param measures_count: list of counting metrics
-    :param counting_dict: dictionary with the results of the counting metrics
-    :param fmt: format in which the outputs should be written (default 4 decimal points)
-    :return: complete comma-separated string of results in the order of keys specifid by measures_dist
-    """
-    result_str = ""
-    # list_space = ['com_ref', 'com_pred', 'list_labels']
-    for key in measures_count:
-        if len(counting_dict[key]) == 2:
-            result = counting_dict[key][0]()
-        else:
-            result = counting_dict[key][0](counting_dict[key][2])
-        result_str += (
-            ",".join(fmt.format(x) for x in result)
-            if isinstance(result, tuple)
-            else fmt.format(result)
-        )
-        result_str += ","
-    return result_str[:-1]  # trim the last comma
-
-
-def to_string_dist(measures_dist, distance_dict, fmt="{:.4f}"):
-    """
-    Transform to a comma separated string the content of results from the dictionary with all the distance based metrics
-
-    :param measures_dist: list of distance metrics
-    :param distance_dict: dictionary with the results of the distance metrics
-    :param fmt: format in which the outputs should be written (default 4 decimal points)
-    :return: complete comma-separated string of results in the order of keys specifid by measures_dist
-    """
-    result_str = ""
-    # list_space = ['com_ref', 'com_pred', 'list_labels']
-    for key in measures_dist:
-        if len(distance_dict[key]) == 2:
-            result = distance_dict[key][0]()
-        else:
-            result = distance_dict[key][0](distance_dict[key][2])
-        result_str += (
-            ",".join(fmt.format(x) for x in result)
-            if isinstance(result, tuple)
-            else fmt.format(result)
-        )
-        result_str += ","
-    return result_str[:-1]  # trim the last comma
+#     :param measures_count: list of counting metrics
+#     :param counting_dict: dictionary with the results of the counting metrics
+#     :param fmt: format in which the outputs should be written (default 4 decimal points)
+#     :return: complete comma-separated string of results in the order of keys specifid by measures_dist
+#     """
+#     result_str = ""
+#     # list_space = ['com_ref', 'com_pred', 'list_labels']
+#     for key in measures_count:
+#         if len(counting_dict[key]) == 2:
+#             result = counting_dict[key][0]()
+#         else:
+#             result = counting_dict[key][0](counting_dict[key][2])
+#         result_str += (
+#             ",".join(fmt.format(x) for x in result)
+#             if isinstance(result, tuple)
+#             else fmt.format(result)
+#         )
+#         result_str += ","
+#     return result_str[:-1]  # trim the last comma
 
 
-def to_string_mt(measures_mthresh, multi_thresholds_dict, fmt="{:.4f}"):
-    """
-    Transform to a comma separated string the content of results from the dictionary with all the multi-threshold metric
+# def to_string_dist(measures_dist, distance_dict, fmt="{:.4f}"):
+#     """
+#     Transform to a comma separated string the content of results from the dictionary with all the distance based metrics
 
-    :param measures_mthresh: list of multi threshold metrics
-    :param multi_thresholds_dict: dictionary with the results of the multi-threshold metrics
-    :param fmt: format in which the outputs should be written (default 4 decimal points)
-    :return: complete comma-separated string of results in the order of keys specifid by measures_mthresh
-    """
-    result_str = ""
-    # list_space = ['com_ref', 'com_pred', 'list_labels']
-    for key in measures_mthresh:
-        if len(multi_thresholds_dict[key]) == 2:
-            result = multi_thresholds_dict[key][0]()
-        else:
-            result = multi_thresholds_dict[key][0](
-                multi_thresholds_dict[key][2]
-            )
-        result_str += (
-            ",".join(fmt.format(x) for x in result)
-            if isinstance(result, tuple)
-            else fmt.format(result)
-        )
-        result_str += ","
-    return result_str[:-1]  # trim the last comma
+#     :param measures_dist: list of distance metrics
+#     :param distance_dict: dictionary with the results of the distance metrics
+#     :param fmt: format in which the outputs should be written (default 4 decimal points)
+#     :return: complete comma-separated string of results in the order of keys specifid by measures_dist
+#     """
+#     result_str = ""
+#     # list_space = ['com_ref', 'com_pred', 'list_labels']
+#     for key in measures_dist:
+#         if len(distance_dict[key]) == 2:
+#             result = distance_dict[key][0]()
+#         else:
+#             result = distance_dict[key][0](distance_dict[key][2])
+#         result_str += (
+#             ",".join(fmt.format(x) for x in result)
+#             if isinstance(result, tuple)
+#             else fmt.format(result)
+#         )
+#         result_str += ","
+#     return result_str[:-1]  # trim the last comma
+
+
+# def to_string_mt(measures_mthresh, multi_thresholds_dict, fmt="{:.4f}"):
+#     """
+#     Transform to a comma separated string the content of results from the dictionary with all the multi-threshold metric
+
+#     :param measures_mthresh: list of multi threshold metrics
+#     :param multi_thresholds_dict: dictionary with the results of the multi-threshold metrics
+#     :param fmt: format in which the outputs should be written (default 4 decimal points)
+#     :return: complete comma-separated string of results in the order of keys specifid by measures_mthresh
+#     """
+#     result_str = ""
+#     # list_space = ['com_ref', 'com_pred', 'list_labels']
+#     for key in measures_mthresh:
+#         if len(multi_thresholds_dict[key]) == 2:
+#             result = multi_thresholds_dict[key][0]()
+#         else:
+#             result = multi_thresholds_dict[key][0](
+#                 multi_thresholds_dict[key][2]
+#             )
+#         result_str += (
+#             ",".join(fmt.format(x) for x in result)
+#             if isinstance(result, tuple)
+#             else fmt.format(result)
+#         )
+#         result_str += ","
+#     return result_str[:-1]  # trim the last comma
 
     
-def to_dict_meas_(measures, measures_dict, fmt="{:.4f}"):
-    """
-    Given the selected metrics provides a dictionary 
-    with relevant metrics
+# def to_dict_meas_(measures, measures_dict, fmt="{:.4f}"):
+#     """
+#     Given the selected metrics provides a dictionary 
+#     with relevant metrics
     
-    :param measures: list of measures
-    :param measures_dict: dictionary of result for metrics
-    :param fmt: format to use (default 4 decimal places)
+#     :param measures: list of measures
+#     :param measures_dict: dictionary of result for metrics
+#     :param fmt: format to use (default 4 decimal places)
     
-    :return: result_dict
-    """
-    result_dict = {}
-    # list_space = ['com_ref', 'com_pred', 'list_labels']
-    for key in measures:
-        if len(measures_dict[key]) == 2:
-            result = measures_dict[key][0]()
-        else:
-            result = measures_dict[key][0](measures_dict[key][2])
-        result_dict[key] = fmt.format(result)
-    return result_dict  # trim the last comma
+#     :return: result_dict
+#     """
+#     result_dict = {}
+#     # list_space = ['com_ref', 'com_pred', 'list_labels']
+#     for key in measures:
+#         if len(measures_dict[key]) == 2:
+#             result = measures_dict[key][0]()
+#         else:
+#             result = measures_dict[key][0](measures_dict[key][2])
+#         result_dict[key] = fmt.format(result)
+#     return result_dict  # trim the last comma
 
 def combine_df(df1,df2):
     """
@@ -554,6 +554,8 @@ def merge_list_df(list_df, on=['label','case']):
             for f in on:
                 if f not in k.columns:
                     flag_on = False
+                    print(f, ' not present')
+                    break
             if flag_on:
                 list_fin.append(k)
     if len(list_fin) == 0:
@@ -561,16 +563,12 @@ def merge_list_df(list_df, on=['label','case']):
     elif len(list_fin) == 1:
         return list_fin[0]
     else:
-        print("list fin is ",list_fin)
+        #print("list fin is ",list_fin)
         df_fin = list_fin[0]
+        print(len(list_fin))
         for k in list_fin[1:]:
             df_fin = pd.merge(df_fin, k, on=on)
         return df_fin    
-
-
-    
-
-
 
 def trapezoidal_integration(x, fx):
     """Trapezoidal integration

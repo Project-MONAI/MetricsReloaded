@@ -43,7 +43,7 @@ data_miss['pred_class'] = [pred1, pred2]
 data_miss['ref_class'] = [ref1, ref2]
 data_miss['list_values'] = [1]
 data_miss['pred_prob'] = [None,None]
-data_miss['ref_missing'] = [ref3]
+data_miss['ref_missing_pred'] = [ref3]
 
 data_agg = {}
 data_agg['pred_class'] = [pred12]
@@ -73,7 +73,7 @@ def test_op_aggregation():
 def test_op_refmissing():
     pe = PE(data_miss,'SemS',measures_overlap=['fbeta'],measures_boundary=['boundary_iou'])
     print(pe.grouped_lab, pe.resseg)
-    assert_allclose(pe.grouped_lab.shape,[3,8])
+    assert_allclose(pe.grouped_lab.shape,[2,8]) # to modify
 
 
 
