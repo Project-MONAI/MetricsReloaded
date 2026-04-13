@@ -434,6 +434,13 @@ def test_voldiff():
     expected_vdiff = 0
     assert_allclose(value_test, expected_vdiff)
 
+def test_absolute_volume_difference_ratio_emptyref():
+    ref = np.zeros([10, 10])
+    pred = np.eye(10)
+    ppm = PM(pred, ref)
+    value_test = ppm.absolute_volume_difference_ratio()
+    assert value_test != value_test
+
 def test_specificity():
     """
     Using figure 2.17 p59 as example test
@@ -444,6 +451,20 @@ def test_specificity():
     expected_spec2 = 1.00
     assert_allclose(value_test1, expected_spec1, atol=0.01)
     assert_allclose(value_test2, expected_spec2, atol=0.01)
+
+def test_topology_precision_emptypred():
+    pred = np.zeros([10, 10])
+    ref = np.eye(10)
+    ppm = PM(pred, ref)
+    value_test = ppm.topology_precision()
+    assert value_test != value_test
+
+def test_topology_sensitivity_emptyref():
+    ref = np.zeros([10, 10])
+    pred = np.eye(10)
+    ppm = PM(pred, ref)
+    value_test = ppm.topology_sensitivity()
+    assert value_test != value_test
 
 
 def test_matthews_correlation_coefficient_29():
@@ -470,6 +491,12 @@ def test_matthews_correlation_coefficient():
     assert_allclose(value_test, expected_mcc, atol=0.001)
     assert_allclose(value_test2, expected_mcc, atol=0.001)
 
+def test_to_dict_meas_mpm():
+    mpm = MPM(f38_pred, f38_ref, [0,1],measures=['mcc'])
+    dict_meas = mpm.to_dict_meas()
+    print(dict_meas.keys,dict_meas.values)
+    assert_allclose(dict_meas['mcc'],0.0386,atol=0.01)
+
 def test_confusion_matrix():
     """
     Taking Figure SN3.39 as inspiration
@@ -485,6 +512,25 @@ def test_confusion_matrix():
     print(cm_test)
     assert_array_equal(cm_test,cm)
 
+def test_best_naive_ec():
+    test_true = np.asarray([0, 1, 2, 3, 4])
+    test_pred = np.asarray([0, 1, 2, 3, 0])
+    weights_ec = np.ones([5,5]) - np.eye(5)
+    mpm = MPM(test_pred, test_true, [0, 1, 2, 3, 4],dict_args={'ec_costs':weights_ec})
+    expected_value = 0.8
+    value_test = mpm.best_naive_ec()
+    assert_allclose(value_test, expected_value, atol=0.01)
+
+def test_ec_weight_matrix_argument():
+    test_true = np.asarray([0, 1, 2, 3, 4])
+    test_pred = np.asarray([0, 1, 2, 3, 0])
+    weights_ec = np.ones([5,5]) - np.eye(5)
+    mpm = MPM(test_pred, test_true, [0, 1, 2, 3, 4],dict_args={'ec_costs':weights_ec})
+    value_test = mpm.expected_cost()
+    print(value_test)
+    expected_ec = 0.2
+    assert_allclose(value_test, expected_ec, atol=0.01)
+
 
 def test_ec3():
     test_true = np.asarray([0, 1, 2, 3, 4])
@@ -494,6 +540,17 @@ def test_ec3():
     print(value_test)
     expected_ec = 0.25
     assert_allclose(value_test, expected_ec, atol=0.01)
+
+def test_chance_agreement_probability():
+    test_true = np.asarray([0, 1, 2, 3, 4])
+    test_pred = np.asarray([0, 1, 2, 3, 0])
+    #0.2*0.4+0.2*0.2+0.2*0.2+0.2*0.2+0.2*0
+    mpm = MPM(test_pred, test_true, [0, 1, 2, 3, 4])
+    value_test = mpm.chance_agreement_probability()
+    expected_value = 0.2
+    assert_allclose(value_test, expected_value, atol=0.01)
+
+
 
 def test_accuracy():
     """
@@ -511,6 +568,7 @@ def test_accuracy():
     value_test2 = ppm2.accuracy()
     assert_allclose(value_test1, expected_accuracy1,atol=0.001)
     assert_allclose(value_test2, expected_accuracy2,atol=0.001)
+
 
 def test_netbenefit():
     """
@@ -557,7 +615,20 @@ def test_negative_predictive_value():
     expected_npv2 = 0.47
     assert_allclose(value_test1, expected_npv1, atol=0.001)
     assert_allclose(value_test2, expected_npv2, atol=0.01)
-    
+
+def test_negative_predictive_value_predfull_reffull():
+    ref = np.ones([10, 10])
+    pred = np.ones([10, 10])
+    ppm = PM(pred, ref)
+    value_test = ppm.negative_predictive_value()
+    assert value_test != value_test
+
+def test_negative_predictive_value_predfull():
+    ref = np.eye(10)
+    pred = np.ones([10, 10])
+    ppm = PM(pred, ref)
+    value_test = ppm.negative_predictive_value()
+    assert value_test != value_test  
 
 
 def test_expectedcost():
@@ -578,6 +649,20 @@ def test_normalised_expectedcost2():
     
     assert_allclose(value_test2, expected_ec, atol=0.01)
     assert_allclose(value_test1, expected_ec, atol=0.01)
+
+def test_normalised_expectedcost_allpos():
+    ref = np.asarray([1, 1, 1, 1])
+    pred = np.asarray([0, 1, 1, 1])
+    ppm = PM(pred,ref)
+    value_test = ppm.normalised_expected_cost()
+    assert(value_test!=value_test)
+
+def test_normalised_expectedcost_allneg():
+    ref = np.asarray([0, 0, 0, 0])
+    pred = np.asarray([0, 1, 1, 1])
+    ppm = PM(pred,ref)
+    value_test = ppm.normalised_expected_cost()
+    assert(value_test!=value_test)
     
 def test_cohenskappa():
     """
@@ -585,18 +670,25 @@ def test_cohenskappa():
     """
     value_test1 = ppm29_1.cohens_kappa()
     value_test2 = ppm29_2.cohens_kappa()
+    ppm_dict = PM(pred29_1,ref29_1,dict_args={'cost_fn':1,'cost_fp':1})
+    value_test3 = ppm_dict.cohens_kappa()
     expected_ck1 = 0.70
     expected_ck2 = 0.53
     assert_allclose(value_test1, expected_ck1, atol=0.01)
+    assert_allclose(value_test3, expected_ck1,atol=0.01)
     assert_allclose(value_test2, expected_ck2, atol=0.01)
 
 
 def test_cohenskappa3():
     mpm = MPM(f38_pred, f38_ref, [0, 1])
+    weights_matrix = np.ones([2,2])-np.eye(2)
+    mpm2 = MPM(f38_pred, f38_ref, [0,1],dict_args={'weights':weights_matrix})
     value_test = mpm.weighted_cohens_kappa()
+    value_test2 = mpm2.weighted_cohens_kappa()
     print("CK f38 ", value_test, cks(f38_pred, f38_ref))
     expected_ck3 = 0.003
     assert_allclose(value_test, expected_ck3, atol=0.001)
+    assert_allclose(value_test2, expected_ck3, atol=0.001)
 
 
 def test_balanced_accuracy2():
@@ -610,6 +702,35 @@ def test_balanced_accuracy2():
     assert_allclose(value_test1, expected_ba1, atol=0.01)
     assert_allclose(value_test2, expected_ba2, atol=0.01)
 
+def test_balanced_accuracy_all_pos():
+    ref = np.asarray([1, 1, 1, 1])
+    pred = np.asarray([0, 1, 1, 1])
+    ppm = PM(pred,ref)
+    value_test = ppm.balanced_accuracy()
+    assert(value_test!=value_test)
+
+def test_balanced_accuracy_all_neg():
+    ref = np.asarray([0, 0, 0, 0])
+    pred = np.asarray([0, 1, 0, 0])
+    ppm = PM(pred,ref)
+    value_test = ppm.balanced_accuracy()
+    assert(value_test!=value_test)
+
+def test_false_positive_rate():
+    ref = np.asarray([0, 0, 1, 1])
+    pred = np.asarray([0, 1, 1, 1])
+    ppm = PM(pred,ref)
+    value_test = ppm.false_positive_rate()
+    expected_value = 0.5
+    assert_allclose(value_test, expected_value, atol=0.01)
+
+def test_false_positive_rate_all_pos():
+    ref = np.asarray([1, 1, 1, 1])
+    pred = np.asarray([0, 1, 1, 1])
+    ppm = PM(pred,ref)
+    value_test = ppm.false_positive_rate()
+    assert(value_test!=value_test)
+
 
 def test_youden_index2():
     """
@@ -621,6 +742,21 @@ def test_youden_index2():
     value_test2 = ppm29_2.youden_index()
     assert_allclose(value_test1, expected_yi1, atol=0.01)
     assert_allclose(value_test2, expected_yi2, atol=0.01)
+
+def test_youden_index_fully_neg():
+    ref = np.asarray([0, 0, 0, 0])
+    pred = np.asarray([0, 1, 0, 0])
+    ppm = PM(pred,ref)
+    value_test = ppm.youden_index()
+    assert(value_test!=value_test)
+
+def test_youden_index_fully_pos():
+    ref = np.asarray([1, 1, 1, 1])
+    pred = np.asarray([0, 1, 1, 1])
+    ppm = PM(pred,ref)
+    value_test = ppm.youden_index()
+    assert(value_test!=value_test)
+
 
 def test_mcc():
     list_values = [0, 1, 2, 3]
@@ -705,6 +841,22 @@ def test_intersection_over_union():
     expected_iou = 0.76
     assert_allclose(value_test, expected_iou, atol=0.01)
 
+def test_intersection_over_reference0():
+    ref = np.zeros([10, 10])
+    pred = np.eye(10)
+    ppm = PM(pred, ref)
+    value_test = ppm.intersection_over_reference()
+    assert value_test != value_test
+
+def test_intersection_over_union_allempty():
+    ref = np.zeros([10, 10])
+    pred = np.zeros([10, 10])
+    ppm = PM(pred, ref)
+    value_test = ppm.intersection_over_union()
+    assert value_test != value_test
+
+
+
 
 def test_fbeta_beta_value():
     """
@@ -777,6 +929,28 @@ def test_positive_likelihood_ratio():
     expected_plr2 = 4.50
     assert_allclose(value_test1, expected_plr1, atol=0.01)
     assert_allclose(value_test2, expected_plr2, atol=0.01)
+
+def test_positive_likelihood_ratio_allpos():
+    pred = np.asarray([0, 1, 1, 1])
+    ref = np.asarray([1, 1, 1, 1])
+    ppm = PM(pred, ref)
+    value_test = ppm.positive_likelihood_ratio()
+    assert(value_test!=value_test)
+
+def test_positive_likelihood_ratio_allneg():
+    pred = np.asarray([0, 0, 1, 1])
+    ref = np.asarray([0, 0, 0, 0])
+    ppm = PM(pred, ref)
+    value_test = ppm.positive_likelihood_ratio()
+    assert(value_test!=value_test)
+
+def test_positive_likelihood_ratio_spec1():
+    pred = np.asarray([0, 0, 0, 1])
+    ref = np.asarray([0, 0, 1, 1])
+    ppm = PM(pred, ref)
+    value_test = ppm.positive_likelihood_ratio()
+    assert(value_test!=value_test)
+
 
 def test_hausdorff_distances_s210():
     """
@@ -906,6 +1080,15 @@ def test_dsc_s214():
     assert_allclose(value_test1, expected_dsc1, atol=0.01)
     assert_allclose(value_test2, expected_dsc2, atol=0.01)
 
+def test_dsc_allempty():
+    ref = np.zeros([10, 10])
+    pred = np.zeros([10, 10])
+    ppm = PM(pred,ref)
+    value_test = ppm.dsc()
+    assert(value_test!=value_test)
+
+
+
 def test_cldsc():
     pm1 = PM(pred_clDice_small1, ref_clDice_small)
     value_test1 = pm1.centreline_dsc()
@@ -927,6 +1110,21 @@ def test_cldsc():
     expected_cldsc2 = 0.67
     assert_allclose(value_test1, expected_cldsc1, atol=0.01)
     assert_allclose(value_test2, expected_cldsc2, atol=0.01)
+
+def test_cldsc_empty_ref_or_pred():
+    ref1 = np.zeros([10, 10])
+    pred1 = np.eye(10)
+
+    pred2 = np.zeros([10, 10])
+    ref2 = np.eye(10)
+
+    ppm1 = PM(pred1, ref1)
+    ppm2 = PM(pred2, ref2)
+    value_test1 = ppm1.centreline_dsc()
+    value_test2 = ppm2.centreline_dsc()
+    assert value_test1 != value_test1
+    assert value_test2 != value_test2
+
 
 
 def test_empty_reference():
@@ -953,6 +1151,14 @@ def test_empty_reference():
     assert np.isnan(fbeta)
     assert sens != sens  # True if nan
     assert spec != spec  # True if nan
+
+def test_fbeta_denominator0():
+    ref = np.asarray([0, 0, 0, 1])
+    pred = np.asarray([0, 1, 0, 0])
+    ppm = PM(pred, ref)
+    value_test = ppm.fbeta()
+    assert value_test == 0
+
 
 
 def test_pred_in_ref():

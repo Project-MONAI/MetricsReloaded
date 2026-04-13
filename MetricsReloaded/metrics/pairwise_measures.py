@@ -194,6 +194,7 @@ class MultiClassPairwiseMeasures(object):
         for f in self.list_values:
             prob_pred = len(np.where(self.pred == f)[0]) / np.size(self.pred)
             prob_ref = len(np.where(self.ref == f)[0]) / np.size(self.ref)
+            print(f, prob_ref, prob_pred)
             chance += prob_pred * prob_ref
         return chance
 
@@ -1101,15 +1102,15 @@ class BinaryPairwiseMeasures(object):
             com_pred = ndimage.center_of_mass(self.pred)
             return com_pred
 
-    def list_labels(self):
-        """
-        Creates the tuple with unique values of labels
+    # def list_labels(self):
+    #     """
+    #     Creates the tuple with unique values of labels
 
-        return list_labels
-        """
-        if self.list_labels is None:
-            return ()
-        return tuple(np.unique(self.list_labels))
+    #     return list_labels
+    #     """
+    #     if self.list_labels is None:
+    #         return ()
+    #     return tuple(np.unique(self.list_labels))
 
     def absolute_volume_difference_ratio(self):
         """
