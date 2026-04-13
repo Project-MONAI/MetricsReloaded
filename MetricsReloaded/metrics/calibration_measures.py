@@ -117,6 +117,7 @@ class CalibrationMeasures(object):
             nbins = self.dict_args["bins_ece"]
         else:
             nbins = 10
+        print('number bins is ',nbins)
         step = 1.0 / nbins
         range_values = np.arange(0, 1.00001, step)
         list_values = []
@@ -385,8 +386,10 @@ class CalibrationMeasures(object):
         prob_ref_values, prob_ref_counts = np.unique(self.ref, return_counts=True)
         for k in range(nclasses):
             idx = np.where(prob_ref_values == k)
-            if len(idx) == 0:
+            print(k, idx)
+            if np.size(idx) == 0:
                 prob[k] = 0
+                print('nothing in ', k)
             else:
                 prob[k] = prob_ref_counts[idx[0]] / numb_samples
 
