@@ -71,6 +71,15 @@ def test_brier_score():
     expected_bs = 0.4
     assert_allclose(expected_bs, value_test, atol=0.01)
 
+def test_root_brier_score():
+    ref_bs = [1, 0]
+    pred_bs = [[0.2,0.8],
+                [0.4,0.6]]
+    ppm = CalibrationMeasures(np.asarray(pred_bs), np.asarray(ref_bs))
+    value_test = ppm.root_brier_score()
+    expected_bs = 0.6325
+    assert_allclose(expected_bs, value_test, atol=0.01)
+
 #To use SN 2.14 p 99 of Metrics Reloaded
 
 def test_top_label_classification_error():
@@ -82,6 +91,22 @@ def test_top_label_classification_error():
     best_prob = [0.6, 0.8, 1, 0.7]
     pred_class = [1, 0, 2, 1]
     expected_tce = 0.478
+    cm = CalibrationMeasures(pred_tce, ref_tce)
+    value_test = cm.top_label_classification_error()
+    assert_allclose(value_test, expected_tce, atol=0.001)
+
+def test_top_label_classification_error_oneemptyclass():
+    ref_tce = [1, 0, 1, 1]
+    pred_tce = [[0.1, 0.8, 0, 0.1], [0.6, 0.1, 0.6, 0.7], [0.3, 0.1, 0.4, 0.2]]
+    # 0.25 - 0.75 - 0
+    #
+    pred_tce = np.asarray(pred_tce).T
+    ref_tce = np.asarray(ref_tce)
+    expected_prob = [0.75, 0.25, 0.75, 0.75]
+    best_prob = [0.6, 0.8, 0.6, 0.7]
+    pred_class = [1, 0, 1, 1]
+    # sqrt(0.15^2 + 0.55^2 + 0.15^2 + 0.05^2)/4
+    expected_tce = 0.2958
     cm = CalibrationMeasures(pred_tce, ref_tce)
     value_test = cm.top_label_classification_error()
     assert_allclose(value_test, expected_tce, atol=0.001)
@@ -111,9 +136,13 @@ def test_class_wise_expectation_calibration_error():
     pred_cwece = np.asarray(pred_cwece).T
     dict_args = {"bins_ece": 2}
     cm = CalibrationMeasures(pred_cwece, ref_cwece, dict_args=dict_args)
+    cm2 = CalibrationMeasures(pred_cwece, ref_cwece)
     value_test = cm.class_wise_expectation_calibration_error()
+    value_test2 = cm2.class_wise_expectation_calibration_error()
     expected_cwece = 0.150
+    expected_cwece2 = 0.150
     assert_allclose(value_test, expected_cwece, atol=0.001)
+    assert_allclose(value_test2, expected_cwece2, atol=0.001)
 
 
 def test_gamma_ik():
@@ -121,9 +150,13 @@ def test_gamma_ik():
     pred = np.asarray(pred).T
     ref = np.asarray([1, 0, 2, 1])
     cm = CalibrationMeasures(pred, ref)
+    cm2 = CalibrationMeasures(pred, ref, dict_args={'bandwidth':0.5})
     value_test = cm.gamma_ik(0, 0)
+    value_test2 = cm2.gamma_ik(0,0)
     expected_gamma = gamma(1.2)
+    expected_gamma2 = gamma(1.2)
     assert_allclose(value_test, expected_gamma, atol=0.001)
+    assert_allclose(value_test2, expected_gamma2, atol=0.001)
 
 
 def test_dirichlet_kernel():
@@ -131,12 +164,28 @@ def test_dirichlet_kernel():
     pred = np.asarray(pred).T
     ref = np.asarray([1, 0, 2, 1])
     cm = CalibrationMeasures(pred, ref)
+    cm2 = CalibrationMeasures(pred,ref,dict_args={'bandwidth':0.5})
     numerator = gamma(1.2 + 2.2 + 1.6)
     denominator = gamma(1.2) * gamma(2.2) * gamma(1.6)
     prod = np.power(0.8, 0.2) * np.power(0.1, 1.2) * np.power(0.1, 0.6)
     value_test = cm.dirichlet_kernel(1, 0)
+    value_test2 = cm2.dirichlet_kernel(1,0)
     expected_dir = numerator * prod / denominator
+    expected_dir2 = expected_dir
     assert_allclose(value_test, expected_dir, atol=0.001)
+    assert_allclose(value_test2, expected_dir2, atol=0.001)
+
+
+
+def test_kernel_calculation():
+    pred = [[0.1, 0.8, 0, 0.1], [0.6, 0.1, 0, 0.7], [0.3, 0.1, 1, 0.2]]
+    #sqrt(0.7^2 + 0.5^2 + 0.2^2)/0.2
+    pred = np.asarray(pred).T
+    ref = np.asarray([1, 0, 2, 1])
+    cm = CalibrationMeasures(pred,ref,dict_args={'bandwidth_kce':0.2})
+    value_test = cm.kernel_calculation(0,1)[0,0]
+    expected_value = 0.01208
+    assert_allclose(value_test, expected_value, atol=0.001)
 
 def test_kernel_calibration_error():
     pred = [[0.1, 0.8, 0, 0.1], [0.6, 0.1, 0, 0.7], [0.3, 0.1, 1, 0.2]]
