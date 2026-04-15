@@ -110,6 +110,8 @@ class AssignmentMapping(object):
         self.flag_fp_in = flag_fp_in
         self.pixdim = pixdim
         all_input = []
+        self.ref_loc_mod = None
+        self.pred_loc_mod = None
         if len(self.pixdim) == 0:
             if len(pred_loc) > 0:
                 if pred_loc[0].size > 0:
@@ -136,11 +138,14 @@ class AssignmentMapping(object):
             
         flag_usable, flag_predmod, flag_refmod = self.check_input_localization()
         # self.pred_class = pred_class
-        
+        print('Flag', flag_usable, flag_predmod, flag_refmod)
         # self.ref_class = ref_class
         self.flag_usable = flag_usable
         self.flag_predmod = flag_predmod
         self.flag_refmod = flag_refmod
+        
+
+
         if self.flag_usable:
             if localization == "box_iou":
                 self.matrix = self.pairwise_boxiou()
@@ -163,12 +168,23 @@ class AssignmentMapping(object):
             elif localization == "com_dist":
                 self.matrix = self.pairwise_pointcomdist()
             else:
+                print(' not valid localisation ')
                 self.flag_usable = False
+                self.df_matching = None
+                self.valid = None
+                warnings.warn("No adequate localization strategy chosen - not going ahead")
+        else:
+                print(' not valid localisation ')
+                self.flag_usable = False
+                self.df_matching = None
+                self.valid = None
                 warnings.warn("No adequate localization strategy chosen - not going ahead")
         
         if self.localization in ['point_in_mask','point_in_box']:
             if self.assignment == 'greedy_matching':
                 self.flag_usable = False
+                self.df_matching = None
+                self.valid = None
                 warnings.warn("The localization strategy does not provide grading. Impossible to base assignment on localization performance!")
         if self.flag_usable:        
             self.df_matching, self.valid = self.resolve_ambiguities_matching()
@@ -240,6 +256,7 @@ class AssignmentMapping(object):
                 return flag_usable, flag_predmod, flag_refmod
             if input_ref == 'mask':
                 flag_refmod = True
+                self.box_fromrefmask()
                 warnings.warn('We will need to modify ref to make it interpretable as box corners')
         elif self.localization == 'com_dist':
             if input_ref == 'mask':
@@ -359,8 +376,8 @@ class AssignmentMapping(object):
         pred_points = self.pred_loc
         if self.flag_refmod:
             ref_boxes = self.ref_loc_mod
-        if self.flag_predmod:
-            pred_points = self.pred_loc_mod
+        # if self.flag_predmod:
+        #     pred_points = self.pred_loc_mod
         matrix_pinb = np.zeros([pred_points.shape[0],ref_boxes.shape[0]])
         for (p, p_point) in enumerate(pred_points):
             for (r, r_box) in enumerate(ref_boxes):
@@ -376,10 +393,10 @@ class AssignmentMapping(object):
         """
         ref_masks = self.ref_loc
         pred_points = self.pred_loc
-        if self.flag_refmod:
-            ref_masks = self.ref_loc_mod
-        if self.flag_predmod:
-            pred_points = self.pred_loc_mod
+        # if self.flag_refmod:
+        #     ref_masks = self.ref_loc_mod
+        # if self.flag_predmod:
+        #     pred_points = self.pred_loc_mod
         matrix_pinm = np.zeros([pred_points.shape[0],ref_masks.shape[0]])
         for (p,p_point) in enumerate(pred_points):
             for (r,r_mask) in enumerate(ref_masks):
@@ -600,13 +617,13 @@ class AssignmentMapping(object):
             df_ambiguous_ref = df_matching[
                 (df_matching["count_ref"] > 1) & (df_matching["ref"] > -1)
             ]
-            df_ambiguous_seg = df_matching[
+            df_ambiguous_pred = df_matching[
                 (df_matching["count_pred"] > 1) & (df_matching["pred"] > -1)
             ]
         if (
             df_ambiguous_ref is None
             or df_ambiguous_ref.shape[0] == 0
-            and df_ambiguous_seg.shape[0] == 0
+            and df_ambiguous_pred.shape[0] == 0
         ):
             print("No ambiguity in matching")
             df_matching_all = pd.concat([df_matching, df_fp, df_fn])
@@ -620,7 +637,7 @@ class AssignmentMapping(object):
                 list_matching = []
                 for (r, c) in zip(row, col):
                     df_tmp = df_matching[
-                        df_matching["seg"] == list_valid[r] & (df_matching["ref"] == c)
+                        df_matching["pred"] == list_valid[r] & (df_matching["ref"] == c)
                     ]
                     list_matching.append(df_tmp)
                 df_ordered2 = pd.concat(list_matching)
