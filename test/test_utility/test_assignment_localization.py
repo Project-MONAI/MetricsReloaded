@@ -1,14 +1,9 @@
-import pytest
-from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures as PM
-from MetricsReloaded.metrics.pairwise_measures import MultiClassPairwiseMeasures as MPM
 from MetricsReloaded.processes.mixed_measures_processes import (
     MultiLabelLocSegPairwiseMeasure as MLIS,
 )
 from MetricsReloaded.utility.assignment_localization import AssignmentMapping
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_almost_equal
-from sklearn.metrics import cohen_kappa_score as cks
-from sklearn.metrics import matthews_corrcoef as mcc
 
 #Data for figure 6a testing of assignment and average precision
 ref6a1 = np.asarray([3,2,7,5])
@@ -83,7 +78,7 @@ def test_assignment_6c():
 
 def test_check_localization():
     ref_box = [[2,2,4,4]]
-    ref_com = [[3,3]]
+    # ref_com = [[3,3]]
     pred_box = [[2,2,4,4]]
     pred_com = [[3,3]]
     ref_mask = np.zeros([14,14])
@@ -92,7 +87,7 @@ def test_check_localization():
     pred_mask[2:5,2:5]=1
     ref_boxes = np.vstack([ref_box])
     ref_masks = np.asarray([ref_mask])
-    ref_coms = np.vstack([ref_com])
+    # ref_coms = np.vstack([ref_com])
     pred_coms = np.vstack([pred_com])
     pred_boxes = np.vstack([pred_box])
     pred_masks = np.asarray([pred_mask])
@@ -314,9 +309,6 @@ def test_box_frompredmask():
     assert_array_almost_equal(np.asarray(expected_box),test_box)
 
 
-
-
-
 def test_localization():
     ref = [f59_ref1, f59_ref2]
     pred = [f59_pred1, f59_pred2]
@@ -349,7 +341,7 @@ def test_localization():
     print(match1, match2, match2.columns)
     m12 = match1[match1["label"] == 1]
     m21 = match2[match2["label"] == 0]
-    m22 = match2[match2["label"] == 1]
+    # m22 = match2[match2["label"] == 1]
     print(m12)
     print(match1[match1["label"] == 1])
     print(match1[match1["label"] == 0])

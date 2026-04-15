@@ -332,19 +332,6 @@ class MultiLabelLocSegPairwiseMeasure(object):
                 pred_class_case = np.asarray(self.pred_class[case])
                 ref_class_case = np.asarray(self.ref_class[case])
                 ind_pred = np.where(pred_class_case == lab)
-                
-                # identification of the elements of pred classified according to label lab
-                pred_tmp = np.where(
-                    pred_class_case == lab,
-                    np.ones_like(pred_class_case),
-                    np.zeros_like(pred_class_case),
-                )
-                # identification of the elements of ref_class classificed according to label lab
-                ref_tmp = np.where(
-                    ref_class_case == lab,
-                    np.ones_like(ref_class_case),
-                    np.zeros_like(ref_class_case),
-                )
                 ind_ref = np.where(ref_class_case == lab)
 
                 # Creation of the list of individual element images for pred and ref given the chosen label
@@ -576,12 +563,6 @@ class MultiLabelLocMeasures(object):
                 pred_arr = np.asarray(self.pred_class[case])
                 ref_arr = np.asarray(self.ref_class[case])
                 ind_pred = np.where(pred_arr == lab)
-                pred_tmp = np.where(
-                    pred_arr == lab, np.ones_like(pred_arr), np.zeros_like(pred_arr)
-                )
-                ref_tmp = np.where(
-                    ref_arr == lab, np.ones_like(ref_arr), np.zeros_like(ref_arr)
-                )
                 ind_ref = np.where(ref_arr == lab)
                 pred_loc_tmp = [self.pred_loc[case][f] for f in ind_pred[0]]
                 ref_loc_tmp = [self.ref_loc[case][f] for f in ind_ref[0]]

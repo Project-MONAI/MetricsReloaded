@@ -34,9 +34,6 @@ from scipy.spatial.distance import cdist
 import warnings
 from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures
 from MetricsReloaded.utility.utils import (
-    intersection_boxes,
-    area_box,
-    union_boxes,
     box_ior,
     box_iou,
     guess_input_style,

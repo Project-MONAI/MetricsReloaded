@@ -56,10 +56,6 @@ __all__ = [
     'min_x_at_y_less',
     'min_x_at_y_more',
     'one_hot_encode',
-    'to_string_count',
-    'to_string_dist',
-    'to_string_mt',
-    'to_dict_meas_',
     'trapezoidal_integration',
 ]
 
@@ -167,7 +163,6 @@ def intersection_boxes(box1, box2):
     max_values = np.maximum(box1, box2)
     box_inter = max_values[: min_values.shape[0] // 2]
     box_inter2 = min_values[max_values.shape[0] // 2 :]
-    box_intersect = np.concatenate([box_inter, box_inter2])
     box_intersect_area = np.prod(
         np.maximum(box_inter2 + 1 - box_inter, np.zeros_like(box_inter))
     )

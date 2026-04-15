@@ -1,13 +1,6 @@
-from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures as PM
-from MetricsReloaded.metrics.pairwise_measures import MultiClassPairwiseMeasures as MPM
-from MetricsReloaded.processes.mixed_measures_processes import (
-    MultiLabelLocSegPairwiseMeasure as MLIS, MultiLabelPairwiseMeasures as MLPM,
-)
 from MetricsReloaded.processes.overall_process import ProcessEvaluation as PE
 import numpy as np
 from numpy.testing import assert_allclose
-from sklearn.metrics import cohen_kappa_score as cks
-from sklearn.metrics import matthews_corrcoef as mcc
 
 ref1 = np.zeros([21,21])
 ref1[5:12,4:7] = 1
@@ -89,4 +82,4 @@ def test_op_agg_label_nan():
 
 def test_check_measures_cat_valid():
     pe = PE(data_agg,category='ImLC',measures_mt=['froc'])
-    assert(pe.flag_valid,False)
+    assert not pe.flag_valid 

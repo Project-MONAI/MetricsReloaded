@@ -181,8 +181,7 @@ The available measures per task are:
 """
 
 
-from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures
-from MetricsReloaded.processes.mixed_measures_processes import *
+from MetricsReloaded.processes.mixed_measures_processes import MultiLabelLocMeasures, MultiLabelPairwiseMeasures, MultiLabelLocSegPairwiseMeasure
 import warnings
 from MetricsReloaded.utility.utils import combine_df, merge_list_df
 import pandas as pd
@@ -604,7 +603,7 @@ class ProcessEvaluation(object):
                     for m in self.measures_mcc:
                         dict_mcc[m] = WORSE[m]
                     list_missing_mcc.append(dict_mcc)    
-                    for l in self.data['list_values']:
+                    for lab in self.data['list_values']:
                         dict_seg = {}
                         dict_mt = {}
                         dict_det = {}
@@ -621,15 +620,15 @@ class ProcessEvaluation(object):
                             dict_seg[m] = WORSE[m]
                         if len(self.measures_boundary) + len(self.measures_overlap) > 0:
                             dict_seg['case'] = i + numb_valid
-                            dict_seg["label"] = l
+                            dict_seg["label"] = lab
                             list_missing_seg.append(dict_seg)
                         if len(self.measures_pcc) + len(self.measures_detseg) > 0 : 
                             dict_det['case'] = i + numb_valid
-                            dict_det["label"] = l
+                            dict_det["label"] = lab
                             list_missing_det.append(dict_det)
                         if len(self.measures_mt) > 0:
                             dict_mt['case'] = i + numb_valid
-                            dict_mt["label"] = l
+                            dict_mt["label"] = lab
                             list_missing_mt.append(dict_mt)
                 df_miss_det = pd.DataFrame.from_dict(list_missing_det)
                 df_miss_seg = pd.DataFrame.from_dict(list_missing_seg)

@@ -1,13 +1,9 @@
 #import pytest
-from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures as PM
-from MetricsReloaded.metrics.pairwise_measures import MultiClassPairwiseMeasures as MPM
 from MetricsReloaded.processes.mixed_measures_processes import (
     MultiLabelLocSegPairwiseMeasure as MLIS, MultiLabelPairwiseMeasures as MLPM,
 )
 import numpy as np
 from numpy.testing import assert_allclose
-from sklearn.metrics import cohen_kappa_score as cks
-from sklearn.metrics import matthews_corrcoef as mcc
 
 # Data for panoptic quality Figure 3.51 p96
 pq_pred1 = np.zeros([18, 18])

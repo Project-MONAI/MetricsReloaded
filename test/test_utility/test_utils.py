@@ -1,9 +1,8 @@
-import pytest
 import numpy as np
 import pandas as pd
 from numpy.testing import assert_allclose, assert_array_equal
 from MetricsReloaded.utility.utils import MorphologyOps as MO
-from MetricsReloaded.utility.utils import intersection_boxes, guess_input_style, merge_list_df, com_from_box, point_in_box,point_in_mask, area_box, min_x_at_y_more, compute_box, compute_center_of_mass, compute_skeleton, combine_df, distance_transform_edt, one_hot_encode, median_heuristic, box_ior, box_iou, union_boxes, max_x_at_y_less, min_x_at_y_less, skeletonize, trapezoidal_integration
+from MetricsReloaded.utility.utils import intersection_boxes, guess_input_style, merge_list_df, com_from_box, point_in_box,point_in_mask, area_box, min_x_at_y_more, compute_box, compute_center_of_mass, combine_df, box_ior, box_iou, union_boxes, max_x_at_y_less, min_x_at_y_less
 
 
 box3 = [2,3, 4,4]
@@ -153,24 +152,24 @@ def test_point_in_box():
     box = [2,1,5,8]
     point1 = [3,6]
     point2 = [1,9]
-    assert point_in_box(np.asarray(point1), np.asarray(box)) == True
-    assert point_in_box(np.asarray(point2), np.asarray(box)) == False
+    assert point_in_box(np.asarray(point1), np.asarray(box)) 
+    assert not point_in_box(np.asarray(point2), np.asarray(box)) 
 
 def test_point_in_mask():
     mask = np.zeros([10,10])
     mask[2:6,1:9] = 1
     point1 = [3,6]
     point2 = [1,9]
-    assert point_in_mask(np.asarray(point1), np.asarray(mask)) == True
-    assert point_in_mask(np.asarray(point2), np.asarray(mask)) == False
+    assert point_in_mask(np.asarray(point1), np.asarray(mask)) 
+    assert not point_in_mask(np.asarray(point2), np.asarray(mask)) 
 
 def test_point_in_mask3d():
     mask = np.zeros([10, 10, 10])
     mask[2:6,1:9,3:8] = 1
     point1 = [3,6,5]
     point2 = [1,9,2]
-    assert point_in_mask(np.asarray(point1), np.asarray(mask)) == True
-    assert point_in_mask(np.asarray(point2), np.asarray(mask)) == False
+    assert point_in_mask(np.asarray(point1), np.asarray(mask)) 
+    assert not point_in_mask(np.asarray(point2), np.asarray(mask)) 
 
 def test_area_box():
     box = [1,2,3,1,3,5]
@@ -205,21 +204,21 @@ def test_union_boxes():
     box2 = [3,4,4,6]
     assert union_boxes(np.asarray(box1),np.asarray(box2)) == 11
 
-def test_point_in_box():
+def test_point_in_box2():
     box1 = [3,5,5,7]
     point1 = [4,7]
     point2 = [2,3]
     assert point_in_box(np.asarray(point1), np.asarray(box1)) == 1
     assert point_in_box(np.asarray(point2),np.asarray(box1)) == 0
 
-def test_point_in_mask():
+def test_point_in_mask2():
     mask = np.zeros([10,10])
     mask[2:5,4:8] = 1
     mask[4:6,4:5] = 1
     point1 = [4,7]
     point2 = [2,3]
-    assert point_in_mask(point1,mask) == 1
-    assert point_in_mask(point2, mask) == 0
+    assert point_in_mask(point1,mask) 
+    assert not point_in_mask(point2, mask) 
 
 def test_max_x_at_y_less():
     x = [1, 2, 1, 3, 4, 0, 1, 4, 5]

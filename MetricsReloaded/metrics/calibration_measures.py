@@ -34,12 +34,6 @@ from scipy.special import gamma
 import warnings
 # from metrics.pairwise_measures import CacheFunctionOutput
 from MetricsReloaded.utility.utils import (
-    CacheFunctionOutput,
-    max_x_at_y_more,
-    max_x_at_y_less,
-    min_x_at_y_more,
-    min_x_at_y_less,
-    trapezoidal_integration,
     one_hot_encode,
     median_heuristic
 )
@@ -122,14 +116,14 @@ class CalibrationMeasures(object):
         range_values = np.arange(0, 1.00001, step)
         list_values = []
         numb_samples = self.pred.shape[0]
-        class_pred = np.argmax(self.pred, 1)
+        #class_pred = np.argmax(self.pred, 1)
         n_classes = self.pred.shape[1]
         for k in range(n_classes):
             list_values_k = []
-            for (l, u) in zip(range_values[:-1], range_values[1:]):
+            for (lo, up) in zip(range_values[:-1], range_values[1:]):
                 pred_k = self.pred[:, k]
                 ref_tmp = np.where(
-                    np.logical_and(pred_k > l, pred_k <= u),
+                    np.logical_and(pred_k > lo, pred_k <= up),
                     self.ref,
                     np.ones_like(self.ref) * -1,
                 )
@@ -140,7 +134,7 @@ class CalibrationMeasures(object):
                 nsamples = np.size(ref_sel)
                 prop = np.sum(ref_selk) / nsamples
                 pred_tmp = np.where(
-                    np.logical_and(pred_k > l, pred_k <= u),
+                    np.logical_and(pred_k > lo, pred_k <= up),
                     pred_k,
                     np.ones_like(pred_k) * -1,
                 )
@@ -180,9 +174,9 @@ class CalibrationMeasures(object):
         list_values = []
         numb_samples = 0
         pred_prob = self.pred[:,1]
-        for (l, u) in zip(range_values[:-1], range_values[1:]):
+        for (lo, up) in zip(range_values[:-1], range_values[1:]):
             ref_tmp = np.where(
-                np.logical_and(pred_prob > l, pred_prob <= u),
+                np.logical_and(pred_prob > lo, pred_prob <= up),
                 self.ref,
                 np.ones_like(self.ref) * -1,
             )
@@ -190,7 +184,7 @@ class CalibrationMeasures(object):
             nsamples = np.size(ref_sel)
             prop = np.sum(ref_sel) / nsamples
             pred_tmp = np.where(
-                np.logical_and(pred_prob > l, pred_prob <= u),
+                np.logical_and(pred_prob > lo, pred_prob <= up),
                 pred_prob,
                 np.ones_like(pred_prob) * -1,
             )
@@ -225,11 +219,10 @@ class CalibrationMeasures(object):
         step = 1.0 / nbins
         range_values = np.arange(0, 1.00001, step)
         list_values = []
-        numb_samples = 0
         pred_prob = self.pred[:,1]
-        for (l, u) in zip(range_values[:-1], range_values[1:]):
+        for (lo, up) in zip(range_values[:-1], range_values[1:]):
             ref_tmp = np.where(
-                np.logical_and(pred_prob > l, pred_prob <= u),
+                np.logical_and(pred_prob > lo, pred_prob <= up),
                 self.ref,
                 np.ones_like(self.ref) * -1,
             )
@@ -237,7 +230,7 @@ class CalibrationMeasures(object):
             nsamples = np.size(ref_sel)
             prop = np.sum(ref_sel) / nsamples
             pred_tmp = np.where(
-                np.logical_and(pred_prob > l, pred_prob <= u),
+                np.logical_and(pred_prob > lo, pred_prob <= up),
                 pred_prob,
                 np.ones_like(pred_prob) * -1,
             )
@@ -299,7 +292,6 @@ class CalibrationMeasures(object):
         """
         eps = 1e-10
         log_pred = np.log(self.pred + eps)
-        to_log = self.pred[np.arange(log_pred.shape[0]),self.ref]
         to_sum = log_pred[np.arange(log_pred.shape[0]),self.ref]
         ls =  np.mean(to_sum)
         return ls
