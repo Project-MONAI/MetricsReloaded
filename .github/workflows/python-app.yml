@@ -9,11 +9,9 @@ name: Unit Tests
 
 on:
   push:
-<<<<<<< HEAD
-    branches: [ main, docs_test ]  # run when anything is pushed to these branches
-=======
-    branches: [ main, docs_tests ]  # run when anything is pushed to these branches
->>>>>>> 7bef02a4357737d41391ceef32945c656e64c08e
+    branches: 
+     - main
+     - docs_tests   # run when anything is pushed to these branches
   pull_request:
     branches: [ main ]  # run for the code submitted as a PR to these branches
 
@@ -65,7 +63,6 @@ jobs:
         fail_ci_if_error: true
         verbose: true
         version: "v0.1.15"
-        codecov: 
         token: ${{ secrets.CODECOV_TOKEN }}
   
   build_docs:
