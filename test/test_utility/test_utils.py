@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
-from MetricsReloaded.utility.utils import intersection_boxes, guess_input_style, com_from_box, point_in_box, point_in_mask, area_box, compute_box, compute_center_of_mass, compute_skeleton, combine_df, distance_transform_edt, one_hot_encode, median_heuristic, box_ior, box_iou, union_boxes, max_x_at_y_less, min_x_at_y_less, skeletonize, trapezoidal_integration
+from MetricsReloaded.utility.utils import intersection_boxes, guess_input_style, com_from_box, point_in_box, point_in_mask, area_box, compute_box, compute_center_of_mass, compute_skeleton, combine_df, distance_transform_edt, one_hot_encode, median_heuristic, box_ior, box_iou, union_boxes, max_x_at_y_less, min_x_at_y_less, skeletonize, trapezoidal_integration, MorphologyOps
 
 
 box3 = [2,3, 4,4]
@@ -79,6 +79,17 @@ def test_compute_center_of_mass():
     mask[2:5,3:8] = 1
     mask[4:6,4:5] = 1
     assert_array_equal(compute_center_of_mass(mask),np.asarray([3.125,	4.9375]))
+
+def test_foreground_component_uses_connectivity():
+    mask = np.zeros([2, 2])
+    mask[0, 0] = 1
+    mask[1, 1] = 1
+
+    _, nlabels_connectivity_1 = MorphologyOps(mask, 1).foreground_component()
+    _, nlabels_connectivity_2 = MorphologyOps(mask, 2).foreground_component()
+
+    assert nlabels_connectivity_1 == 2
+    assert nlabels_connectivity_2 == 1
 
 def test_box_ior():
     box1 = [3,5,5,7]
