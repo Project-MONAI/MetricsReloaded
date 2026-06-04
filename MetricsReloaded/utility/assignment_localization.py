@@ -123,7 +123,8 @@ class AssignmentMapping(object):
 
             dim = 0
             print(all_input)
-            if all_input.shape[0] > 0:
+            if np.asarray(all_input).size > 0:
+            #if all_input.shape[0] > 0:
                 input = guess_input_style(all_input)
                 if input == 'mask':
                     dim = all_input.ndim
@@ -132,7 +133,7 @@ class AssignmentMapping(object):
                     dim = int(np.size(all_input)/2)
                 else:
                     dim = np.size(all_input)
-            print(input, dim)
+                print(input, dim)
             if dim > 0:
                 self.pixdim = np.ones([dim])
             
@@ -168,13 +169,13 @@ class AssignmentMapping(object):
             elif localization == "com_dist":
                 self.matrix = self.pairwise_pointcomdist()
             else:
-                print(' not valid localisation ')
+                print(' not valid localisation with ', localization)
                 self.flag_usable = False
                 self.df_matching = None
                 self.valid = None
                 warnings.warn("No adequate localization strategy chosen - not going ahead")
         else:
-                print(' not valid localisation ')
+                print(' not valid localisation with void entries')
                 self.flag_usable = False
                 self.df_matching = None
                 self.valid = None
@@ -627,6 +628,8 @@ class AssignmentMapping(object):
         ):
             print("No ambiguity in matching")
             df_matching_all = pd.concat([df_matching, df_fp, df_fn])
+            if df_matching_all.shape[0] == 0:
+                df_matching_all =pd.DataFrame(columns = ['pred','ref','pred_prob','performance'])
             return df_matching_all, list_valid
         else:
             if self.assignment == "hungarian":
@@ -696,6 +699,8 @@ class AssignmentMapping(object):
                 df_matching_all = pd.concat([df_ordered2, df_fn_all, df_fp, df_fp_new])
             else:
                 df_matching_all = pd.concat([df_ordered2, df_fp, df_fn_all])
+            if df_matching_all.shape[0] == 0:
+                df_matching_all =pd.DataFrame(columns = ['pred','ref','pred_prob','performance'])
             return df_matching_all, list_valid
 
     def matching_ref_predseg(self):

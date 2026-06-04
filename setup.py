@@ -4,7 +4,8 @@
 import os
 from glob import glob
 
-from pkg_resources import parse_requirements
+#from pkg_resources import parse_requirements
+from packaging.requirements import Requirement
 from setuptools import find_packages
 from setuptools import setup
 
@@ -17,7 +18,7 @@ with open(os.path.join(source_dir, "MetricsReloaded/_version.py")) as o:
 
 # read install requirements from requirements.txt
 with open(os.path.join(source_dir, "requirements.txt")) as o:
-    requirements = [str(r) for r in parse_requirements(o.read())]
+    requirements = [str(r) for r in Requirement(o.read())]
 
 setup(
     name="MetricsReloaded",
@@ -46,6 +47,10 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
         "Topic :: Scientific/Engineering",
     ],
     project_urls={

@@ -521,9 +521,9 @@ def combine_df(df1,df2):
     if df1 is None or df1.shape[0]==0:
         print('Nothing in first')
         if df2 is None:
-            return None
+            return pd.DataFrame()
         elif df2.shape[0] == 0:
-            return None
+            return pd.DataFrame()
         else:
             return df2
     elif df2 is None or df2.shape[0]==0:

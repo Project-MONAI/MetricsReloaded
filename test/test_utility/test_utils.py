@@ -55,11 +55,11 @@ def test_combine_df():
     val_comb14 = combine_df(df1, df4)
     val_comb33 = combine_df(df3, df3)
 
-    assert val_comb12 is None
+    assert val_comb12.empty
     pd.testing.assert_frame_equal(val_comb13, df_dsc)
     pd.testing.assert_frame_equal(val_comb31, df_dsc)
     pd.testing.assert_frame_equal(val_comb33, pd.concat([df_dsc, df_dsc]))
-    assert val_comb14 is None
+    assert val_comb14.empty
 
 def test_merge_list_df():
     df1 = None

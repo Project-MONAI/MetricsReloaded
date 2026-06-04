@@ -153,7 +153,7 @@ class MixedLocSegPairwiseMeasure(object):
 
     def panoptic_quality(self):
         """
-        Calculates the panopitic quality defined as the production between
+        Calculates the panopitic quality defined as the product between
         detection quality and segmentation quality
 
         Alexander Kirillov, Kaiming He, Ross Girshick, Carsten Rother, and Piotr Dollár. 2019. Panoptic segmentation. In
@@ -248,7 +248,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
         pixdim=[],
         empty=False,
         assignment="Greedy_IoU",
-        localization="iou",
+        localization="mask_iou",
         thresh=0.5,
         flag_fp_in=True,
         dict_args={},
@@ -476,7 +476,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
                     list_mt.append(res_mt)
         self.matching = pd.concat(self.matching)
         if len(list_seg) == 0:
-            df_seg = None
+            df_seg = pd.DataFrame()
         else:
             df_seg = pd.concat(list_seg)
         return (
@@ -541,8 +541,8 @@ class MultiLabelLocMeasures(object):
         self.names = names
         self.pixdim = pixdim
         self.flag_fp_in = flag_fp_in
-        if len(self.names) < len(self.ref):
-            self.names = range(len(self.ref))
+        if len(self.names) < len(self.ref_class):
+            self.names = range(len(self.ref_class))
         self.flag_valid_proba = True
         if pred_prob is None or pred_prob[0] is None:
             self.flag_valid_proba=False
@@ -556,6 +556,7 @@ class MultiLabelLocMeasures(object):
         list_det = []
         list_mt = []
         for lab in self.list_values:
+            print('Taking care of label %d in OD process'%lab)
             list_pred = []
             list_ref = []
             list_prob = []
@@ -566,8 +567,9 @@ class MultiLabelLocMeasures(object):
                 ind_ref = np.where(ref_arr == lab)
                 pred_loc_tmp = [self.pred_loc[case][f] for f in ind_pred[0]]
                 ref_loc_tmp = [self.ref_loc[case][f] for f in ind_ref[0]]
+                print(self.pred_prob[case].shape)
                 if self.flag_valid_proba:
-                    pred_prob_tmp = [self.pred_prob[case][lab,f] for f in ind_pred[0]]
+                    pred_prob_tmp = [self.pred_prob[case][f,lab] for f in ind_pred[0]]
                 else:
                     pred_prob_tmp = None
                 AS = AssignmentMapping(
@@ -581,6 +583,9 @@ class MultiLabelLocMeasures(object):
                     pixdim=self.pixdim
                 )
                 df_matching = AS.df_matching
+                if df_matching is None:
+                    warnings.warn('Issue with the processing due to incorrect choices and/or input - output will be none')
+                    return None, None
                 pred_tmp_fin = np.asarray(df_matching["pred"])
                 pred_tmp_fin = np.where(
                     pred_tmp_fin > -1,
@@ -910,12 +915,12 @@ class MultiLabelPairwiseMeasures(object):
                 list_mcc.append(dict_mcc)
                 pd_mcc = pd.DataFrame.from_dict(list_mcc)
             else:
-                pd_mcc = None
+                pd_mcc = pd.DataFrame()
             if len(self.measures_calibration) > 0 and overall_prob is not None:
                 CM = CalibrationMeasures(overall_prob, overall_ref,measures=self.measures_calibration)
                 dict_cal = CM.to_dict_meas()
                 list_cal.append(dict_cal)
                 pd_cal = pd.DataFrame.from_dict(list_cal)
             else:
-                pd_cal = None
+                pd_cal = pd.DataFrame()
         return pd_mcc, pd_cal

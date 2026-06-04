@@ -201,6 +201,7 @@ class MultiClassPairwiseMeasures(object):
         """
         one_hot_pred = one_hot_encode(self.pred, len(self.list_values))
         one_hot_ref = one_hot_encode(self.ref, len(self.list_values))
+        print(one_hot_ref.shape, one_hot_pred.shape)
         confusion_matrix = np.matmul(one_hot_pred.T, one_hot_ref)
         return confusion_matrix
 

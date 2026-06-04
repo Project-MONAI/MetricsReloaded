@@ -357,7 +357,7 @@ class ProcessEvaluation(object):
         self.pixdim = pixdim
         if self.flag_valid:
             self.process_data()
-            if 'ref_missing' in self.data.keys():
+            if 'ref_missing_pred' in self.data.keys():
                 self.complete_missing_cases()
             if 'weights_labels' in self.data.keys():
                 self.weights_labels = self.data['weights_labels']
@@ -428,11 +428,11 @@ class ProcessEvaluation(object):
         
         """
         data = self.data
-        df_resdet = None
-        df_resseg = None
-        df_resmt = None
-        df_resmcc = None
-        df_rescal = None
+        df_resdet = pd.DataFrame()
+        df_resseg = pd.DataFrame()
+        df_resmt = pd.DataFrame()
+        df_resmcc = pd.DataFrame()
+        df_rescal = pd.DataFrame()
         if self.category == "InS":
             MLLS = MultiLabelLocSegPairwiseMeasure(
                 pred_loc=data["pred_loc"],
@@ -475,7 +475,7 @@ class ProcessEvaluation(object):
                 
             )
             df_resdet, df_resmt = MLDT.per_label_dict()
-            df_resseg = None
+            df_resseg = pd.DataFrame()
         elif self.category in ["ImLC", "SemS"]:
             if 'names' in data.keys():
                 list_names=data['names']
@@ -504,12 +504,12 @@ class ProcessEvaluation(object):
             # print(df_cal, 'CAL')
             if self.category == "ImLC":
                 df_resdet = df_bin
-                df_resseg = None
+                df_resseg = pd.DataFrame()
                 df_resmt = df_mt
                 df_resmcc = df_mcc
                 df_rescal = df_cal
             else:
-                df_resdet = None
+                df_resdet = pd.DataFrame()
                 df_resseg = df_bin
                 df_resmt = df_mt
                 df_resmcc = df_mcc
@@ -518,12 +518,14 @@ class ProcessEvaluation(object):
         self.resmt = df_resmt
         self.resmcc = df_resmcc
         self.rescal = df_rescal
-        self.create_mapping_column_nan_replaced_seg()
+        print('After process state of resdet', self.resdet, ' and resseg ',self.resseg)
+        if self.category == 'SemS':
+            self.create_mapping_column_nan_replaced_seg()
         return
     
     def create_mapping_column_nan_replaced_seg(self):
         """
-        For each measure (segmentation) for which nan are possible 
+        For each measure (semantic segmentation) for which nan are possible 
         creates an additional column in which nans are replaced by value (worse or best according to situation
         """
         list_to_map = []
@@ -547,8 +549,6 @@ class ProcessEvaluation(object):
 
         return
         
-        
-
     
     def identify_empty_ref(self):
         """
@@ -650,26 +650,34 @@ class ProcessEvaluation(object):
             # print('DET', self.resdet,'CAL',self.rescal, 'SEG',self.resseg,'MT', self.resmt,'MCC', self.resmcc)
             df_grouped_all = merge_list_df([self.resdet, self.resseg, self.resmt,self.resmcc, self.rescal])
             return df_grouped_all
-        df_all_labels = merge_list_df([self.resdet, self.resseg, self.resmt], on=['label','case'])
-        df_all_labels['weights_labels'] = 1
-        df_all_labels['prevalence_labels'] = 1 
-        for k in self.weights_labels.keys():
-            df_all_labels['weights_labels'] = np.where(df_all_labels['label']==k,self.weights_labels[k],df_all_labels['weights_labels'])
-        for (c,rc) in enumerate(self.data['ref_class']):
-            values,counts = np.unique(rc, return_counts=True)
-            for (v,co) in zip(values,counts):
-                df_all_labels['prevalence_labels'] = np.where(np.logical_and(df_all_labels['case']==c, df_all_labels['label']==v),co,df_all_labels['prevalence_labels'])
-        wm = lambda x: np.ma.average(np.ma.masked_array(x,np.isnan(x)), weights=df_all_labels.loc[x.index, "prevalence_labels"])
-        wm2 = lambda x: np.ma.average(np.ma.masked_array(x,np.isnan(x)), weights=df_all_labels.loc[x.index, "weights_labels"])
-        wm3 = lambda x: np.ma.average(np.ma.masked_array(x,np.isnan(x)))
-        list_measures = self.measures_boundary + self.measures_overlap + self.measures_detseg + self.measures_pcc + self.measures_mt
-        dict_measures = {k:[('prevalence',wm),('weights',wm2),('average',wm3)] for k in list_measures}
-        df_grouped_lab = df_all_labels.groupby('case',as_index=False).agg(dict_measures).reset_index()
-        df_grouped_lab.columns = ['_'.join(col).rstrip('_') for col in df_grouped_lab.columns.values]
+        if self.category == 'ImLC': 
+            print(self.resdet, self.resmt, self.rescal, self.resmcc)
+            df_all_labels = merge_list_df([self.resdet, self.resmt, self.rescal], on='label')
+            
+        else:
+            df_all_labels = merge_list_df([self.resdet, self.resseg, self.resmt], on=['label','case'])
+        if df_all_labels is not None:
+            df_all_labels['weights_labels'] = 1
+            df_all_labels['prevalence_labels'] = 1 
+            for k in self.weights_labels.keys():
+                df_all_labels['weights_labels'] = np.where(df_all_labels['label']==k,self.weights_labels[k],df_all_labels['weights_labels'])
+            for (c,rc) in enumerate(self.data['ref_class']):
+                values,counts = np.unique(rc, return_counts=True)
+                for (v,co) in zip(values,counts):
+                    df_all_labels['prevalence_labels'] = np.where(np.logical_and(df_all_labels['case']==c, df_all_labels['label']==v),co,df_all_labels['prevalence_labels'])
+            wm = lambda x: np.ma.average(np.ma.masked_array(x,np.isnan(x)), weights=df_all_labels.loc[x.index, "prevalence_labels"])
+            wm2 = lambda x: np.ma.average(np.ma.masked_array(x,np.isnan(x)), weights=df_all_labels.loc[x.index, "weights_labels"])
+            wm3 = lambda x: np.ma.average(np.ma.masked_array(x,np.isnan(x)))
+            list_measures = self.measures_boundary + self.measures_overlap + self.measures_detseg + self.measures_pcc + self.measures_mt
+            dict_measures = {k:[('prevalence',wm),('weights',wm2),('average',wm3)] for k in list_measures}
+            df_grouped_lab = df_all_labels.groupby('case',as_index=False).agg(dict_measures).reset_index()
+            df_grouped_lab.columns = ['_'.join(col).rstrip('_') for col in df_grouped_lab.columns.values]
         
         # print(df_grouped_lab, " grouped lab ")                                             
-        df_grouped_all = merge_list_df([df_grouped_lab.reset_index(), self.resmcc, self.rescal], on=['case'])
-        # print(df_grouped_all, 'grouped all')
+            df_grouped_all = merge_list_df([df_grouped_lab.reset_index(), self.resmcc, self.rescal], on=['case'])
+        else:
+            df_grouped_all = merge_list_df([self.rescal,self.resmcc],on=['case'])
+        print(df_grouped_all, 'grouped all')
         return df_grouped_all
 
     def get_stats_res(self):
@@ -677,10 +685,15 @@ class ProcessEvaluation(object):
         Create summary statistics overall and per label available in self.stats_lab and self.stats_all
         """
         df_stats_all = self.grouped_lab.describe()
+        self.stats_all = df_stats_all
+        print(self.resdet, self.resseg)
+        if len(self.resdet.index)==0 and len(self.resseg.index)==0:
+            return
+        
         df_all_labels = merge_list_df([self.resdet, self.resseg, self.resmt], on=['label','case'])
         df_stats_lab = df_all_labels.groupby('label').describe()
         self.stats_lab = df_stats_lab
-        self.stats_all = df_stats_all
+       
         return 
 
     
