@@ -302,15 +302,17 @@ class ProbabilityPairwiseMeasures(object):
         """
         if self.case is not None:
             list_sum = []
-            # print(np.max(self.case))
+            print(np.max(self.case), ' is number maximum of cases')
             for f in range(np.max(self.case)+1):
-                # print(np.where(self.case==f), self.case, f)
+                print(np.where(self.case==f), self.case, f)
                 ind_case = np.where(self.case == f)[0][0]
                 print(ind_case, np.asarray(self.pred[ind_case]), self.ref[ind_case])
+                # case_tmp = ProbabilityPairwiseMeasures(
+                #     self.pred[ind_case][0], self.ref[ind_case][0]
+                # )
                 case_tmp = ProbabilityPairwiseMeasures(
-                    self.pred[ind_case][0], self.ref[ind_case][0]
+                    self.pred[ind_case], self.ref[ind_case]
                 )
-                
                 list_sum.append(case_tmp.fp_thr(thresh))
             fppi = np.mean(np.asarray(list_sum))
         else:   # Assuming images stacked over last dimension

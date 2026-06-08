@@ -24,6 +24,13 @@ A Python implementaiton of `Metrics Reloaded <https://openreview.net/forum?id=24
     :target: https://codecov.io/gh/Project-MONAI/MetricsReloaded
     :alt: Coverage Status
 
+.. _Coverage status:
+    https://github.com
+
+.. |coverage| image:: coverage.svg 
+    :alt: Coverage status
+    :target: https://github.com
+
 .. end-badges
 
 Installation

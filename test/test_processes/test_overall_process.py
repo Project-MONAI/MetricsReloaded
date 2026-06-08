@@ -1,6 +1,7 @@
 from MetricsReloaded.processes.overall_process import ProcessEvaluation as PE
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_equal
+
 
 ref1 = np.zeros([21,21])
 ref1[5:12,4:7] = 1
@@ -154,6 +155,8 @@ def test_non_valid_task():
 
 def test_ilc():
     pe = PE(data_ilc,'ImLC', measures_mcc=['ec','mcc'],measures_pcc=[])
+    print(pe.stats_all)
+    assert_array_equal(pe.stats_all.columns,['ec','mcc','case'])
 
 def test_is():
     pe = PE(data_pq, 'InS', measures_pcc=['fbeta'],measures_overlap=['dsc'])

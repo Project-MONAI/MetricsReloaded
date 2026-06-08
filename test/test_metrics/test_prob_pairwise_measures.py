@@ -186,8 +186,8 @@ def test_fppi_thr():
     ref2 = [0, 1, 0, 1, 0, 1]
     pred1 = [0, 0.2, 0.4, 0.6, 0.8, 1]
     pred2 = [0, 0.2, 0.4, 0.6, 0.8, 1]
-    ref = [np.asarray(ref1)], [np.asarray(ref2)]
-    pred = [np.asarray(pred1)], [np.asarray(pred2)]
+    ref = [np.asarray(ref1), np.asarray(ref2)]
+    pred = [np.asarray(pred1), np.asarray(pred2)]
     ppm = PPM(pred, ref, case=np.asarray([0,1]))
     value_test = ppm.fppi_thr(0.4)
     expected_value = 1.5

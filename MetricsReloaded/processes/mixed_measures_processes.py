@@ -67,7 +67,7 @@ import pandas as pd
 import nibabel as nib
 import os
 import warnings
-
+from PIL import Image
 
 __all__ = [
     "MixedLocSegPairwiseMeasure",
@@ -285,7 +285,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
         if pred_prob is None or pred_prob[0] is None:
             self.flag_valid_prob = False
 
-    def create_nifti_image(self, list_maps, file_ref, category):
+    def create_map_image(self, list_maps, file_ref, category):
         """
         Creates a nifti image of either the true positives, true negatives, false positives or false negatives
 
@@ -294,16 +294,28 @@ class MultiLabelLocSegPairwiseMeasure(object):
         :param category: category description of the elements being saved (classically TP TN FP FN)
 
         """
-        affine = nib.load(file_ref).affine
-        data = nib.load(file_ref).get_fdata()
-        final_class = np.zeros_like(data)
-        for f in list_maps:
-            final_class += f
-        nib_img = nib.Nifti1Image(final_class, affine)
         path, name = os.path.split(file_ref)
         name_new = category + "_" + name
         name_fin = path + os.path.sep + name_new
-        nib.save(nib_img, name_fin)
+        # Checking this is a nifti image
+        if 'nii'  in file_ref.split(os.extsep)[1]:
+            affine = nib.load(file_ref).affine
+            data = nib.load(file_ref).get_fdata()
+            final_class = np.zeros_like(data)
+            for f in list_maps:
+                final_class += f
+            nib_img = nib.Nifti1Image(final_class, affine)
+            
+            nib.save(nib_img, name_fin)
+        else:
+            warnings.warn('File of reference is not Nifti Image, saving as png')
+            img = Image.open(file_ref).convert('L')
+            im = np.array(img)
+            final_class = np.zeros_like(im).astype('uint8')
+            for f in list_maps:
+                final_class += f.astype('uint8')
+            result = Image.fromarray((final_class * 255).astype(np.uint8))
+            result.save(name_fin)
 
     def per_label_dict(self):
         """
@@ -335,6 +347,7 @@ class MultiLabelLocSegPairwiseMeasure(object):
                 ind_ref = np.where(ref_class_case == lab)
 
                 # Creation of the list of individual element images for pred and ref given the chosen label
+                print(ind_pred, ' ind_pred ', len(self.pred_loc), len(self.pred_loc[case]))
                 pred_loc_tmp = [self.pred_loc[case][i] for i in ind_pred[0]]
                 ref_loc_tmp = [self.ref_loc[case][i] for i in ind_ref[0]]
                 print(self.pixdim)
@@ -381,10 +394,10 @@ class MultiLabelLocSegPairwiseMeasure(object):
                     ref_fn_loc,
                 ) = AS.matching_ref_predseg()
                 if self.flag_map and len(self.file) == len(self.pred_class):
-                    self.create_nifti_image(pred_loc_tmp_fin, self.file[case], "TP_Pred")
-                    self.create_nifti_image(ref_loc_tmp_fin, self.file[case], "TP_Ref")
-                    self.create_nifti_image(pred_fp_loc, self.file[case], "FP")
-                    self.create_nifti_image(ref_fn_loc, self.file[case], "FN")
+                    self.create_map_image(pred_loc_tmp_fin, self.file[case], "TP_Pred")
+                    self.create_map_image(ref_loc_tmp_fin, self.file[case], "TP_Ref")
+                    self.create_map_image(pred_fp_loc, self.file[case], "FP")
+                    self.create_map_image(ref_fn_loc, self.file[case], "FN")
                 print("assignment done")
                 if self.per_case:
                     # pred_loc_tmp_fin = pred_loc_tmp[list_valid]
@@ -519,7 +532,7 @@ class MultiLabelLocMeasures(object):
         measures_mt=[],
         per_case=False,
         assignment="Greedy IoU",
-        localization="iou",
+        localization="mask_iou",
         thresh=0.5,
         flag_fp_in=True,
         pixdim=[],
@@ -561,6 +574,7 @@ class MultiLabelLocMeasures(object):
             list_ref = []
             list_prob = []
             for (case, name) in zip(range(len(self.ref_class)), self.names):
+                print('Taking care of case %d in OD process '%case)
                 pred_arr = np.asarray(self.pred_class[case])
                 ref_arr = np.asarray(self.ref_class[case])
                 ind_pred = np.where(pred_arr == lab)
@@ -601,27 +615,35 @@ class MultiLabelLocMeasures(object):
                 pred_prob_tmp_fin = np.asarray(df_matching["pred_prob"])
                 if self.per_case:
                     if len(self.measures_pcc) > 0:
-                        BPM = BinaryPairwiseMeasures(
-                            pred=pred_tmp_fin,
-                            ref=ref_tmp_fin,
-                            measures=self.measures_pcc,
-                            dict_args=self.dict_args,
-                        )
-                        det_res = BPM.to_dict_meas()
-                        det_res["label"] = lab
-                        det_res["case"] = name
-                        list_det.append(det_res)
+                        if pred_prob_tmp_fin.shape[0] == 0 and ref_tmp_fin.shape[0] ==0:
+                            det_res = {}
+                        else:
+                            BPM = BinaryPairwiseMeasures(
+                                pred=pred_tmp_fin,
+                                ref=ref_tmp_fin,
+                                measures=self.measures_pcc,
+                                dict_args=self.dict_args,
+                            )
+                            det_res = BPM.to_dict_meas()
+                            det_res["label"] = lab
+                            det_res["case"] = name
+                            list_det.append(det_res)
                     if len(self.measures_mt) > 0:
-                        PPM = ProbabilityPairwiseMeasures(
-                            pred_prob_tmp_fin,
-                            ref_tmp_fin,
-                            measures=self.measures_mt,
-                            dict_args=self.dict_args,
-                        )
-                        mt_res = PPM.to_dict_meas()
-                        mt_res["label"] = lab
-                        mt_res["case"] = name
-                        list_mt.append(mt_res)
+                        if pred_prob_tmp_fin.shape[0] == 0 and ref_tmp_fin.shape[0] ==0:
+                            det_res = {}
+                        else:
+                            PPM = ProbabilityPairwiseMeasures(
+                                pred_prob_tmp_fin,
+                                ref_tmp_fin,
+                                measures=self.measures_mt,
+                                dict_args=self.dict_args,
+                            )
+                            print(case,lab,pred_prob_tmp_fin.shape[0], ref_tmp_fin.shape[0] )
+                            
+                            mt_res = PPM.to_dict_meas()
+                            mt_res["label"] = lab
+                            mt_res["case"] = name
+                            list_mt.append(mt_res)
                 else:
                     list_pred.append(pred_tmp_fin)
                     list_ref.append(ref_tmp_fin)
@@ -815,7 +837,8 @@ class MultiLabelPairwiseMeasures(object):
                     list_ref.append(ref_tmp)
                     if self.flag_valid_proba:
                         list_prob.append(pred_proba_tmp)
-                    list_case.append(np.ones_like(pred_case) * case)
+                    #list_case.append(np.ones_like(pred_case) * case)
+                    list_case.append(case)
             if not self.per_case:
                 overall_pred = np.concatenate(list_pred)
                 overall_ref = np.concatenate(list_ref)
@@ -840,7 +863,7 @@ class MultiLabelPairwiseMeasures(object):
                     PPM = ProbabilityPairwiseMeasures(
                         overall_prob,
                         overall_ref,
-                        case=list_case,
+                        case=np.asarray(list_case),
                         measures=self.measures_mt,
                         dict_args=self.dict_args,
                     )
