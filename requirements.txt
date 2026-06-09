@@ -1,7 +1,7 @@
-numpy;
-scipy;
-scikit-learn;
-scikit-image;
-pandas;
-nibabel;
-pillow;
+numpy>=1.24,<3.0
+scipy
+scikit-learn
+scikit-image
+pandas
+nibabel
+pillow

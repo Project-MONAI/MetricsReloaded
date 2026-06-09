@@ -18,7 +18,10 @@ with open(os.path.join(source_dir, "MetricsReloaded/_version.py")) as o:
 
 # read install requirements from requirements.txt
 with open(os.path.join(source_dir, "requirements.txt")) as o:
-    requirements = [str(r) for r in Requirement(o.read())]
+    #requirements = {str(r).rstrip() for r in o}
+    requirements = o.read().splitlines()
+
+print(requirements)
 
 setup(
     name="MetricsReloaded",
@@ -50,7 +53,6 @@ setup(
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
-        "Programming Language :: Python :: 3.14",
         "Topic :: Scientific/Engineering",
     ],
     project_urls={
