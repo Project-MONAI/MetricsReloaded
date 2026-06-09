@@ -1,6 +1,7 @@
-numpy;
-scipy;
-scikit-learn;
-scikit-image;
-pandas;
-nibabel;
+"numpy";
+"scipy";
+"scikit-learn";
+"scikit-image";
+"pandas";
+"nibabel";
+"PIL";
