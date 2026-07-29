@@ -87,9 +87,9 @@ def test_top_label_classification_error():
     pred_tce = [[0.1, 0.8, 0, 0.1], [0.6, 0.1, 0, 0.7], [0.3, 0.1, 1, 0.2]]
     pred_tce = np.asarray(pred_tce).T
     ref_tce = np.asarray(ref_tce)
-    expected_prob = [0.5, 0.25, 0.25, 0.5]
-    best_prob = [0.6, 0.8, 1, 0.7]
-    pred_class = [1, 0, 2, 1]
+    # expected_prob = [0.5, 0.25, 0.25, 0.5]
+    # best_prob = [0.6, 0.8, 1, 0.7]
+    # pred_class = [1, 0, 2, 1]
     expected_tce = 0.478
     cm = CalibrationMeasures(pred_tce, ref_tce)
     value_test = cm.top_label_classification_error()
@@ -102,9 +102,9 @@ def test_top_label_classification_error_oneemptyclass():
     #
     pred_tce = np.asarray(pred_tce).T
     ref_tce = np.asarray(ref_tce)
-    expected_prob = [0.75, 0.25, 0.75, 0.75]
-    best_prob = [0.6, 0.8, 0.6, 0.7]
-    pred_class = [1, 0, 1, 1]
+    # expected_prob = [0.75, 0.25, 0.75, 0.75]
+    # best_prob = [0.6, 0.8, 0.6, 0.7]
+    # pred_class = [1, 0, 1, 1]
     # sqrt(0.15^2 + 0.55^2 + 0.15^2 + 0.05^2)/4
     expected_tce = 0.2958
     cm = CalibrationMeasures(pred_tce, ref_tce)

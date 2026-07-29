@@ -16,13 +16,20 @@ A Python implementaiton of `Metrics Reloaded <https://openreview.net/forum?id=24
     :target: https://MetricsReloaded.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
-.. |testing| image:: https://github.com/csudre/MetricsReloaded/actions/workflows/python-app.yml/badge.svg
-    :target: https://github.com/csudre/MetricsReloaded/actions
+.. |testing| image:: https://github.com/Project-MONAI/MetricsReloaded/actions/workflows/python-app.yml/badge.svg
+    :target: https://github.com/Project-MONAI/MetricsReloaded/actions
     :alt: Testing Status
 
-.. |codecov| image:: https://codecov.io/gh/csudre/MetricsReloaded/branch/main/graph/badge.svg
-    :target: https://codecov.io/gh/csudre/MetricsReloaded
+.. |codecov| image:: https://codecov.io/gh/Project-MONAI/MetricsReloaded/branch/main/graph/badge.svg?token=5jh1HQAk0K
+    :target: https://codecov.io/gh/Project-MONAI/MetricsReloaded
     :alt: Coverage Status
+
+.. _Coverage status:
+    https://github.com
+
+.. |coverage| image:: coverage.svg 
+    :alt: Coverage status
+    :target: https://github.com
 
 .. end-badges
 
