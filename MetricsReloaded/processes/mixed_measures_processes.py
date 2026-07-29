@@ -347,10 +347,10 @@ class MultiLabelLocSegPairwiseMeasure(object):
                 ind_ref = np.where(ref_class_case == lab)
 
                 # Creation of the list of individual element images for pred and ref given the chosen label
-                print(ind_pred, ' ind_pred ', len(self.pred_loc), len(self.pred_loc[case]))
+                # print(ind_pred, ' ind_pred ', len(self.pred_loc), len(self.pred_loc[case]))
                 pred_loc_tmp = [self.pred_loc[case][i] for i in ind_pred[0]]
                 ref_loc_tmp = [self.ref_loc[case][i] for i in ind_ref[0]]
-                print(self.pixdim)
+                # print(self.pixdim)
                 if len(self.pixdim) == 0:
                     if len(pred_loc_tmp) > 0:
                         self.pixdim = np.ones([pred_loc_tmp[0].ndim])
@@ -638,7 +638,7 @@ class MultiLabelLocMeasures(object):
                                 measures=self.measures_mt,
                                 dict_args=self.dict_args,
                             )
-                            print(case,lab,pred_prob_tmp_fin.shape[0], ref_tmp_fin.shape[0] )
+                            # print(case,lab,pred_prob_tmp_fin.shape[0], ref_tmp_fin.shape[0] )
                             
                             mt_res = PPM.to_dict_meas()
                             mt_res["label"] = lab

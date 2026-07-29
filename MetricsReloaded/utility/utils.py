@@ -510,6 +510,28 @@ def one_hot_encode(img, n_classes):
 #         result_dict[key] = fmt.format(result)
 #     return result_dict  # trim the last comma
 
+def calculate_worse_dist(ref, pixdim):
+        """
+        From an image for which pixel dimensions and full shape is known, calculates the worst possible distance value.
+        This is to be used when distance cannot be calculated due to reference or prediction being empty and the worst
+        value assigned to the metric
+        :param ref: reference image to use to derive worse distance
+        :param pixdim: pixel dimension to use to derive the distance
+        :return max_dist: maximum distance for the given case
+        """
+        shape = ref.shape
+        pixdim = pixdim
+        if pixdim is not None and len(pixdim)>0:
+            mult_sp = shape * np.asarray(pixdim)
+        else:
+            mult_sp = shape
+        #print(mult_sp)
+        max_dist = np.sqrt(np.sum(np.square(mult_sp)))
+        #print(max_dist)
+        return max_dist
+
+
+
 def combine_df(df1,df2):
     """
     Perform the concatenation of two dataframes - is used in the overall process when combining dataframe from existing and missing/failed prediction

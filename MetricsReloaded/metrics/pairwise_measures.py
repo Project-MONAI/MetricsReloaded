@@ -189,7 +189,7 @@ class MultiClassPairwiseMeasures(object):
         for f in self.list_values:
             prob_pred = len(np.where(self.pred == f)[0]) / np.size(self.pred)
             prob_ref = len(np.where(self.ref == f)[0]) / np.size(self.ref)
-            print(f, prob_ref, prob_pred)
+            #print(f, prob_ref, prob_pred)
             chance += prob_pred * prob_ref
         return chance
 
@@ -201,7 +201,7 @@ class MultiClassPairwiseMeasures(object):
         """
         one_hot_pred = one_hot_encode(self.pred, len(self.list_values))
         one_hot_ref = one_hot_encode(self.ref, len(self.list_values))
-        print(one_hot_ref.shape, one_hot_pred.shape)
+        #print(one_hot_ref.shape, one_hot_pred.shape)
         confusion_matrix = np.matmul(one_hot_pred.T, one_hot_ref)
         return confusion_matrix
 
@@ -380,9 +380,9 @@ class BinaryPairwiseMeasures(object):
             mult_sp = shape * np.asarray(pixdim)
         else:
             mult_sp = shape
-        print(mult_sp)
+        #print(mult_sp)
         max_dist = np.sqrt(np.sum(np.square(mult_sp)))
-        print(max_dist)
+        #print(max_dist)
         return max_dist
 
 

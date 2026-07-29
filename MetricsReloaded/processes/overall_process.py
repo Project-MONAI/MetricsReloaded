@@ -183,9 +183,10 @@ The available measures per task are:
 
 from MetricsReloaded.processes.mixed_measures_processes import MultiLabelLocMeasures, MultiLabelPairwiseMeasures, MultiLabelLocSegPairwiseMeasure
 import warnings
-from MetricsReloaded.utility.utils import combine_df, merge_list_df
+from MetricsReloaded.utility.utils import calculate_worse_dist, combine_df, merge_list_df
 import pandas as pd
 import numpy as np
+
 
 __all__ = [
     "ProcessEvaluation",
@@ -365,6 +366,8 @@ class ProcessEvaluation(object):
                 self.weights_labels = {}
                 for v in self.data['list_values']:
                     self.weights_labels[v] = 1
+            if self.category == 'SemS':
+                self.create_mapping_column_nan_replaced_seg()
             self.grouped_lab = self.label_aggregation()
             if self.case:
                 self.get_stats_res()
@@ -518,9 +521,8 @@ class ProcessEvaluation(object):
         self.resmt = df_resmt
         self.resmcc = df_resmcc
         self.rescal = df_rescal
-        print('After process state of resdet', self.resdet, ' and resseg ',self.resseg)
-        if self.category == 'SemS':
-            self.create_mapping_column_nan_replaced_seg()
+        # print('After process state of resdet', self.resdet, ' and resseg ',self.resseg)
+        
         return
     
     def create_mapping_column_nan_replaced_seg(self):
@@ -588,18 +590,22 @@ class ProcessEvaluation(object):
             warnings.warn("The set up currently ignores any missing case / dataset")
             return 
         else:
+            if 'missing_names' in self.data.keys():
+                list_missing_names = self.data['missing_names']
+            else:
+                list_missing_names = [k + len(self.data['ref_class']) for k in range(len(self.data['ref_missing_pred']))]
             list_missing_det = []
             list_missing_seg = []
             list_missing_mt = []
             list_missing_mcc = []
             numb_valid = len(self.data['ref_class'])
             if self.case:
-                for (i,f) in enumerate(self.data['ref_missing_pred']):
+                for (f,n) in zip(self.data['ref_missing_pred'], list_missing_names):
                     dict_mt = {}
                     dict_mcc = {}
                     dict_seg = {}
                     dict_det = {}
-                    dict_mcc['case'] = i + numb_valid
+                    dict_mcc['case'] = n
                     for m in self.measures_mcc:
                         dict_mcc[m] = WORSE[m]
                     list_missing_mcc.append(dict_mcc)    
@@ -610,8 +616,12 @@ class ProcessEvaluation(object):
                         
                         for m in self.measures_boundary:
                             dict_seg[m] = WORSE[m]
+                            print(self.pixdim)
+                            dict_seg[m] = calculate_worse_dist(f,self.pixdim)
+                            # print(dict_seg[m])
                         for m in self.measures_overlap:
                             dict_seg[m] = WORSE[m]
+                            # print(dict_seg[m])
                         for m in self.measures_pcc:
                             dict_det[m] = WORSE[m]
                         for m in self.measures_mt:
@@ -619,21 +629,24 @@ class ProcessEvaluation(object):
                         for m in self.measures_detseg:
                             dict_seg[m] = WORSE[m]
                         if len(self.measures_boundary) + len(self.measures_overlap) > 0:
-                            dict_seg['case'] = i + numb_valid
+                            dict_seg['case'] = n
                             dict_seg["label"] = lab
                             list_missing_seg.append(dict_seg)
                         if len(self.measures_pcc) + len(self.measures_detseg) > 0 : 
-                            dict_det['case'] = i + numb_valid
+                            dict_det['case'] = n
                             dict_det["label"] = lab
                             list_missing_det.append(dict_det)
                         if len(self.measures_mt) > 0:
-                            dict_mt['case'] = i + numb_valid
+                            dict_mt['case'] = n
                             dict_mt["label"] = lab
                             list_missing_mt.append(dict_mt)
+
+                # print(len(list_missing_seg), 'missing seg results')
                 df_miss_det = pd.DataFrame.from_dict(list_missing_det)
                 df_miss_seg = pd.DataFrame.from_dict(list_missing_seg)
                 df_miss_mcc = pd.DataFrame.from_dict(list_missing_mcc)
                 df_miss_mt = pd.DataFrame.from_dict(list_missing_mt)
+                # print(df_miss_seg)
                 self.resdet = combine_df(self.resdet, df_miss_det)
                 self.resseg = combine_df(self.resseg, df_miss_seg)
                 self.resmt = combine_df(self.resmt, df_miss_mt)
@@ -651,7 +664,7 @@ class ProcessEvaluation(object):
             df_grouped_all = merge_list_df([self.resdet, self.resseg, self.resmt,self.resmcc, self.rescal])
             return df_grouped_all
         if self.category == 'ImLC': 
-            print(self.resdet, self.resmt, self.rescal, self.resmcc)
+            # print(self.resdet, self.resmt, self.rescal, self.resmcc)
             df_all_labels = merge_list_df([self.resdet, self.resmt, self.rescal], on='label')
             
         else:
@@ -686,7 +699,7 @@ class ProcessEvaluation(object):
         """
         df_stats_all = self.grouped_lab.describe()
         self.stats_all = df_stats_all
-        print(self.resdet, self.resseg)
+        # print(self.resdet, self.resseg)
         if len(self.resdet.index)==0 and len(self.resseg.index)==0:
             return
         
