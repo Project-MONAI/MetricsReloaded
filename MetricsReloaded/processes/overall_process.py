@@ -689,7 +689,7 @@ class ProcessEvaluation(object):
         aggregated results are reported with their uncertainty rather than as
         bare point estimates.
         """
-        df_stats_all = stats_with_ci(self.grouped_lab)
+        df_stats_all = stats_with_ci(self.grouped_lab, exclude=("index", "case"))
         self.stats_all = df_stats_all
         print(self.resdet, self.resseg)
         if len(self.resdet.index)==0 and len(self.resseg.index)==0:

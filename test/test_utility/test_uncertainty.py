@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pytest
 from numpy.testing import assert_allclose
 
 from MetricsReloaded.utility.uncertainty import (
@@ -62,3 +63,37 @@ def test_stats_with_ci_appends_interval_rows():
         assert stats.loc["ci95_high", col] > df[col].mean()
     # describe() content preserved
     assert_allclose(stats.loc["mean", "dsc"], df["dsc"].mean())
+
+
+def test_invalid_options_are_rejected():
+    values = [0.7, 0.8, 0.9]
+    with pytest.raises(ValueError):
+        percentile_bootstrap_ci(values, n_boot=0)
+    with pytest.raises(ValueError):
+        percentile_bootstrap_ci(values, alpha=1.1)
+    with pytest.raises(ValueError):
+        percentile_bootstrap_ci(values, alpha=0.0)
+
+
+def test_fractional_confidence_level_is_labelled_exactly():
+    df = pd.DataFrame({"dsc": [0.7, 0.8, 0.85, 0.9, 0.75]})
+    stats = stats_with_ci(df, alpha=0.025)
+    # a 97.5% interval must not be rounded to "ci98"
+    assert "ci97.5_low" in stats.index
+    assert "ci97.5_high" in stats.index
+
+
+def test_identifier_columns_are_excluded_from_bootstrapping():
+    df = pd.DataFrame(
+        {
+            "case": [1, 2, 3, 4, 5],
+            "dsc": [0.7, 0.8, 0.85, 0.9, 0.75],
+        }
+    )
+    stats = stats_with_ci(df, exclude=("case",))
+    # the identifier keeps its describe() rows but gets no interval
+    assert_allclose(stats.loc["mean", "case"], 3.0)
+    assert np.isnan(stats.loc["ci95_low", "case"])
+    assert np.isnan(stats.loc["ci95_high", "case"])
+    # metric columns still get one
+    assert stats.loc["ci95_low", "dsc"] < df["dsc"].mean()
