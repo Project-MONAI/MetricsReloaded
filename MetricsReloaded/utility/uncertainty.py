@@ -39,7 +39,11 @@ def percentile_bootstrap_ci(values, n_boot=2000, alpha=0.05, seed=42):
     reported intervals are reproducible across runs of the same evaluation.
 
     :param values: iterable of per-case metric values (may contain NaN)
-    :param n_boot: number of bootstrap resamples (must be positive)
+    :param n_boot: number of bootstrap resamples; must be at least 2, and in
+        practice should be far larger. Both bounds are quantiles of the
+        resample distribution, so while n_boot < 2 / alpha they are decided by
+        its most extreme draws alone (fewer than 40 resamples at the default
+        alpha=0.05) and the interval is too narrow rather than merely noisy.
     :param alpha: 1 - confidence level (0.05 -> 95% interval); must be
         strictly between 0 and 1
     :param seed: seed for the resampling generator; pass None for
@@ -47,8 +51,12 @@ def percentile_bootstrap_ci(values, n_boot=2000, alpha=0.05, seed=42):
     :return: (lower, upper) bounds of the interval; (nan, nan) when fewer
         than two non-NaN values are available
     """
-    if n_boot < 1:
-        raise ValueError("n_boot must be a positive integer, got %r" % (n_boot,))
+    # n_boot=1 passes any "is it positive?" check and then returns a
+    # zero-width interval, because both quantiles of a single resample are
+    # that resample: a claim of exact precision produced by the least
+    # evidence the function accepts.
+    if n_boot < 2:
+        raise ValueError("n_boot must be at least 2, got %r" % (n_boot,))
     if not 0.0 < alpha < 1.0:
         raise ValueError("alpha must be strictly between 0 and 1, got %r" % (alpha,))
     arr = np.asarray(values, dtype=float)

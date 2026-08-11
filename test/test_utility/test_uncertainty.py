@@ -75,6 +75,14 @@ def test_invalid_options_are_rejected():
         percentile_bootstrap_ci(values, alpha=0.0)
 
 
+def test_single_resample_is_rejected_rather_than_reported_as_exact():
+    # Both bounds are quantiles of the resample distribution, so with one
+    # resample they are the same number and the interval has zero width --
+    # the strongest possible claim from the weakest possible evidence.
+    with pytest.raises(ValueError):
+        percentile_bootstrap_ci([0.1, 0.5, 0.9, 0.3, 0.7], n_boot=1)
+
+
 def test_fractional_confidence_level_is_labelled_exactly():
     df = pd.DataFrame({"dsc": [0.7, 0.8, 0.85, 0.9, 0.75]})
     stats = stats_with_ci(df, alpha=0.025)
