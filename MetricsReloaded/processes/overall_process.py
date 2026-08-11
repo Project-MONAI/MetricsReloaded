@@ -184,6 +184,7 @@ The available measures per task are:
 from MetricsReloaded.processes.mixed_measures_processes import MultiLabelLocMeasures, MultiLabelPairwiseMeasures, MultiLabelLocSegPairwiseMeasure
 import warnings
 from MetricsReloaded.utility.utils import combine_df, merge_list_df
+from MetricsReloaded.utility.uncertainty import stats_with_ci
 import pandas as pd
 import numpy as np
 
@@ -682,9 +683,13 @@ class ProcessEvaluation(object):
 
     def get_stats_res(self):
         """
-        Create summary statistics overall and per label available in self.stats_lab and self.stats_all
+        Create summary statistics overall and per label available in self.stats_lab and self.stats_all.
+        The overall statistics include percentile-bootstrap confidence
+        intervals (rows ci95_low / ci95_high) for each metric's mean, so that
+        aggregated results are reported with their uncertainty rather than as
+        bare point estimates.
         """
-        df_stats_all = self.grouped_lab.describe()
+        df_stats_all = stats_with_ci(self.grouped_lab, exclude=("index", "case"))
         self.stats_all = df_stats_all
         print(self.resdet, self.resseg)
         if len(self.resdet.index)==0 and len(self.resseg.index)==0:
