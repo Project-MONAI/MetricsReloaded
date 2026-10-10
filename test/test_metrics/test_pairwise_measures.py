@@ -1,17 +1,12 @@
 import pytest
 from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures as PM
 from MetricsReloaded.metrics.pairwise_measures import MultiClassPairwiseMeasures as MPM
-from MetricsReloaded.processes.mixed_measures_processes import (
-    MultiLabelLocSegPairwiseMeasure as MLIS,
-)
 import numpy as np
 
-from MetricsReloaded.utility.utils import one_hot_encode
 from numpy.testing import assert_allclose, assert_array_equal
 from sklearn.metrics import cohen_kappa_score as cks
 from sklearn.metrics import matthews_corrcoef as mcc
 
-from MetricsReloaded.metrics.prob_pairwise_measures import ProbabilityPairwiseMeasures
 
 #Data for figure SN 2.9 of Pitfalls p49
 pred29_1 = np.concatenate([np.ones([45]),np.zeros([5]),np.ones([10]),np.zeros([40])])
@@ -332,8 +327,8 @@ def test_fn_map():
     fn2 = ppm210_2.fn()
     expected_fn1 = 12
     expected_fn2 = 0
-    assert fn1 == 12
-    assert fn2 == 0 
+    assert fn1 == expected_fn1
+    assert fn2 == expected_fn2
 
 def test_fp():
     """
@@ -410,15 +405,17 @@ def test_n_neg_pred():
     expected_n_neg_pred2 = 160
     n_neg_pred1 = ppm210_1.n_neg_pred()
     n_neg_pred2 = ppm210_2.n_neg_pred()
+    assert expected_n_neg_pred1 == n_neg_pred1
+    assert expected_n_neg_pred2 == n_neg_pred2
 
 def test_balanced_accuracy():
     list_values = [0, 1, 2, 3]
     mpm = MPM(pred, ref, list_values)
-    ohp = one_hot_encode(mpm.pred, 4).T
-    ohr = one_hot_encode(mpm.ref, 4)
-    cm = np.matmul(ohp, ohr)
-    col_sum = np.sum(cm, 0)
-    numerator = np.sum(np.diag(cm) / col_sum)
+    # ohp = one_hot_encode(mpm.pred, 4).T
+    # ohr = one_hot_encode(mpm.ref, 4)
+    # cm = np.matmul(ohp, ohr)
+    # col_sum = np.sum(cm, 0)
+    # numerator = np.sum(np.diag(cm) / col_sum)
     ba = mpm.balanced_accuracy()
     expected_ba = 0.7071
     assert_allclose(ba, expected_ba, atol=0.001)
@@ -791,7 +788,7 @@ def test_fbeta():
 
 def test_dsc_fbeta():
     bpm = PM(p_pred, p_ref)
-    bpm2 = PM(p_pred, p_ref, dict_args={"fbeta": 2})
+    # bpm2 = PM(p_pred, p_ref, dict_args={"fbeta": 2})
     print(np.sum(p_ref), np.sum(p_pred))
     value_test = bpm.fbeta()
     print("DSC test", value_test)
@@ -1147,7 +1144,7 @@ def test_empty_reference():
     with pytest.warns(UserWarning, match=match3):
         spec = pm2.specificity()
 
-    expected_fbeta = 1
+    # expected_fbeta = 1
     assert np.isnan(fbeta)
     assert sens != sens  # True if nan
     assert spec != spec  # True if nan

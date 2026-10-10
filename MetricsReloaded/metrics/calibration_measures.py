@@ -34,12 +34,6 @@ from scipy.special import gamma
 import warnings
 # from metrics.pairwise_measures import CacheFunctionOutput
 from MetricsReloaded.utility.utils import (
-    CacheFunctionOutput,
-    max_x_at_y_more,
-    max_x_at_y_less,
-    min_x_at_y_more,
-    min_x_at_y_less,
-    trapezoidal_integration,
     one_hot_encode,
     median_heuristic
 )
@@ -51,6 +45,25 @@ __all__ = [
 
 
 class CalibrationMeasures(object):
+    """
+    Class allowing the derivation of calibration measures given probability input:
+    The possible metrics are:
+
+    * expected calibration error (ece)
+    * Brier Score
+    * Root Brier score
+    * Logarithmic score
+    * Class wise expectation calibration error
+    * Kernel based ECE
+    * negative log likelihood
+
+    :param pred_proba: predicted probabilities
+    :param ref: reference
+    :param case: if required list of cases to consider
+    :param measures: list of measures to extract
+    :param empty: flag indicating whether there are empty references
+    :param dict_args: dictionary with additional arguments for the metrics if needed
+    """
     def __init__(
         self,
         pred_proba,
@@ -89,7 +102,7 @@ class CalibrationMeasures(object):
 
         .. math::
 
-            cwECE = \dfrac{1}{K}\sum_{k=1}^{K}\sum_{i=1}^{N}\dfrac{\vert B_{i,k} \vert}{N} \left(y_{k}(B_{i,k}) - p_{k}(B_{i,k})\right)
+            cwECE = \\dfrac{1}{K}\sum_{k=1}^{K}\sum_{i=1}^{N}\\dfrac{\\vert B_{i,k} \\vert}{N} \\left(y_{k}(B_{i,k}) - p_{k}(B_{i,k})\\right)
 
         :return: cwece
         """
@@ -103,14 +116,14 @@ class CalibrationMeasures(object):
         range_values = np.arange(0, 1.00001, step)
         list_values = []
         numb_samples = self.pred.shape[0]
-        class_pred = np.argmax(self.pred, 1)
+        #class_pred = np.argmax(self.pred, 1)
         n_classes = self.pred.shape[1]
         for k in range(n_classes):
             list_values_k = []
-            for (l, u) in zip(range_values[:-1], range_values[1:]):
+            for (lo, up) in zip(range_values[:-1], range_values[1:]):
                 pred_k = self.pred[:, k]
                 ref_tmp = np.where(
-                    np.logical_and(pred_k > l, pred_k <= u),
+                    np.logical_and(pred_k > lo, pred_k <= up),
                     self.ref,
                     np.ones_like(self.ref) * -1,
                 )
@@ -121,7 +134,7 @@ class CalibrationMeasures(object):
                 nsamples = np.size(ref_sel)
                 prop = np.sum(ref_selk) / nsamples
                 pred_tmp = np.where(
-                    np.logical_and(pred_k > l, pred_k <= u),
+                    np.logical_and(pred_k > lo, pred_k <= up),
                     pred_k,
                     np.ones_like(pred_k) * -1,
                 )
@@ -146,7 +159,7 @@ class CalibrationMeasures(object):
 
         .. math::
 
-            ECE = \sum_{m=1}^{M} \dfrac{|B_m|}{n}(\dfrac{1}{|B_m|}\sum_{i \in B_m}1(pred_ik==ref_ik)-\dfrac{1}{|B_m|}\sum_{i \in B_m}pred_i)
+            ECE = \sum_{m=1}^{M} \dfrac{|B_m|}{n}(\dfrac{1}{|B_m|}\sum_{i \in B_m}1(pred_{ik}==ref_{ik})-\dfrac{1}{|B_m|}\sum_{i \in B_m}pred_i)
 
         :return: ece
 
@@ -161,9 +174,9 @@ class CalibrationMeasures(object):
         list_values = []
         numb_samples = 0
         pred_prob = self.pred[:,1]
-        for (l, u) in zip(range_values[:-1], range_values[1:]):
+        for (lo, up) in zip(range_values[:-1], range_values[1:]):
             ref_tmp = np.where(
-                np.logical_and(pred_prob > l, pred_prob <= u),
+                np.logical_and(pred_prob > lo, pred_prob <= up),
                 self.ref,
                 np.ones_like(self.ref) * -1,
             )
@@ -171,7 +184,7 @@ class CalibrationMeasures(object):
             nsamples = np.size(ref_sel)
             prop = np.sum(ref_sel) / nsamples
             pred_tmp = np.where(
-                np.logical_and(pred_prob > l, pred_prob <= u),
+                np.logical_and(pred_prob > lo, pred_prob <= up),
                 pred_prob,
                 np.ones_like(pred_prob) * -1,
             )
@@ -193,7 +206,7 @@ class CalibrationMeasures(object):
 
         .. math::
 
-            MCE = max(|\dfrac{1}{|B_m|}\sum_{i \in B_m}1(pred_ik==ref_ik)-\dfrac{1}{|B_m|}\sum_{i \in B_m}pred_i|)
+            MCE = max(|\dfrac{1}{|B_m|}\sum_{i \in B_m}1(pred_{ik}==ref_{ik})-\dfrac{1}{|B_m|}\sum_{i \in B_m}pred_i|)
 
         :return: mce
 
@@ -206,11 +219,10 @@ class CalibrationMeasures(object):
         step = 1.0 / nbins
         range_values = np.arange(0, 1.00001, step)
         list_values = []
-        numb_samples = 0
         pred_prob = self.pred[:,1]
-        for (l, u) in zip(range_values[:-1], range_values[1:]):
+        for (lo, up) in zip(range_values[:-1], range_values[1:]):
             ref_tmp = np.where(
-                np.logical_and(pred_prob > l, pred_prob <= u),
+                np.logical_and(pred_prob > lo, pred_prob <= up),
                 self.ref,
                 np.ones_like(self.ref) * -1,
             )
@@ -218,7 +230,7 @@ class CalibrationMeasures(object):
             nsamples = np.size(ref_sel)
             prop = np.sum(ref_sel) / nsamples
             pred_tmp = np.where(
-                np.logical_and(pred_prob > l, pred_prob <= u),
+                np.logical_and(pred_prob > lo, pred_prob <= up),
                 pred_prob,
                 np.ones_like(pred_prob) * -1,
             )
@@ -274,13 +286,12 @@ class CalibrationMeasures(object):
         
         .. math::
 
-            LS = 1/N\sum_{i=1}^{N}\log{pred_ik}ref_{ik}
+            LS = 1/N\sum_{i=1}^{N}\log{pred_{ik}}ref_{ik}
 
         :return: ls
         """
         eps = 1e-10
         log_pred = np.log(self.pred + eps)
-        to_log = self.pred[np.arange(log_pred.shape[0]),self.ref]
         to_sum = log_pred[np.arange(log_pred.shape[0]),self.ref]
         ls =  np.mean(to_sum)
         return ls
@@ -288,6 +299,9 @@ class CalibrationMeasures(object):
     def distance_ij(self,i,j):
         """
         Determines the euclidean distance between two vectors of prediction for two samples i and j
+
+        :param i: index of first sample
+        :param j: index of second sample with which to calculate distance
 
         :return: distance
         """
@@ -299,7 +313,10 @@ class CalibrationMeasures(object):
 
     def kernel_calculation(self, i,j):
         """
-        Defines the kernel value for two samples i and j with the following definition for k(x_i,x_j)
+        Defines the kernel value for two samples i and j with the following definition for :math:`k(x_i,x_j)`
+
+        :param i: index of first sample
+        :param j: index of second sample
 
         .. math::
 
@@ -414,13 +431,16 @@ class CalibrationMeasures(object):
         """
         Definition of gamma value for sample i class k of the predictions
 
+        :param i: index of the sample
+        :param k: index of the class
+
         .. math::
 
-            gamma_{ik} = \Gamma(pred_{ik}/h + 1)
+            \gamma_{ik} = \Gamma(pred_{ik}/h + 1)
 
         where h is the bandwidth value set as default to 0.5
 
-        :return gamma_ik
+        :return: gamma_ik
 
         """
         pred_ik = self.pred[i, k]
@@ -435,6 +455,9 @@ class CalibrationMeasures(object):
     def dirichlet_kernel(self, j, i):
         """
         Calculation of Dirichlet kernel value for predictions of samples i and j
+
+        :param i: index of first sample to consider
+        :param j: index of second sample to consider
 
         .. math::
 
@@ -470,10 +493,10 @@ class CalibrationMeasures(object):
 
         .. math::
 
-            NLL = -\dfrac{1}{N}\sum_{i=1}^{N}\sum_{k=1}^{C} y_{ik} \dot log(p_{i,k})
+            NLL = -\dfrac{1}{N}\sum_{i=1}^{N}\sum_{k=1}^{C} y_{ik}\log(p_{i,k})
 
-        where :math: `y_{ik}` the outcome is 1 if the class of :math: `y_{i}` is k and :math: `p_{ik}` is the predicted 
-        probability for sample :math: `x_i` and class k
+        where :math:`y_{ik}` the outcome is 1 if the class of :math:`y_{i}` is k and :math:`p_{ik}` is the predicted 
+        probability for sample :math:`x_i` and class k
 
         :return: NLL
 
@@ -485,7 +508,11 @@ class CalibrationMeasures(object):
         return nll
 
     def to_dict_meas(self, fmt="{:.4f}"):
-        """Given the selected metrics provides a dictionary with relevant metrics"""
+        """
+        Given the selected metrics provides a dictionary with relevant metrics
+        
+        :return: result_dict dictionary of results
+        """
         result_dict = {}
         for key in self.measures:
             result = self.measures_dict[key][0]()

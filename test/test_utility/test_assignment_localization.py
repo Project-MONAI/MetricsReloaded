@@ -1,14 +1,9 @@
-import pytest
-from MetricsReloaded.metrics.pairwise_measures import BinaryPairwiseMeasures as PM
-from MetricsReloaded.metrics.pairwise_measures import MultiClassPairwiseMeasures as MPM
 from MetricsReloaded.processes.mixed_measures_processes import (
     MultiLabelLocSegPairwiseMeasure as MLIS,
 )
 from MetricsReloaded.utility.assignment_localization import AssignmentMapping
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_almost_equal
-from sklearn.metrics import cohen_kappa_score as cks
-from sklearn.metrics import matthews_corrcoef as mcc
 
 #Data for figure 6a testing of assignment and average precision
 ref6a1 = np.asarray([3,2,7,5])
@@ -56,6 +51,8 @@ pq_ref3[13:16,8:9] = 1
 ref_351 = [pq_ref1, pq_ref2, pq_ref3]
 pred_351 = [pq_pred1, pq_pred2, pq_pred3,pq_pred4]
 
+pred_com_351 = [np.asarray([4.5,2]), np.asarray([14,5]), np.asarray([9,14.5]), np.asarray([13.5,14.5])]
+
 
 ## Data for figure 59 and testing of localisation
 f59_ref1 = np.zeros([15, 15])
@@ -67,6 +64,48 @@ f59_pred1 = np.zeros([15, 15])
 f59_pred1[7:9, 8:10] = 1
 f59_pred2 = np.zeros([15, 15])
 f59_pred2[4:8, 5:9] = 1
+
+def test_pixdim_info():
+    asm = AssignmentMapping(pred_loc = pred_351, ref_loc=ref_351, pred_prob=[0.4, 0.6, 0.3, 0.9])
+    asm2 = AssignmentMapping(pred_loc=[], ref_loc=ref_351, pred_prob=[])
+    assert_allclose(asm.pixdim,[1,1])
+    assert_allclose(asm2.pixdim,[1,1])
+
+def test_not_suitable_localisation():
+    asm = AssignmentMapping(pred_loc=pred_com_351, ref_loc=ref_351, pred_prob=[0.4, 0.6, 0.3, 0.9], localization='box_iou')
+    assert not asm.flag_usable
+    assert asm.df_matching is None
+
+def test_emptyref_flags():
+    asm = AssignmentMapping(pred_loc=pred_351, ref_loc=[],  pred_prob=[0.4, 0.6, 0.3, 0.9])
+    assert asm.flag_usable
+
+def test_not_good_localisation_option():
+    asm = AssignmentMapping(pred_loc = pred_351, ref_loc=ref_351, pred_prob=[0.4, 0.6, 0.3, 0.9], localization='mask_iop')
+    assert not asm.flag_usable
+
+def test_boundaryiou_loc():
+    asm = AssignmentMapping(pred_loc = pred_351, ref_loc=ref_351, pred_prob=[0.4, 0.6, 0.3, 0.9], localization='boundary_iou')
+    assert asm.matrix[0,1] == 0
+
+def test_input_boxcom_maskcom():
+    asm1 = AssignmentMapping(pred_loc=pred_boxes_6a, ref_loc=ref_boxes_6a, pred_prob=pred_proba_6a, localization='box_com')
+    asm2 = AssignmentMapping(pred_loc = pred_351, ref_loc=ref_351, pred_prob=[0.4, 0.6, 0.3, 0.9], localization='box_com')
+    assert asm1.flag_refmod
+    assert asm1.flag_predmod
+    assert asm2.flag_refmod
+    assert asm2.flag_predmod
+
+def test_input_pim_maskmask():
+    asm2 = AssignmentMapping(pred_loc = pred_351, ref_loc=ref_351, pred_prob=[0.4, 0.6, 0.3, 0.9], localization='point_in_mask')
+    assert not asm2.flag_usable
+
+def test_input_pib_pm():
+    asm = AssignmentMapping(pred_loc=pred_com_351, ref_loc=ref_351, pred_prob=[0.4, 0.6, 0.3, 0.9], localization='point_in_box')
+    matrix_pib = asm.pairwise_pointinbox()
+    assert  asm.flag_refmod
+    assert matrix_pib[0,0] == 1
+
 
 def test_assignment_6c():
     asm1 = AssignmentMapping(pred_loc=pred_boxes_6a, ref_loc=ref_boxes_6a, pred_prob=pred_proba_6a, thresh=0.1,localization='box_iou')
@@ -83,7 +122,7 @@ def test_assignment_6c():
 
 def test_check_localization():
     ref_box = [[2,2,4,4]]
-    ref_com = [[3,3]]
+    # ref_com = [[3,3]]
     pred_box = [[2,2,4,4]]
     pred_com = [[3,3]]
     ref_mask = np.zeros([14,14])
@@ -92,7 +131,7 @@ def test_check_localization():
     pred_mask[2:5,2:5]=1
     ref_boxes = np.vstack([ref_box])
     ref_masks = np.asarray([ref_mask])
-    ref_coms = np.vstack([ref_com])
+    # ref_coms = np.vstack([ref_com])
     pred_coms = np.vstack([pred_com])
     pred_boxes = np.vstack([pred_box])
     pred_masks = np.asarray([pred_mask])
@@ -227,6 +266,11 @@ def test_pairwise_pointinbox():
     expected_matrix = np.asarray([[1,0],[0,0]])
     assert_allclose(am.matrix, expected_matrix)
 
+def test_pairwise_pointinbox_pm():
+    asm = AssignmentMapping(pred_com_351, ref_351,[1,1,1,1],'point_in_box')
+    assert asm.matrix[0,0] == 1
+
+
 def test_pairwise_pointcomdist():
     ref1 = [3,4]
     ref2 = [10,10]
@@ -261,6 +305,11 @@ def test_com_from_refbox_6a():
     test_com = asm1.ref_loc_mod
     expected_ref_com = [[5,3.5],[7.5,10],[2,17],[15,16]]
     assert_array_almost_equal(np.asarray(expected_ref_com), test_com)
+
+def test_pairwise_boxior_mm():
+    asm = AssignmentMapping(pred_351, ref_351,[1,1,1,1],'box_ior')
+    assert asm.matrix[0,0] == 0.8
+
 
 def test_com_from_predbox_6a():
     """
@@ -313,8 +362,22 @@ def test_box_frompredmask():
     expected_box = [[3,1,6,6],[13,4,15,5],[7,13,11,16],[13,13,15,16]]
     assert_array_almost_equal(np.asarray(expected_box),test_box)
 
-
-
+def test_matching_ambiguity():
+        ref_box = np.asarray([2,3,10,11])
+        pred_box1 = np.asarray([1,1,8,8])
+        pred_box2 = np.asarray([2,8,11,11])
+        ref = [ref_box]
+        pred = [pred_box1, pred_box2]
+        asm = AssignmentMapping(pred, ref,[0.5,1],thresh=0.1,localization='box_iou')
+        asm_h = AssignmentMapping(pred, ref,[0.5,1],thresh=0.1,localization='box_iou',assignment='hungarian')
+        asm_p = AssignmentMapping(pred, ref,[0.5,1],thresh=0.1,localization='box_iou',assignment='greedy_performance')
+        df_match, list_val = asm.resolve_ambiguities_matching()
+        df_match_h, list_val_h = asm_h.resolve_ambiguities_matching()
+        df_match_p, list_val_p = asm_p.resolve_ambiguities_matching()
+        print(df_match, df_match_h, df_match_p)
+        assert df_match.shape[0] == 2
+        assert df_match_h.shape[0] == 2
+        assert df_match_p.shape[0] == 2
 
 
 def test_localization():
@@ -349,7 +412,7 @@ def test_localization():
     print(match1, match2, match2.columns)
     m12 = match1[match1["label"] == 1]
     m21 = match2[match2["label"] == 0]
-    m22 = match2[match2["label"] == 1]
+    # m22 = match2[match2["label"] == 1]
     print(m12)
     print(match1[match1["label"] == 1])
     print(match1[match1["label"] == 0])
@@ -357,3 +420,9 @@ def test_localization():
         np.asarray(m12[m12["pred"] == 0]["ref"])[0] == 0
         and np.asarray(m21[m21["pred"] == 0]["ref"])[0] == -1
     )
+
+    
+
+
+
+
