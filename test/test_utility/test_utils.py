@@ -5,6 +5,12 @@ from MetricsReloaded.utility.utils import MorphologyOps as MO
 from MetricsReloaded.utility.utils import intersection_boxes, guess_input_style, merge_list_df, com_from_box, point_in_box,point_in_mask, area_box, min_x_at_y_more, compute_box, compute_center_of_mass, combine_df, box_ior, box_iou, union_boxes, max_x_at_y_less, min_x_at_y_less
 
 
+def test_foreground_component_uses_connectivity():
+    mask = np.eye(2)
+    assert MO(mask, 1).foreground_component()[1] == 2
+    assert MO(mask, 2).foreground_component()[1] == 1
+
+
 box3 = [2,3, 4,4]
 box4 = [4,4,5,6]
 

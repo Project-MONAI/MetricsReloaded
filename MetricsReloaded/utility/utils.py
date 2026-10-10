@@ -129,7 +129,10 @@ class MorphologyOps(object):
 
         return: label map and number of labels
         """
-        return ndimage.label(self.binary_map)
+        structure = ndimage.generate_binary_structure(
+            self.binary_map.ndim, self.connectivity
+        )
+        return ndimage.label(self.binary_map, structure=structure)
 
     def list_foreground_component(self):
         """
