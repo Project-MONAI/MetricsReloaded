@@ -264,7 +264,7 @@ def test_semanticsegmentation_twolabels():
     mlpm = MLPM([pred],[ref],pred_proba=[None],list_values=[1,2],measures_overlap=['dsc'],measures_boundary=['nsd'])
     df_bin, df_mt = mlpm.per_label_dict()
     print(df_bin)
-    value_test = float(np.asarray(df_bin[df_bin['label']==1]['nsd'])[0])
+    value_test = float(df_bin[df_bin['label']==1]['nsd'].item())
     assert_allclose(value_test, 0.52,atol=0.01)
 
 
