@@ -383,7 +383,7 @@ class CalibrationMeasures(object):
                 prob[k] = 0
                 print('nothing in ', k)
             else:
-                prob[k] = prob_ref_counts[idx[0]] / numb_samples
+                prob[k] = prob_ref_counts[idx[0][0]] / numb_samples
 
         prob_expected_max = prob[class_max]
         tce = np.sqrt(np.mean(np.square(prob_expected_max - prob_pred_max)))
